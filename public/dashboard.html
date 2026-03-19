@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>彩票开奖管理系统</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>🎰 彩票开奖管理系统</h1>
+            <div class="header-right">
+                <span class="user-info" id="userInfo"></span>
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+
+        <!-- 导航标签 -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="dashboard">控制台</button>
+            <button class="nav-tab" data-tab="draws">开奖预设</button>
+            <button class="nav-tab admin-only" data-tab="users">用户管理</button>
+            <button class="nav-tab" data-tab="transactions">交易记录</button>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 控制台 -->
+            <div id="dashboard" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4>账户余额</h4>
+                        <div class="value" id="balanceDisplay">¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>账户状态</h4>
+                        <div class="value" id="statusDisplay">正常</div>
+                    </div>
+                    <div class="stat-card admin-only">
+                        <h4>用户总数</h4>
+                        <div class="value" id="userCountDisplay">-</div>
+                    </div>
+                    <div class="stat-card admin-only">
+                        <h4>待审核交易</h4>
+                        <div class="value" id="pendingTransactionsDisplay">-</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>快速操作</h3>
+                    <div class="toolbar">
+                        <button class="btn btn-primary" onclick="showDepositModal()">充值申请</button>
+                        <button class="btn btn-secondary" onclick="showWithdrawModal()">提现申请</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 开奖预设 -->
+            <div id="draws" class="tab-content">
+                <div class="card">
+                    <h3>开奖预设管理</h3>
+                    <div class="toolbar">
+                        <label>日期：</label>
+                        <input type="date" id="drawDate">
+                        <label>周期：</label>
+                        <select id="drawInterval">
+                            <option value="5">5分钟 (288期/天)</option>
+                            <option value="10">10分钟 (144期/天)</option>
+                            <option value="15">15分钟 (96期/天)</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="loadDraws()">加载</button>
+                        <button class="btn btn-success admin-only" onclick="saveDraws()">保存修改</button>
+                        <button class="btn btn-secondary admin-only" onclick="generateRandomResults()">随机生成</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>开奖结果列表 <span id="drawInfo"></span></h3>
+                    <div class="table-wrapper">
+                        <table class="draw-table">
+                            <thead>
+                                <tr>
+                                    <th>期号</th>
+                                    <th>时间</th>
+                                    <th>开奖号码</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="drawsBody">
+                                <tr><td colspan="4" class="loading"><div class="spinner"></div>加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户管理（管理员） -->
+            <div id="users" class="tab-content">
+                <div class="card">
+                    <h3>用户列表</h3>
+                    <div class="toolbar">
+                        <input type="text" id="userSearch" placeholder="搜索用户名">
+                        <select id="userRoleFilter">
+                            <option value="">所有角色</option>
+                            <option value="admin">管理员</option>
+                            <option value="user">普通用户</option>
+                        </select>
+                        <select id="userStatusFilter">
+                            <option value="">所有状态</option>
+                            <option value="true">已启用</option>
+                            <option value="false">已禁用</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="loadUsers()">搜索</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>用户名</th>
+                                    <th>角色</th>
+                                    <th>余额</th>
+                                    <th>状态</th>
+                                    <th>注册时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersBody">
+                                <tr><td colspan="6" class="loading"><div class="spinner"></div>加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 交易记录 -->
+            <div id="transactions" class="tab-content">
+                <div class="card">
+                    <h3>交易记录</h3>
+                    <div class="toolbar">
+                        <select id="transTypeFilter">
+                            <option value="">所有类型</option>
+                            <option value="deposit">充值</option>
+                            <option value="withdraw">提现</option>
+                            <option value="adjust">调账</option>
+                        </select>
+                        <select id="transStatusFilter">
+                            <option value="">所有状态</option>
+                            <option value="pending">待处理</option>
+                            <option value="approved">已批准</option>
+                            <option value="rejected">已拒绝</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="loadTransactions()">搜索</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>用户</th>
+                                    <th>类型</th>
+                                    <th>金额</th>
+                                    <th>状态</th>
+                                    <th>备注</th>
+                                    <th>时间</th>
+                                    <th class="admin-only">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsBody">
+                                <tr><td colspan="7" class="loading"><div class="spinner"></div>加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 充值模态框 -->
+    <div id="depositModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>充值申请</h3>
+                <button class="modal-close" onclick="closeModal('depositModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>充值金额</label>
+                <input type="number" id="depositAmount" class="form-control" placeholder="请输入充值金额" min="1">
+            </div>
+            <div class="form-group">
+                <label>备注（可选）</label>
+                <input type="text" id="depositNote" class="form-control" placeholder="备注信息">
+            </div>
+            <button class="btn btn-primary" onclick="submitDeposit()" style="width: 100%">提交申请</button>
+        </div>
+    </div>
+
+    <!-- 提现模态框 -->
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>提现申请</h3>
+                <button class="modal-close" onclick="closeModal('withdrawModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>当前余额</label>
+                <input type="text" id="withdrawBalance" class="form-control" disabled>
+            </div>
+            <div class="form-group">
+                <label>提现金额</label>
+                <input type="number" id="withdrawAmount" class="form-control" placeholder="请输入提现金额" min="1">
+            </div>
+            <div class="form-group">
+                <label>备注（可选）</label>
+                <input type="text" id="withdrawNote" class="form-control" placeholder="备注信息">
+            </div>
+            <button class="btn btn-primary" onclick="submitWithdraw()" style="width: 100%">提交申请</button>
+        </div>
+    </div>
+
+    <!-- 调账模态框 -->
+    <div id="adjustModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>调整余额</h3>
+                <button class="modal-close" onclick="closeModal('adjustModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="adjustUsername" class="form-control" disabled>
+            </div>
+            <div class="form-group">
+                <label>当前余额</label>
+                <input type="text" id="adjustCurrentBalance" class="form-control" disabled>
+            </div>
+            <div class="form-group">
+                <label>调整金额（正数为充值，负数为扣款）</label>
+                <input type="number" id="adjustAmount" class="form-control" placeholder="输入金额">
+            </div>
+            <div class="form-group">
+                <label>备注</label>
+                <input type="text" id="adjustNote" class="form-control" placeholder="调整原因">
+            </div>
+            <button class="btn btn-primary" onclick="submitAdjust()" style="width: 100%">确认调整</button>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentUser = null;
+        let token = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            token = localStorage.getItem('token');
+            const userStr = localStorage.getItem('user');
+            
+            if (!token || !userStr) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            currentUser = JSON.parse(userStr);
+            document.getElementById('userInfo').textContent = `${currentUser.username} (${currentUser.role === 'admin' ? '管理员' : '用户'})`;
+
+            // 根据角色显示/隐藏管理员功能
+            if (currentUser.role !== 'admin') {
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }
+
+            // 初始化日期
+            document.getElementById('drawDate').value = new Date().toISOString().split('T')[0];
+
+            // 加载初始数据
+            loadDashboard();
+
+            // 标签切换
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    switchTab(tabName);
+                });
+            });
+        });
+
+        // 切换标签
+        function switchTab(tabName) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            // 加载对应数据
+            if (tabName === 'draws') loadDraws();
+            else if (tabName === 'users') loadUsers();
+            else if (tabName === 'transactions') loadTransactions();
+        }
+
+        // 加载控制台数据
+        async function loadDashboard() {
+            try {
+                const res = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    document.getElementById('balanceDisplay').textContent = `¥${data.user.balance.toFixed(2)}`;
+                    document.getElementById('statusDisplay').textContent = data.user.isActive ? '正常' : '已禁用';
+                    currentUser = data.user;
+                }
+
+                // 管理员额外数据
+                if (currentUser.role === 'admin') {
+                    const [usersRes, transRes] = await Promise.all([
+                        fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } }),
+                        fetch('/api/transactions?status=pending', { headers: { 'Authorization': `Bearer ${token}` } })
+                    ]);
+
+                    const usersData = await usersRes.json();
+                    const transData = await transRes.json();
+
+                    document.getElementById('userCountDisplay').textContent = usersData.pagination?.total || 0;
+                    document.getElementById('pendingTransactionsDisplay').textContent = transData.pagination?.total || 0;
+                }
+            } catch (error) {
+                console.error('加载控制台数据错误:', error);
+            }
+        }
+
+        // 加载开奖预设
+        async function loadDraws() {
+            const date = document.getElementById('drawDate').value;
+            const interval = document.getElementById('drawInterval').value;
+
+            if (!date) {
+                showMessage('请选择日期', 'warning');
+                return;
+            }
+
+            const tbody = document.getElementById('drawsBody');
+            tbody.innerHTML = '<tr><td colspan="4" class="loading"><div class="spinner"></div>加载中...</td></tr>';
+
+            try {
+                const res = await fetch(`/api/draws/daily?date=${date}&interval=${interval}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    document.getElementById('drawInfo').textContent = `(${data.totalPeriods}期)`;
+                    renderDrawsTable(data.draws, parseInt(interval));
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4">加载失败</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载开奖预设错误:', error);
+                tbody.innerHTML = '<tr><td colspan="4">网络错误</td></tr>';
+            }
+        }
+
+        // 渲染开奖预设表格
+        function renderDrawsTable(draws, interval) {
+            const tbody = document.getElementById('drawsBody');
+            tbody.innerHTML = '';
+
+            draws.forEach((result, idx) => {
+                const period = idx + 1;
+                const minutes = idx * interval;
+                const hour = Math.floor(minutes / 60);
+                const minute = minutes % 60;
+                const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${period}</td>
+                    <td>${timeStr}</td>
+                    <td>
+                        <input type="text" 
+                            class="result-input" 
+                            data-period="${idx}" 
+                            value="${result || ''}" 
+                            maxlength="10" 
+                            placeholder="10位数字"
+                            onchange="validateInput(this)">
+                    </td>
+                    <td>${result ? '<span class="badge badge-success">已设置</span>' : '<span class="badge badge-warning">未设置</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 验证输入
+        function validateInput(input) {
+            const value = input.value.trim();
+            if (value && !/^\d{10}$/.test(value)) {
+                input.classList.add('invalid');
+                input.classList.remove('valid');
+            } else if (value) {
+                input.classList.add('valid');
+                input.classList.remove('invalid');
+            } else {
+                input.classList.remove('valid', 'invalid');
+            }
+        }
+
+        // 保存开奖预设
+        async function saveDraws() {
+            const date = document.getElementById('drawDate').value;
+            const interval = parseInt(document.getElementById('drawInterval').value);
+
+            const periods = [];
+            document.querySelectorAll('.result-input').forEach(input => {
+                const period = parseInt(input.dataset.period);
+                const value = input.value.trim();
+                if (value && /^\d{10}$/.test(value)) {
+                    periods.push({ period, result: value });
+                }
+            });
+
+            if (periods.length === 0) {
+                showMessage('没有有效的开奖结果需要保存', 'warning');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/draws', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ date, interval, periods })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage(data.message || '保存成功', 'success');
+                    loadDraws();
+                } else {
+                    showMessage(data.error || '保存失败', 'error');
+                }
+            } catch (error) {
+                console.error('保存开奖预设错误:', error);
+                showMessage('网络错误', 'error');
+            }
+        }
+
+        // 随机生成开奖结果
+        function generateRandomResults() {
+            document.querySelectorAll('.result-input').forEach(input => {
+                const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+                for (let i = digits.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [digits[i], digits[j]] = [digits[j], digits[i]];
+                }
+                input.value = digits.join('');
+                input.classList.add('valid');
+            });
+            showMessage('已生成随机开奖结果', 'success');
+        }
+
+        // 加载用户列表
+        async function loadUsers() {
+            const search = document.getElementById('userSearch').value;
+            const role = document.getElementById('userRoleFilter').value;
+            const status = document.getElementById('userStatusFilter').value;
+
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (role) params.append('role', role);
+            if (status) params.append('isActive', status);
+
+            const tbody = document.getElementById('usersBody');
+            tbody.innerHTML = '<tr><td colspan="6" class="loading"><div class="spinner"></div>加载中...</td></tr>';
+
+            try {
+                const res = await fetch(`/api/users?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    renderUsersTable(data.users);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6">加载失败</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载用户列表错误:', error);
+                tbody.innerHTML = '<tr><td colspan="6">网络错误</td></tr>';
+            }
+        }
+
+        // 渲染用户表格
+        function renderUsersTable(users) {
+            const tbody = document.getElementById('usersBody');
+            tbody.innerHTML = '';
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">暂无数据</td></tr>';
+                return;
+            }
+
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${user.username}</td>
+                    <td>${user.role === 'admin' ? '<span class="badge badge-info">管理员</span>' : '<span class="badge">用户</span>'}</td>
+                    <td>¥${user.balance.toFixed(2)}</td>
+                    <td>${user.isActive ? '<span class="badge badge-success">正常</span>' : '<span class="badge badge-danger">已禁用</span>'}</td>
+                    <td>${new Date(user.createdAt).toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="toggleUserStatus('${user._id}', ${!user.isActive})" style="padding: 5px 10px; font-size: 12px;">
+                            ${user.isActive ? '禁用' : '启用'}
+                        </button>
+                        <button class="btn btn-primary" onclick="showAdjustModal('${user._id}', '${user.username}', ${user.balance})" style="padding: 5px 10px; font-size: 12px;">
+                            调账
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 切换用户状态
+        async function toggleUserStatus(userId, isActive) {
+            try {
+                const res = await fetch(`/api/users/${userId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ isActive })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage(data.message, 'success');
+                    loadUsers();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                console.error('更新用户状态错误:', error);
+                showMessage('网络错误', 'error');
+            }
+        }
+
+        // 显示调账模态框
+        function showAdjustModal(userId, username, balance) {
+            document.getElementById('adjustUsername').value = username;
+            document.getElementById('adjustCurrentBalance').value = `¥${balance.toFixed(2)}`;
+            document.getElementById('adjustAmount').value = '';
+            document.getElementById('adjustNote').value = '';
+            document.getElementById('adjustModal').dataset.userId = userId;
+            document.getElementById('adjustModal').classList.add('active');
+        }
+
+        // 提交调账
+        async function submitAdjust() {
+            const userId = document.getElementById('adjustModal').dataset.userId;
+            const amount = parseFloat(document.getElementById('adjustAmount').value);
+            const note = document.getElementById('adjustNote').value;
+
+            if (!amount || amount === 0) {
+                showMessage('请输入有效的金额', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/users/balance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ userId, amount, note })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage(data.message, 'success');
+                    closeModal('adjustModal');
+                    loadUsers();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                console.error('调账错误:', error);
+                showMessage('网络错误', 'error');
+            }
+        }
+
+        // 加载交易记录
+        async function loadTransactions() {
+            const type = document.getElementById('transTypeFilter').value;
+            const status = document.getElementById('transStatusFilter').value;
+
+            const params = new URLSearchParams();
+            if (type) params.append('type', type);
+            if (status) params.append('status', status);
+
+            const tbody = document.getElementById('transactionsBody');
+            tbody.innerHTML = '<tr><td colspan="7" class="loading"><div class="spinner"></div>加载中...</td></tr>';
+
+            try {
+                const res = await fetch(`/api/transactions?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    renderTransactionsTable(data.transactions);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7">加载失败</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载交易记录错误:', error);
+                tbody.innerHTML = '<tr><td colspan="7">网络错误</td></tr>';
+            }
+        }
+
+        // 渲染交易表格
+        function renderTransactionsTable(transactions) {
+            const tbody = document.getElementById('transactionsBody');
+            tbody.innerHTML = '';
+
+            if (transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7">暂无数据</td></tr>';
+                return;
+            }
+
+            transactions.forEach(trans => {
+                const typeMap = {
+                    'deposit': '<span class="badge badge-success">充值</span>',
+                    'withdraw': '<span class="badge badge-warning">提现</span>',
+                    'adjust': '<span class="badge badge-info">调账</span>'
+                };
+                const statusMap = {
+                    'pending': '<span class="badge badge-warning">待处理</span>',
+                    'approved': '<span class="badge badge-success">已批准</span>',
+                    'rejected': '<span class="badge badge-danger">已拒绝</span>'
+                };
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${trans.userId?.username || '-'}</td>
+                    <td>${typeMap[trans.type] || trans.type}</td>
+                    <td>¥${trans.amount.toFixed(2)}</td>
+                    <td>${statusMap[trans.status] || trans.status}</td>
+                    <td>${trans.note || '-'}</td>
+                    <td>${new Date(trans.createdAt).toLocaleString()}</td>
+                    <td class="admin-only">
+                        ${trans.status === 'pending' ? `
+                            <button class="btn btn-success" onclick="processTransaction('${trans._id}', 'approved')" style="padding: 5px 10px; font-size: 12px;">批准</button>
+                            <button class="btn btn-danger" onclick="processTransaction('${trans._id}', 'rejected')" style="padding: 5px 10px; font-size: 12px;">拒绝</button>
+                        ` : '-'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 处理交易
+        async function processTransaction(transactionId, status) {
+            try {
+                const res = await fetch('/api/transactions', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ transactionId, status })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage(data.message, 'success');
+                    loadTransactions();
+                    loadDashboard();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                console.error('处理交易错误:', error);
+                showMessage('网络错误', 'error');
+            }
+        }
+
+        // 显示充值模态框
+        function showDepositModal() {
+            document.getElementById('depositAmount').value = '';
+            document.getElementById('depositNote').value = '';
+            document.getElementById('depositModal').classList.add('active');
+        }
+
+        // 显示提现模态框
+        function showWithdrawModal() {
+            document.getElementById('withdrawBalance').value = `¥${currentUser.balance.toFixed(2)}`;
+            document.getElementById('withdrawAmount').value = '';
+            document.getElementById('withdrawNote').value = '';
+            document.getElementById('withdrawModal').classList.add('active');
+        }
+
+        // 提交充值申请
+        async function submitDeposit() {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            const note = document.getElementById('depositNote').value;
+
+            if (!amount || amount <= 0) {
+                showMessage('请输入有效的充值金额', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/transactions/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ type: 'deposit', amount, note })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage(data.message, 'success');
+                    closeModal('depositModal');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                console.error('提交充值申请错误:', error);
+                showMessage('网络错误', 'error');
+            }
+        }
+
+        // 提交提现申请
+        async function submitWithdraw() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const note = document.getElementById('withdrawNote').value;
+
+            if (!amount || amount <= 0) {
+                showMessage('请输入有效的提现金额', 'error');
+                return;
+            }
+
+            if (amount > currentUser.balance) {
+                showMessage('余额不足', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/transactions/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ type: 'withdraw', amount, note })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage(data.message, 'success');
+                    closeModal('withdrawModal');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                console.error('提交提现申请错误:', error);
+                showMessage('网络错误', 'error');
+            }
+        }
+
+        // 关闭模态框
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // 显示消息
+        function showMessage(text, type) {
+            const existing = document.querySelector('.message');
+            if (existing) existing.remove();
+
+            const msg = document.createElement('div');
+            msg.className = `message message-${type}`;
+            msg.textContent = text;
+            document.body.appendChild(msg);
+
+            setTimeout(() => msg.remove(), 3000);
+        }
+
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // 点击模态框外部关闭
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

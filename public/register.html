@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - 彩票开奖管理系统</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🎰 注册账户</h1>
+            <p>创建您的账户</p>
+        </div>
+
+        <div class="login-form">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" class="form-control" placeholder="3-50个字符">
+            </div>
+
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" class="form-control" placeholder="至少6个字符">
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">确认密码</label>
+                <input type="password" id="confirmPassword" class="form-control" placeholder="再次输入密码">
+            </div>
+
+            <button class="btn btn-primary" onclick="register()">注册</button>
+
+            <div class="login-link">
+                已有账户？ <a href="login.html">立即登录</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 注册
+        async function register() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!username || !password || !confirmPassword) {
+                showMessage('请填写所有字段', 'error');
+                return;
+            }
+
+            if (username.length < 3 || username.length > 50) {
+                showMessage('用户名长度应在3-50个字符之间', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('密码长度至少6个字符', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showMessage('两次输入的密码不一致', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage('注册成功！请登录', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                } else {
+                    showMessage(data.error || '注册失败', 'error');
+                }
+            } catch (error) {
+                console.error('注册错误:', error);
+                showMessage('网络错误，请重试', 'error');
+            }
+        }
+
+        // 回车注册
+        document.getElementById('confirmPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                register();
+            }
+        });
+
+        // 显示消息
+        function showMessage(text, type) {
+            const existing = document.querySelector('.message');
+            if (existing) existing.remove();
+
+            const msg = document.createElement('div');
+            msg.className = `message message-${type}`;
+            msg.textContent = text;
+            document.body.appendChild(msg);
+
+            setTimeout(() => msg.remove(), 3000);
+        }
+    </script>
+</body>
+</html>

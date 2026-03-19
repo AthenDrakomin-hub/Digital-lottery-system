@@ -1,0 +1,100 @@
+# 多用户彩票开奖管理系统
+
+一个支持多种开奖周期的完整彩票开奖管理系统，支持每日288期（5分钟）、144期（10分钟）、96期（15分钟）的开奖结果预设。
+
+## 功能特性
+
+- ✅ 多周期开奖支持（5/10/15分钟）
+- ✅ 用户注册/登录（JWT鉴权）
+- ✅ 管理员预设开奖结果
+- ✅ 用户资金管理（充值/提现）
+- ✅ 管理员审核交易
+- ✅ 用户账户管理
+- ✅ 定时开奖检查（需外部cron触发）
+
+## 技术栈
+
+- **后端**: Vercel Serverless Functions
+- **数据库**: MongoDB Atlas
+- **前端**: 纯HTML/CSS/JavaScript
+- **认证**: JWT
+
+## 项目结构
+
+```
+.
+├── api/                    # Vercel Serverless Functions
+│   ├── auth/              # 认证相关
+│   ├── users/             # 用户管理
+│   ├── draws/             # 开奖预设
+│   ├── transactions/      # 交易管理
+│   └── cron/              # 定时任务
+├── models/                # 数据库模型
+├── lib/                   # 工具库
+├── public/                # 前端静态文件
+├── package.json
+├── vercel.json
+└── README.md
+```
+
+## 环境变量
+
+在Vercel项目设置中添加以下环境变量：
+
+- `MONGODB_URI`: MongoDB连接字符串
+- `JWT_SECRET`: JWT签名密钥（随机字符串）
+- `CRON_SECRET`: 定时任务调用密钥
+
+## 本地开发
+
+```bash
+# 安装依赖
+pnpm install
+
+# 启动开发服务器
+pnpm run dev
+```
+
+## 部署到Vercel
+
+1. 将代码推送到GitHub
+2. 在Vercel导入项目
+3. 配置环境变量
+4. 部署完成
+
+## 定时开奖
+
+使用外部cron服务（如cron-job.org）每分钟调用：
+
+```
+https://your-app.vercel.app/api/cron/check-draws?secret=YOUR_CRON_SECRET
+```
+
+## 默认管理员账户
+
+首次部署后，需要手动在MongoDB中创建管理员账户，或使用注册接口创建普通用户后，在数据库中将其role改为'admin'。
+
+## API文档
+
+### 认证相关
+- `POST /api/auth/register` - 用户注册
+- `POST /api/auth/login` - 用户登录
+- `GET /api/auth/me` - 获取当前用户信息
+
+### 开奖预设
+- `GET /api/draws/daily?date=YYYY-MM-DD&interval=5` - 获取某日预设
+- `POST /api/draws` - 批量保存预设（需管理员权限）
+
+### 用户管理
+- `GET /api/users` - 获取用户列表（需管理员权限）
+- `PATCH /api/users/[id]` - 禁用/启用用户（需管理员权限）
+- `POST /api/users/balance` - 调整用户余额（需管理员权限）
+
+### 交易管理
+- `GET /api/transactions` - 获取交易记录
+- `POST /api/transactions/request` - 提交充值/提现申请
+- `PATCH /api/transactions/[id]` - 审核交易（需管理员权限）
+
+## 许可证
+
+MIT
