@@ -1,19 +1,17 @@
 const express = require('express');
 const path = require('path');
-const { errorHandler, notFoundHandler } = require('./middleware/error');
 
 const app = express();
 const PORT = process.env.DEPLOY_RUN_PORT || 5000;
 
 // 中间件
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // 支付宝回调使用form-urlencoded
+app.use(express.urlencoded({ extended: true }));
 app.use(express.text({ type: 'text/xml' })); // 微信回调使用XML
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CORS支持 - 完整配置
+// CORS支持
 app.use((req, res, next) => {
-    // 允许所有来源（生产环境建议指定具体域名）
     const allowedOrigins = process.env.ALLOWED_ORIGINS 
         ? process.env.ALLOWED_ORIGINS.split(',') 
         : ['*'];
@@ -23,22 +21,12 @@ app.use((req, res, next) => {
         res.header('Access-Control-Allow-Origin', origin || '*');
     }
     
-    // 允许的HTTP方法
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    
-    // 允许的请求头
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Request-ID');
-    
-    // 允许携带凭证（cookies）
     res.header('Access-Control-Allow-Credentials', 'true');
-    
-    // 预检请求缓存时间（秒）
     res.header('Access-Control-Max-Age', '86400');
-    
-    // 暴露给客户端的响应头
     res.header('Access-Control-Expose-Headers', 'X-Total-Count, X-Page, X-Per-Page');
     
-    // 处理OPTIONS预检请求
     if (req.method === 'OPTIONS') {
         return res.status(204).end();
     }
@@ -46,48 +34,20 @@ app.use((req, res, next) => {
     next();
 });
 
-// 动态加载API路由
+// API路由处理器
 const apiRoutes = {
-    // 认证接口
-    '/api/auth/register': './api/auth/register',
-    '/api/auth/login': './api/auth/login',
-    '/api/auth/me': './api/auth/me',
-    '/api/auth/change-password': './api/auth/change-password',
-    // 用户管理接口
-    '/api/users': './api/users/index',
-    '/api/users/balance': './api/users/balance',
-    '/api/users/create': './api/users/create',
-    // 开奖管理接口
-    '/api/draws': './api/draws/index',
-    '/api/draws/daily': './api/draws/daily',
-    // 资金管理接口
-    '/api/transactions': './api/transactions/index',
-    '/api/transactions/request': './api/transactions/request',
-    // 定时任务接口
-    '/api/cron/check-draws': './api/cron/check-draws',
-    '/api/cron/compensation': './api/cron/compensation',
-    // 管理员接口
-    '/api/admin/init': './api/admin/init',
-    '/api/admin/archive': './api/admin/archive',
-    '/api/admin/verify': './api/admin/verify',
-    '/api/admin/stats': './api/admin/stats',
-    // 投注管理接口
-    '/api/bets': './api/bets/index',
-    '/api/bets/period': './api/bets/period',
-    '/api/bets/history': './api/bets/history',
-    '/api/bets/admin': './api/bets/admin',
-    // 支付回调接口
-    '/api/payment/alipay/notify': './api/payment/alipay/notify',
-    '/api/payment/wechat/notify': './api/payment/wechat/notify',
-    '/api/payment/payout/process': './api/payment/payout/process',
-    '/api/payment/payout/callback': './api/payment/payout/callback'
+    '/api/auth': './api/auth',
+    '/api/users': './api/users',
+    '/api/transactions': './api/transactions',
+    '/api/admin': './api/admin',
+    '/api/system': './api/system'
 };
 
 // 注册API路由
 Object.keys(apiRoutes).forEach(route => {
     const handler = require(apiRoutes[route]);
+    
     app.all(route, async (req, res) => {
-        // 模拟Vercel的req和res对象
         const vercelReq = {
             ...req,
             query: req.query,
@@ -105,135 +65,23 @@ Object.keys(apiRoutes).forEach(route => {
     });
 });
 
-// 处理动态路由（用户ID）
-app.all('/api/users/:id', async (req, res) => {
-    const handler = require('./api/users/[id]');
-    const vercelReq = {
-        ...req,
-        query: { id: req.params.id, ...req.query },
-        body: req.body,
-        headers: req.headers,
-        method: req.method
-    };
-    
-    try {
-        await handler(vercelReq, res);
-    } catch (error) {
-        console.error('API错误 [/api/users/:id]:', error);
-        res.status(500).json({ error: '服务器内部错误' });
-    }
-});
-
-// 处理动态路由（交易ID）
-app.all('/api/transactions/:id', async (req, res) => {
-    const handler = require('./api/transactions/[id]');
-    const vercelReq = {
-        ...req,
-        query: { id: req.params.id, ...req.query },
-        body: req.body,
-        headers: req.headers,
-        method: req.method
-    };
-    
-    try {
-        await handler(vercelReq, res);
-    } catch (error) {
-        console.error('API错误 [/api/transactions/:id]:', error);
-        res.status(500).json({ error: '服务器内部错误' });
-    }
-});
-
-// 处理动态路由（投注ID）
-app.all('/api/bets/:id', async (req, res) => {
-    const handler = require('./api/bets/[id]');
-    const vercelReq = {
-        ...req,
-        query: { id: req.params.id, ...req.query },
-        body: req.body,
-        headers: req.headers,
-        method: req.method
-    };
-    
-    try {
-        await handler(vercelReq, res);
-    } catch (error) {
-        console.error('API错误 [/api/bets/:id]:', error);
-        res.status(500).json({ error: '服务器内部错误' });
-    }
-});
-
-// 处理动态路由（开奖ID）
-app.all('/api/draws/:id', async (req, res) => {
-    const handler = require('./api/draws/[id]');
-    const vercelReq = {
-        ...req,
-        query: { id: req.params.id, ...req.query },
-        body: req.body,
-        headers: req.headers,
-        method: req.method
-    };
-    
-    try {
-        await handler(vercelReq, res);
-    } catch (error) {
-        console.error('API错误 [/api/draws/:id]:', error);
-        res.status(500).json({ error: '服务器内部错误' });
-    }
-});
-
-// 处理交易审核动态路由
-app.all('/api/transactions/:id/:action', async (req, res) => {
-    const handler = require('./api/transactions/[id]/approve');
-    const vercelReq = {
-        ...req,
-        query: { id: req.params.id, action: req.params.action, ...req.query },
-        body: req.body,
-        headers: req.headers,
-        method: req.method
-    };
-    
-    try {
-        await handler(vercelReq, res);
-    } catch (error) {
-        console.error('API错误 [/api/transactions/:id/:action]:', error);
-        res.status(500).json({ error: '服务器内部错误' });
-    }
-});
-
-// 处理投注状态修改动态路由
-app.all('/api/bets/:id/status', async (req, res) => {
-    const handler = require('./api/bets/[id]/status');
-    const vercelReq = {
-        ...req,
-        query: { id: req.params.id, ...req.query },
-        body: req.body,
-        headers: req.headers,
-        method: req.method
-    };
-    
-    try {
-        await handler(vercelReq, res);
-    } catch (error) {
-        console.error('API错误 [/api/bets/:id/status]:', error);
-        res.status(500).json({ error: '服务器内部错误' });
-    }
-});
-
 // 默认路由
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 404 处理
-app.use(notFoundHandler);
-
-// 全局错误处理
-app.use(errorHandler);
+// 404处理
+app.use((req, res) => {
+    res.status(404).json({ error: `路径 ${req.method} ${req.path} 不存在`, code: 'NOT_FOUND' });
+});
 
 // 启动服务器
 app.listen(PORT, () => {
     console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
-    console.log(`📝 API文档: http://localhost:${PORT}/api`);
-    console.log(`\n⏳ 等待数据库连接...`);
-    console.log(`提示: 请确保设置了 MONGODB_URI 环境变量`);
+    console.log(`📝 API端点: 5个合并后的函数`);
+    console.log(`   - /api/auth?action=register|login|me|change-password`);
+    console.log(`   - /api/users[?id=xxx&action=create|balance]`);
+    console.log(`   - /api/transactions[?id=xxx&action=request|approve|reject]`);
+    console.log(`   - /api/admin?action=init|verify|archive|stats`);
+    console.log(`   - /api/system?type=draws|bets|cron|payment`);
 });

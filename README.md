@@ -59,45 +59,69 @@ pnpm run dev
 
 ## API 文档
 
-**共计 38 个 API 接口**
+**5个合并后的 Serverless Functions，满足 Vercel Hobby 套餐限制**
 
 详细接口文档请查看 [API_DOC.md](./API_DOC.md)
 
-### 认证接口 (4个)
+### 认证模块 (auth.js)
 
-| 接口 | 方法 | 说明 | 权限 |
+| 路由 | 方法 | 说明 | 权限 |
 |------|------|------|------|
-| `/api/auth/register` | POST | 用户注册 | 公开 |
-| `/api/auth/login` | POST | 用户登录 | 公开 |
-| `/api/auth/me` | GET | 获取当前用户信息 | 登录 |
-| `/api/auth/change-password` | POST | 修改密码 | 登录 |
+| `/api/auth?action=register` | POST | 用户注册 | 公开 |
+| `/api/auth?action=login` | POST | 用户登录 | 公开 |
+| `/api/auth?action=me` | GET | 获取当前用户信息 | 登录 |
+| `/api/auth?action=change-password` | POST | 修改密码 | 登录 |
 
-### 用户管理接口 (5个)
+### 用户管理模块 (users.js)
 
-| 接口 | 方法 | 说明 | 权限 |
+| 路由 | 方法 | 说明 | 权限 |
 |------|------|------|------|
 | `/api/users` | GET | 获取用户列表 | 管理员 |
-| `/api/users/create` | POST | 创建用户 | 管理员 |
-| `/api/users/:id` | GET | 获取用户详情 | 管理员 |
-| `/api/users/:id` | PUT | 更新用户 | 管理员 |
-| `/api/users/:id` | DELETE | 删除用户（软删除） | 管理员 |
-| `/api/users/balance` | POST | 调整用户余额 | 管理员 |
+| `/api/users?action=create` | POST | 创建用户 | 管理员 |
+| `/api/users?action=balance` | POST | 调整用户余额 | 管理员 |
+| `/api/users?id=xxx` | GET | 获取用户详情 | 管理员 |
+| `/api/users?id=xxx` | PUT | 更新用户 | 管理员 |
+| `/api/users?id=xxx` | DELETE | 删除用户（软删除） | 管理员 |
 
-### 资金管理接口 (6个)
+### 交易管理模块 (transactions.js)
 
-| 接口 | 方法 | 说明 | 权限 |
+| 路由 | 方法 | 说明 | 权限 |
 |------|------|------|------|
 | `/api/transactions` | GET | 获取交易记录 | 登录 |
-| `/api/transactions` | PATCH | 审核交易 | 管理员 |
-| `/api/transactions/request` | POST | 提交充值/提现申请 | 登录 |
-| `/api/transactions/:id` | GET | 获取交易详情 | 登录 |
-| `/api/transactions/:id/approve` | POST | 批准交易 | 管理员 |
-| `/api/transactions/:id/reject` | POST | 拒绝交易 | 管理员 |
+| `/api/transactions` | PATCH | 批量审核交易 | 管理员 |
+| `/api/transactions?action=request` | POST | 提交充值/提现申请 | 登录 |
+| `/api/transactions?id=xxx` | GET | 获取交易详情 | 登录 |
+| `/api/transactions?id=xxx&action=approve` | POST | 批准交易 | 管理员 |
+| `/api/transactions?id=xxx&action=reject` | POST | 拒绝交易 | 管理员 |
+| `/api/transactions?id=xxx` | DELETE | 取消交易 | 登录 |
 
-### 开奖管理接口 (5个)
+### 管理员模块 (admin.js)
 
-| 接口 | 方法 | 说明 | 权限 |
+| 路由 | 方法 | 说明 | 权限 |
 |------|------|------|------|
+| `/api/admin?action=init` | GET | 检查初始化状态 | 公开 |
+| `/api/admin?action=init` | POST | 执行初始化 | 内部 |
+| `/api/admin?action=verify` | GET | 验证管理员权限 | 管理员 |
+| `/api/admin?action=archive` | GET | 获取数据库统计 | 管理员 |
+| `/api/admin?action=archive` | POST | 执行归档清理 | 管理员 |
+| `/api/admin?action=stats` | GET | 获取运营统计 | 管理员 |
+
+### 系统模块 (system.js)
+
+通过 `type` 参数一级分发，支持开奖、投注、定时任务、支付回调。
+
+| 路由 | 方法 | 说明 | 权限 |
+|------|------|------|------|
+| `/api/system?type=draws` | GET | 获取开奖列表 | 登录 |
+| `/api/system?type=draws` | POST | 批量保存开奖预设 | 管理员 |
+| `/api/system?type=draws&action=daily` | GET | 获取每日开奖 | 公开 |
+| `/api/system?type=draws&id=xxx` | PUT | 更新开奖结果 | 管理员 |
+| `/api/system?type=bets` | GET | 获取投注配置 | 公开 |
+| `/api/system?type=bets` | POST | 提交投注 | 登录 |
+| `/api/system?type=bets&action=period` | GET | 获取期号信息 | 公开 |
+| `/api/system?type=bets&action=history` | GET | 获取投注历史 | 登录 |
+| `/api/system?type=cron&action=check-draws` | GET | 自动开奖结算 | 定时服务 |
+| `/api/system?type=payment&action=alipay` | POST | 支付宝回调 | 支付宝 |
 | `/api/draws` | GET | 获取开奖列表 | 登录 |
 | `/api/draws` | POST | 创建开奖结果 | 管理员 |
 | `/api/draws/daily` | GET | 获取某日开奖预设 | 公开 |
@@ -258,43 +282,12 @@ Authorization: Bearer <token>
 
 ```
 .
-├── api/                          # Vercel Serverless Functions
-│   ├── auth/                     # 认证接口
-│   │   ├── register.js
-│   │   ├── login.js
-│   │   ├── me.js
-│   │   └── change-password.js
-│   ├── users/                    # 用户管理
-│   │   ├── index.js
-│   │   ├── [id].js
-│   │   ├── create.js
-│   │   └── balance.js
-│   ├── transactions/             # 交易管理
-│   │   ├── index.js
-│   │   ├── [id].js
-│   │   └── request.js
-│   ├── draws/                    # 开奖管理
-│   │   ├── index.js
-│   │   └── daily.js
-│   ├── bets/                     # 投注管理
-│   │   ├── index.js
-│   │   ├── [id].js
-│   │   ├── admin.js
-│   │   ├── period.js
-│   │   └── history.js
-│   ├── admin/                    # 管理功能
-│   │   ├── init.js
-│   │   ├── archive.js
-│   │   └── verify.js
-│   ├── cron/                     # 定时任务
-│   │   ├── check-draws.js
-│   │   └── compensation.js
-│   └── payment/                  # 支付接口
-│       ├── alipay/notify.js
-│       ├── wechat/notify.js
-│       └── payout/
-│           ├── process.js
-│           └── callback.js
+├── api/                          # Vercel Serverless Functions (5个)
+│   ├── auth.js                   # 认证模块（注册/登录/用户信息/修改密码）
+│   ├── users.js                  # 用户管理模块（列表/创建/详情/更新/删除/余额）
+│   ├── transactions.js           # 交易管理模块（列表/申请/详情/取消/审核）
+│   ├── admin.js                  # 管理员模块（初始化/验证/归档/统计）
+│   └── system.js                 # 系统模块（开奖/投注/定时/支付）
 ├── models/                       # 数据库模型
 │   ├── User.js
 │   ├── Draw.js
