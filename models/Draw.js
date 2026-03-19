@@ -26,13 +26,22 @@ const drawSchema = new mongoose.Schema({
     }, // 10位数字字符串，如 "5820913746"
     status: {
         type: String,
-        enum: ['pending', 'drawn'],
+        enum: ['pending', 'drawn', 'settled'],
         default: 'pending'
-    }, // 状态：pending-待开奖，drawn-已开奖
+    }, // 状态：pending-待开奖，drawn-已开奖未结算，settled-已结算
     updatedAt: { 
         type: Date, 
         default: Date.now 
-    }
+    },
+    settledAt: {
+        type: Date
+    }, // 结算时间
+    settlementStats: {
+        totalBets: { type: Number, default: 0 },
+        wonBets: { type: Number, default: 0 },
+        lostBets: { type: Number, default: 0 },
+        totalWinAmount: { type: Number, default: 0 }
+    } // 结算统计
 });
 
 // 索引

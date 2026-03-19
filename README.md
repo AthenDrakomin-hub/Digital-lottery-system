@@ -12,6 +12,9 @@
 - ✅ 用户账户管理
 - ✅ 定时开奖检查（需外部cron触发）
 - ✅ Redis缓存支持（开奖结果、用户余额）
+- ✅ 消息队列处理异步任务
+- ✅ 分布式锁确保幂等性
+- ✅ 兜底补偿机制
 
 ## 技术栈
 
@@ -38,7 +41,12 @@
 │   ├── redis.js          # Redis连接
 │   ├── cache.js          # 缓存服务
 │   ├── auth.js           # 认证工具
-│   └── cors.js           # 跨域处理
+│   ├── cors.js           # 跨域处理
+│   ├── queue.js          # 消息队列
+│   └── lock.js           # 分布式锁
+├── workers/               # Worker进程
+│   ├── settlement.js     # 开奖结算Worker
+│   └── compensation.js   # 补偿Worker
 ├── scripts/               # 脚本工具
 │   ├── init-admins.js    # 初始化管理员
 │   └── archive.js        # 数据归档
@@ -47,6 +55,90 @@
 ├── vercel.json
 └── README.md
 ```
+
+## 定时任务可靠性
+
+系统实现了完整的定时任务可靠性保障机制：
+
+### 1. 消息队列处理异步任务
+
+使用Redis Streams作为消息队列，处理开奖后的结算、通知等异步任务：
+
+```javascript
+// lib/queue.js - 消息队列模块
+const { queue } = require('./lib/queue');
+
+// 发布开奖结算任务
+await queue.publishDrawSettlement({
+    date: '2024-01-01',
+    interval: 5,
+    period: 10,
+    result: '1234567890'
+});
+```
+
+**优势**：
+- 避免在API请求中直接处理耗时操作
+- 支持任务重试和错误恢复
+- 提高系统吞吐量
+
+### 2. 幂等性设计
+
+使用分布式锁确保同一开奖周期只执行一次结算：
+
+```javascript
+// lib/lock.js - 分布式锁模块
+const { drawLock } = require('./lib/lock');
+
+// 使用锁执行开奖结算
+const result = await drawLock.withDrawLock(date, interval, period, async () => {
+    // 执行结算逻辑
+    return await processSettlement();
+});
+```
+
+**幂等性保障**：
+- 分布式锁防止并发执行
+- 数据库唯一索引防止重复记录
+- 状态检查防止重复处理
+
+### 3. 兜底补偿机制
+
+定期扫描数据库，检查并处理遗漏的开奖和结算：
+
+```bash
+# 检查遗漏情况
+curl "https://your-app.vercel.app/api/cron/compensation?secret=YOUR_CRON_SECRET"
+
+# 执行补偿（需要管理员权限）
+curl -X POST "https://your-app.vercel.app/api/cron/compensation" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"action": "all"}'
+```
+
+**补偿策略**：
+- 自动扫描遗漏期号（每5分钟）
+- 补开遗漏的开奖
+- 补结算遗漏的投注
+- 记录补偿日志
+
+### 4. Worker进程
+
+系统提供独立的Worker进程处理异步任务：
+
+```bash
+# 启动结算Worker
+node -e "require('./workers/settlement').startWorker()"
+
+# 启动补偿Worker
+node -e "require('./workers/compensation').startWorker()"
+```
+
+**Worker特性**：
+- 支持消息队列消费
+- 自动重试失败任务
+- 优雅降级处理
 
 ## 数据库优化
 
