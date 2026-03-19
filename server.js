@@ -56,8 +56,12 @@ const apiRoutes = {
     '/api/transactions': './api/transactions/index',
     '/api/transactions/request': './api/transactions/request',
     '/api/cron/check-draws': './api/cron/check-draws',
+    '/api/cron/compensation': './api/cron/compensation',
     '/api/admin/init': './api/admin/init',
-    '/api/admin/archive': './api/admin/archive'
+    '/api/admin/archive': './api/admin/archive',
+    '/api/bets': './api/bets/index',
+    '/api/bets/period': './api/bets/period',
+    '/api/bets/history': './api/bets/history'
 };
 
 // 注册API路由
