@@ -2,6 +2,7 @@ const dbConnect = require('../../lib/db');
 const User = require('../../models/User');
 const { extractUserFromRequest } = require('../../lib/auth');
 const { setCorsHeaders, handlePreflightRequest } = require('../../lib/cors');
+const cache = require('../../lib/cache');
 
 module.exports = async (req, res) => {
     // 设置CORS头
@@ -23,6 +24,9 @@ module.exports = async (req, res) => {
             return res.status(401).json({ error: '未授权，请先登录' });
         }
 
+        // 尝试从缓存获取用户余额
+        const cachedBalance = await cache.getUserBalance(userData.id);
+
         await dbConnect();
 
         // 查找用户
@@ -36,12 +40,20 @@ module.exports = async (req, res) => {
             return res.status(403).json({ error: '账户已被禁用' });
         }
 
+        // 如果缓存中有余额，优先使用缓存值
+        const balance = cachedBalance !== null ? cachedBalance : user.balance;
+
+        // 如果缓存中没有余额，写入缓存
+        if (cachedBalance === null) {
+            await cache.setUserBalance(user._id.toString(), user.balance);
+        }
+
         res.json({
             user: {
                 id: user._id,
                 username: user.username,
                 role: user.role,
-                balance: user.balance,
+                balance: balance,
                 isActive: user.isActive,
                 createdAt: user.createdAt
             }

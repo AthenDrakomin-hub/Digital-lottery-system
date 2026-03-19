@@ -1,6 +1,7 @@
 const dbConnect = require('../../lib/db');
 const Draw = require('../../models/Draw');
 const { setCorsHeaders, handlePreflightRequest } = require('../../lib/cors');
+const cache = require('../../lib/cache');
 
 module.exports = async (req, res) => {
     // 设置CORS头
@@ -16,7 +17,7 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { date, interval } = req.query;
+        const { date, interval, nocache } = req.query;
 
         // 验证参数
         if (!date || !interval) {
@@ -34,13 +35,27 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: '日期格式应为YYYY-MM-DD' });
         }
 
+        // 根据周期计算总期数
+        const totalPeriods = intervalNum === 5 ? 288 : (intervalNum === 10 ? 144 : 96);
+
+        // 尝试从缓存获取（如果不是强制刷新）
+        if (nocache !== '1') {
+            const cached = await cache.getDailyDraws(date, intervalNum);
+            if (cached) {
+                return res.json({
+                    date,
+                    interval: intervalNum,
+                    totalPeriods,
+                    draws: cached,
+                    cached: true
+                });
+            }
+        }
+
         await dbConnect();
 
         // 查询该日期该周期的所有开奖预设
         const draws = await Draw.find({ date, interval: intervalNum }).sort('period');
-
-        // 根据周期计算总期数
-        const totalPeriods = intervalNum === 5 ? 288 : (intervalNum === 10 ? 144 : 96);
 
         // 构建完整的期次数组（没有记录的期次用null填充）
         const fullDay = Array.from({ length: totalPeriods }, (_, i) => {
@@ -48,11 +63,15 @@ module.exports = async (req, res) => {
             return existing ? existing.result : null;
         });
 
+        // 写入缓存
+        await cache.setDailyDraws(date, intervalNum, fullDay);
+
         res.json({
             date,
             interval: intervalNum,
             totalPeriods,
-            draws: fullDay
+            draws: fullDay,
+            cached: false
         });
     } catch (error) {
         console.error('获取开奖预设错误:', error);

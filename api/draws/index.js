@@ -2,6 +2,7 @@ const dbConnect = require('../../lib/db');
 const Draw = require('../../models/Draw');
 const adminVerify = require('../admin/verify');
 const { setCorsHeaders, handlePreflightRequest } = require('../../lib/cors');
+const cache = require('../../lib/cache');
 
 module.exports = async (req, res) => {
     // 设置CORS头
@@ -98,6 +99,9 @@ module.exports = async (req, res) => {
             if (ops.length > 0) {
                 await Draw.bulkWrite(ops);
             }
+
+            // 删除该日期该周期的缓存
+            await cache.deleteDailyDraws(date, intervalNum);
 
             res.json({ 
                 success: true, 

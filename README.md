@@ -11,6 +11,7 @@
 - ✅ 管理员审核交易
 - ✅ 用户账户管理
 - ✅ 定时开奖检查（需外部cron触发）
+- ✅ Redis缓存支持（开奖结果、用户余额）
 
 ## 技术栈
 
@@ -18,6 +19,7 @@
 - **数据库**: MongoDB Atlas
 - **前端**: 纯HTML/CSS/JavaScript
 - **认证**: JWT
+- **缓存**: Redis（支持Upstash和标准Redis）
 
 ## 项目结构
 
@@ -28,9 +30,18 @@
 │   ├── users/             # 用户管理
 │   ├── draws/             # 开奖预设
 │   ├── transactions/      # 交易管理
+│   ├── admin/             # 管理功能
 │   └── cron/              # 定时任务
 ├── models/                # 数据库模型
 ├── lib/                   # 工具库
+│   ├── db.js             # 数据库连接
+│   ├── redis.js          # Redis连接
+│   ├── cache.js          # 缓存服务
+│   ├── auth.js           # 认证工具
+│   └── cors.js           # 跨域处理
+├── scripts/               # 脚本工具
+│   ├── init-admins.js    # 初始化管理员
+│   └── archive.js        # 数据归档
 ├── public/                # 前端静态文件
 ├── package.json
 ├── vercel.json
@@ -96,10 +107,46 @@ MONGODB_URI="your-mongodb-uri" node scripts/init-admins.js
 
 在Vercel项目设置中添加以下环境变量：
 
+### 必需变量
 - `MONGODB_URI`: MongoDB连接字符串
 - `JWT_SECRET`: JWT签名密钥（随机字符串）
 - `CRON_SECRET`: 定时任务调用密钥
-- `ALLOWED_ORIGINS`: (可选) 允许的跨域来源，多个用逗号分隔，默认允许所有来源
+
+### 可选变量
+- `ALLOWED_ORIGINS`: 允许的跨域来源，多个用逗号分隔，默认允许所有来源
+
+### Redis缓存配置（推荐）
+- `REDIS_URL`: Redis连接字符串（支持标准Redis和Upstash）
+  - 标准Redis格式: `redis://localhost:6379`
+  - Upstash格式: `https://your-endpoint.upstash.io`
+  - 带密码: `redis://:password@host:port` 或 `https://:password@endpoint`
+
+**注意**: 如果未配置Redis，系统将正常工作但不使用缓存。
+
+## Redis缓存策略
+
+系统使用Redis缓存提升性能和并发能力：
+
+### 缓存内容
+1. **开奖结果缓存**
+   - 缓存某日某周期的所有开奖预设
+   - TTL: 24小时
+   - 在管理员保存预设后自动失效
+
+2. **用户余额缓存**
+   - 缓存用户当前余额
+   - TTL: 1小时
+   - 在余额变动后自动更新
+
+### 缓存效果
+- 减少数据库查询次数
+- 提升高频访问接口响应速度
+- 支持更高并发访问
+
+### 推荐Redis服务
+- **Upstash Redis**: Serverless友好，按需付费
+- **Redis Labs**: 免费套餐，适合小型项目
+- **自建Redis**: 完全控制，适合私有部署
 
 ## 跨域支持
 

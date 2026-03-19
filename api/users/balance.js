@@ -3,6 +3,7 @@ const User = require('../../models/User');
 const Transaction = require('../../models/Transaction');
 const adminVerify = require('../admin/verify');
 const { setCorsHeaders, handlePreflightRequest } = require('../../lib/cors');
+const cache = require('../../lib/cache');
 
 module.exports = async (req, res) => {
     // 设置CORS头
@@ -54,6 +55,9 @@ module.exports = async (req, res) => {
         // 更新用户余额
         user.balance = newBalance;
         await user.save();
+
+        // 更新用户余额缓存
+        await cache.setUserBalance(user._id.toString(), newBalance);
 
         // 创建交易记录
         const transaction = await Transaction.create({
