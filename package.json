@@ -13,10 +13,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.0"
   },
-  "devDependencies": {
-    "vercel": "^33.0.0"
-  },
+  "devDependencies": {},
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   }
 }
