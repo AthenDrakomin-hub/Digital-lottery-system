@@ -335,3 +335,85 @@ curl -X POST https://your-app.vercel.app/api/admin/archive \
 - MongoDB存储 > 400MB
 - Vercel带宽 > 80GB/月
 - 并发用户 > 100
+
+## 九、API接口清单
+
+### 认证接口 (4个)
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/auth/register` | POST | 用户注册 |
+| `/api/auth/login` | POST | 用户登录 |
+| `/api/auth/me` | GET | 获取当前用户 |
+| `/api/auth/change-password` | POST | 修改密码 |
+
+### 用户管理接口 (5个)
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/users` | GET | 用户列表 |
+| `/api/users/create` | POST | 创建用户 |
+| `/api/users/:id` | GET | 用户详情 |
+| `/api/users/:id` | PUT | 更新用户 |
+| `/api/users/:id` | DELETE | 删除用户 |
+| `/api/users/balance` | POST | 调整余额 |
+
+### 资金管理接口 (4个)
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/transactions` | GET | 交易列表 |
+| `/api/transactions/request` | POST | 提交申请 |
+| `/api/transactions/:id` | GET | 交易详情 |
+| `/api/transactions/:id` | DELETE | 取消交易 |
+
+### 开奖管理接口 (4个)
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/draws` | GET | 开奖列表 |
+| `/api/draws` | POST | 创建开奖 |
+| `/api/draws/daily` | GET | 每日开奖 |
+| `/api/admin/archive` | GET/POST | 数据归档 |
+
+### 投注管理接口 (6个)
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/bets` | GET | 投注配置 |
+| `/api/bets` | POST | 提交投注 |
+| `/api/bets/period` | GET | 期号信息 |
+| `/api/bets/history` | GET | 投注历史 |
+| `/api/bets/admin` | GET | 管理员查询 |
+| `/api/bets/:id` | DELETE | 取消投注 |
+
+### 定时任务接口 (2个)
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/cron/check-draws` | GET | 自动开奖 |
+| `/api/cron/compensation` | GET/POST | 补偿机制 |
+
+### 支付回调接口 (4个)
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/payment/alipay/notify` | POST | 支付宝回调 |
+| `/api/payment/wechat/notify` | POST | 微信回调 |
+| `/api/payment/payout/process` | POST | 提现处理 |
+| `/api/payment/payout/callback` | POST | 代付回调 |
+
+### 管理员接口 (3个)
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/admin/init` | GET/POST | 初始化 |
+| `/api/admin/archive` | GET/POST | 数据归档 |
+| `/api/admin/verify` | GET | 权限验证 |
+
+**总计：28个API接口**
+
+## 十、快速测试
+
+```bash
+# 给测试脚本添加执行权限
+chmod +x scripts/test-api.sh
+
+# 本地测试
+./scripts/test-api.sh http://localhost:5000 "" "your-cron-secret"
+
+# 生产环境测试
+./scripts/test-api.sh https://your-app.vercel.app "your-jwt-token" "your-cron-secret"
+```

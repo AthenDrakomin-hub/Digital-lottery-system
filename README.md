@@ -1,164 +1,141 @@
 # 数字开奖管理系统
 
-一个支持多种开奖周期的完整开奖管理系统，支持每日288期（5分钟）、144期（10分钟）、96期（15分钟）的开奖结果预设。
+一个完整的数字开奖管理系统，支持多周期开奖（5/10/15分钟）、用户投注、资金管理、自动结算等功能。
 
 ## 功能特性
 
-- ✅ 多周期开奖支持（5/10/15分钟）
+### 核心功能
+- ✅ 多周期开奖支持（5/10/15分钟，每日最多288期）
 - ✅ 用户注册/登录（JWT鉴权）
-- ✅ 管理员预设开奖结果
+- ✅ 冠军玩法投注（选择数字，猜中第一位即中奖）
 - ✅ 用户资金管理（充值/提现）
 - ✅ 管理员审核交易
-- ✅ 用户账户管理（增删改查）
-- ✅ 定时开奖检查（需外部cron触发）
+- ✅ 定时自动开奖结算
+
+### 高级功能
 - ✅ Redis缓存支持（开奖结果、用户余额）
 - ✅ 消息队列处理异步任务
 - ✅ 分布式锁确保幂等性
 - ✅ 兜底补偿机制
-- ✅ 投注API接口（供外部系统调用）
+- ✅ 风控系统（限流、黑名单、异常检测）
+- ✅ 第三方支付回调（支付宝/微信）
+- ✅ 提现自动处理（代付）
+- ✅ 日志服务集成（Axiom/Logtail）
 
 ---
 
-## API文档
+## 快速开始
 
-### 认证相关 API
+### 环境要求
+- Node.js 18+
+- MongoDB（推荐 MongoDB Atlas 免费套餐）
+- Redis（可选，用于缓存）
+
+### 本地开发
+
+```bash
+# 安装依赖
+pnpm install
+
+# 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，填入实际配置
+
+# 启动开发服务器
+pnpm run dev
+```
+
+### 部署到Vercel
+
+1. 推送代码到 GitHub
+2. 在 Vercel 导入项目
+3. 配置环境变量（见下方说明）
+4. 部署完成
+5. 配置定时任务（cron-job.org）
+
+详细部署步骤请查看 [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+---
+
+## API 文档
+
+### 认证接口 (4个)
 
 | 接口 | 方法 | 说明 | 权限 |
-|-----|------|------|------|
+|------|------|------|------|
 | `/api/auth/register` | POST | 用户注册 | 公开 |
 | `/api/auth/login` | POST | 用户登录 | 公开 |
 | `/api/auth/me` | GET | 获取当前用户信息 | 登录 |
 | `/api/auth/change-password` | POST | 修改密码 | 登录 |
 
-### 用户管理 API
+### 用户管理接口 (5个)
 
 | 接口 | 方法 | 说明 | 权限 |
-|-----|------|------|------|
+|------|------|------|------|
 | `/api/users` | GET | 获取用户列表 | 管理员 |
-| `/api/users` | POST | 创建用户 | 管理员 |
-| `/api/users/create` | POST | 创建用户（管理员） | 管理员 |
+| `/api/users/create` | POST | 创建用户 | 管理员 |
 | `/api/users/:id` | GET | 获取用户详情 | 管理员 |
-| `/api/users/:id` | PUT | 更新用户信息 | 管理员 |
-| `/api/users/:id` | PATCH | 禁用/启用用户 | 管理员 |
+| `/api/users/:id` | PUT | 更新用户 | 管理员 |
 | `/api/users/:id` | DELETE | 删除用户（软删除） | 管理员 |
 | `/api/users/balance` | POST | 调整用户余额 | 管理员 |
 
-### 资金管理 API
+### 资金管理接口 (4个)
 
 | 接口 | 方法 | 说明 | 权限 |
-|-----|------|------|------|
+|------|------|------|------|
 | `/api/transactions` | GET | 获取交易记录 | 登录 |
-| `/api/transactions` | PATCH | 审核交易 | 管理员 |
 | `/api/transactions/request` | POST | 提交充值/提现申请 | 登录 |
 | `/api/transactions/:id` | GET | 获取交易详情 | 登录 |
 | `/api/transactions/:id` | DELETE | 取消交易 | 登录 |
 
-### 开奖管理 API
+### 开奖管理接口 (4个)
 
 | 接口 | 方法 | 说明 | 权限 |
-|-----|------|------|------|
-| `/api/draws` | GET | 获取开奖预设列表 | 登录 |
-| `/api/draws` | POST | 批量保存开奖预设 | 管理员 |
+|------|------|------|------|
+| `/api/draws` | GET | 获取开奖列表 | 登录 |
+| `/api/draws` | POST | 创建开奖结果 | 管理员 |
 | `/api/draws/daily` | GET | 获取某日开奖预设 | 公开 |
-| `/api/cron/check-draws` | GET | 定时开奖检查 | Cron Secret |
-| `/api/cron/compensation` | GET/POST | 补偿检查/执行 | 管理员 |
+| `/api/admin/archive` | GET/POST | 数据归档 | 管理员 |
 
-### 投注管理 API
+### 投注管理接口 (6个)
 
 | 接口 | 方法 | 说明 | 权限 |
-|-----|------|------|------|
-| `/api/bets` | GET | 获取投注配置 | 公开 |
+|------|------|------|------|
+| `/api/bets` | GET | 获取投注配置/列表 | 公开/登录 |
 | `/api/bets` | POST | 提交投注 | 登录 |
 | `/api/bets/period` | GET | 获取期号信息 | 公开 |
 | `/api/bets/history` | GET | 获取投注历史 | 登录 |
-| `/api/bets/admin` | GET | 获取所有投注（管理员） | 管理员 |
-| `/api/bets/:id` | GET | 获取投注详情 | 登录 |
+| `/api/bets/admin` | GET | 获取所有投注 | 管理员 |
 | `/api/bets/:id` | DELETE | 取消投注 | 登录 |
+
+### 定时任务接口 (2个)
+
+| 接口 | 方法 | 说明 | 权限 |
+|------|------|------|------|
+| `/api/cron/check-draws` | GET | 自动开奖结算 | CRON_SECRET |
+| `/api/cron/compensation` | GET/POST | 补偿机制 | 管理员 |
+
+### 支付回调接口 (4个)
+
+| 接口 | 方法 | 说明 | 权限 |
+|------|------|------|------|
+| `/api/payment/alipay/notify` | POST | 支付宝支付回调 | 支付宝 |
+| `/api/payment/wechat/notify` | POST | 微信支付回调 | 微信 |
+| `/api/payment/payout/process` | POST | 提现自动处理 | 内部 |
+| `/api/payment/payout/callback` | POST | 代付结果回调 | 第三方 |
 
 ---
 
-## API详细说明
+## 投注玩法说明
 
-### 用户管理
+### 冠军玩法
 
-**创建用户（管理员）**
-```bash
-POST /api/users/create
-Authorization: Bearer <admin-token>
-Content-Type: application/json
+**规则**：猜开奖结果的第一位数字
 
-{
-    "username": "testuser",
-    "password": "123456",
-    "role": "user",
-    "balance": 100,
-    "isActive": true
-}
-```
-
-**更新用户**
-```bash
-PUT /api/users/:id
-Authorization: Bearer <admin-token>
-Content-Type: application/json
-
-{
-    "username": "newname",
-    "role": "user",
-    "isActive": true
-}
-```
-
-**删除用户**
-```bash
-DELETE /api/users/:id
-Authorization: Bearer <admin-token>
-```
-
-### 资金管理
-
-**调整用户余额**
-```bash
-POST /api/users/balance
-Authorization: Bearer <admin-token>
-Content-Type: application/json
-
-{
-    "userId": "user_id",
-    "amount": 100,
-    "note": "系统赠送"
-}
-```
-
-**获取交易记录**
-```bash
-GET /api/transactions?page=1&limit=20&status=pending
-Authorization: Bearer <token>
-```
-
-**审核交易**
-```bash
-PATCH /api/transactions
-Authorization: Bearer <admin-token>
-Content-Type: application/json
-
-{
-    "transactionId": "trans_id",
-    "status": "approved",
-    "note": "审核通过"
-}
-```
-
-### 投注管理
-
-**获取投注配置**
-```bash
-GET /api/bets?interval=5
-```
+**投注示例**：
+```json
 POST /api/bets
 Authorization: Bearer <token>
-Content-Type: application/json
-
 {
     "date": "2024-01-01",
     "interval": 5,
@@ -167,165 +144,209 @@ Content-Type: application/json
 }
 ```
 
-**获取期号信息**
-```bash
-GET /api/bets/period?interval=5
+**赔率表**：
+
+| 选择数字数 | 投注金额 | 中奖金额 | 赔率 | 中奖概率 |
+|-----------|---------|---------|------|---------|
+| 1个 | ¥2 | ¥19.5 | 9.75 | 10% |
+| 2个 | ¥4 | ¥19.5 | 4.875 | 20% |
+| 3个 | ¥6 | ¥19.5 | 3.25 | 30% |
+| 4个 | ¥8 | ¥19.5 | 2.4375 | 40% |
+| 5个 | ¥10 | ¥19.5 | 1.95 | 50% |
+
+**结算逻辑**：
+```
+开奖结果: "5820913746"
+冠军数字: result[0] = 5
+投注: championNumbers = [3, 5, 7]
+结果: 5 ∈ [3, 5, 7] → 中奖 ¥19.5
 ```
 
-**获取投注历史**
-```bash
-GET /api/bets/history
-Authorization: Bearer <token>
-```
+---
 
-## 技术栈
+## 风控系统
 
-- **后端**: Vercel Serverless Functions
-- **数据库**: MongoDB Atlas
-- **前端**: 纯HTML/CSS/JavaScript
-- **认证**: JWT
-- **缓存**: Redis（支持Upstash和标准Redis）
+### 限流规则
+
+| 接口类型 | 限制 | 存储方式 |
+|----------|------|---------|
+| 投注 | 10次/分钟 | Redis/内存 |
+| 充值 | 3次/分钟 | Redis/内存 |
+| 提现 | 1次/分钟 | Redis/内存 |
+| 登录 | 5次/分钟 | Redis/内存 |
+
+### 风控规则
+
+| 规则 | 限制 | 级别 |
+|------|------|------|
+| 单期投注金额 | ¥10,000 | 高 |
+| 单期投注次数 | 50次 | 中 |
+| 单日投注金额 | ¥100,000 | 高 |
+| 单日提现金额 | ¥50,000 | 高 |
+| 单日提现次数 | 5次 | 中 |
+| 异常倍投检测 | 10倍 | 中 |
+
+---
+
+## 数据库模型
+
+### User（用户）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| username | String | 用户名（唯一） |
+| password | String | 密码（bcrypt加密） |
+| role | String | 角色：user/admin |
+| balance | Number | 余额 |
+| isActive | Boolean | 是否启用 |
+
+### Draw（开奖）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| date | String | 日期 YYYY-MM-DD |
+| interval | Number | 周期（5/10/15分钟） |
+| period | Number | 期号（0-based） |
+| result | String | 10位数字结果 |
+| status | String | 状态：pending/drawn/settled |
+
+### Bet（投注）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| userId | ObjectId | 用户ID |
+| date | String | 开奖日期 |
+| interval | Number | 周期 |
+| period | Number | 期号 |
+| championNumbers | [Number] | 投注数字 |
+| amount | Number | 投注金额 |
+| status | String | 状态：pending/won/lost |
+| winAmount | Number | 中奖金额 |
+
+### Transaction（交易）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| userId | ObjectId | 用户ID |
+| type | String | 类型：deposit/withdraw |
+| amount | Number | 金额 |
+| status | String | 状态：pending/approved/completed |
+| paymentInfo | Object | 支付信息 |
+
+---
 
 ## 项目结构
 
 ```
 .
-├── api/                    # Vercel Serverless Functions
-│   ├── auth/              # 认证相关
-│   ├── users/             # 用户管理
-│   ├── draws/             # 开奖预设
-│   ├── transactions/      # 交易管理
-│   ├── admin/             # 管理功能
-│   └── cron/              # 定时任务
-├── models/                # 数据库模型
-├── lib/                   # 工具库
-│   ├── db.js             # 数据库连接
-│   ├── redis.js          # Redis连接
-│   ├── cache.js          # 缓存服务
-│   ├── auth.js           # 认证工具
-│   ├── cors.js           # 跨域处理
-│   ├── queue.js          # 消息队列
-│   └── lock.js           # 分布式锁
-├── workers/               # Worker进程
-│   ├── settlement.js     # 开奖结算Worker
-│   └── compensation.js   # 补偿Worker
-├── scripts/               # 脚本工具
-│   ├── init-admins.js    # 初始化管理员
-│   └── archive.js        # 数据归档
-├── public/                # 前端静态文件
+├── api/                          # Vercel Serverless Functions
+│   ├── auth/                     # 认证接口
+│   │   ├── register.js
+│   │   ├── login.js
+│   │   ├── me.js
+│   │   └── change-password.js
+│   ├── users/                    # 用户管理
+│   │   ├── index.js
+│   │   ├── [id].js
+│   │   ├── create.js
+│   │   └── balance.js
+│   ├── transactions/             # 交易管理
+│   │   ├── index.js
+│   │   ├── [id].js
+│   │   └── request.js
+│   ├── draws/                    # 开奖管理
+│   │   ├── index.js
+│   │   └── daily.js
+│   ├── bets/                     # 投注管理
+│   │   ├── index.js
+│   │   ├── [id].js
+│   │   ├── admin.js
+│   │   ├── period.js
+│   │   └── history.js
+│   ├── admin/                    # 管理功能
+│   │   ├── init.js
+│   │   ├── archive.js
+│   │   └── verify.js
+│   ├── cron/                     # 定时任务
+│   │   ├── check-draws.js
+│   │   └── compensation.js
+│   └── payment/                  # 支付接口
+│       ├── alipay/notify.js
+│       ├── wechat/notify.js
+│       └── payout/
+│           ├── process.js
+│           └── callback.js
+├── models/                       # 数据库模型
+│   ├── User.js
+│   ├── Draw.js
+│   ├── Bet.js
+│   └── Transaction.js
+├── lib/                          # 工具库
+│   ├── db.js                     # 数据库连接
+│   ├── redis.js                  # Redis连接
+│   ├── cache.js                  # 缓存服务
+│   ├── auth.js                   # 认证工具
+│   ├── cors.js                   # 跨域处理
+│   ├── queue.js                  # 消息队列
+│   ├── lock.js                   # 分布式锁
+│   ├── rateLimiter.js            # 限流中间件
+│   ├── riskControl.js            # 风控检查
+│   └── logger.js                 # 日志服务
+├── workers/                      # Worker进程
+│   ├── settlement.js             # 开奖结算Worker
+│   └── compensation.js           # 补偿Worker
+├── scripts/                      # 脚本工具
+│   ├── init-admins.js            # 初始化管理员
+│   └── archive.js                # 数据归档
+├── public/                       # 前端静态文件
+│   └── index.html
 ├── package.json
 ├── vercel.json
-└── README.md
+├── README.md
+├── DEPLOYMENT.md
+└── DATABASE_OPTIMIZATION.md
 ```
 
-## 定时任务可靠性
+---
 
-系统实现了完整的定时任务可靠性保障机制：
+## 环境变量配置
 
-### 1. 消息队列处理异步任务
+### 必需变量
 
-使用Redis Streams作为消息队列，处理开奖后的结算、通知等异步任务：
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `MONGODB_URI` | MongoDB连接字符串 | `mongodb+srv://...` |
+| `JWT_SECRET` | JWT签名密钥 | 随机字符串，至少32位 |
+| `CRON_SECRET` | 定时任务密钥 | 随机字符串 |
 
-```javascript
-// lib/queue.js - 消息队列模块
-const { queue } = require('./lib/queue');
+### 支付配置（可选）
 
-// 发布开奖结算任务
-await queue.publishDrawSettlement({
-    date: '2024-01-01',
-    interval: 5,
-    period: 10,
-    result: '1234567890'
-});
-```
+| 变量名 | 说明 |
+|--------|------|
+| `ALIPAY_APP_ID` | 支付宝应用ID |
+| `ALIPAY_PUBLIC_KEY` | 支付宝公钥 |
+| `ALIPAY_PRIVATE_KEY` | 应用私钥 |
+| `WECHAT_APP_ID` | 微信应用ID |
+| `WECHAT_MCH_ID` | 微信商户号 |
+| `WECHAT_API_KEY` | 微信API密钥 |
 
-**优势**：
-- 避免在API请求中直接处理耗时操作
-- 支持任务重试和错误恢复
-- 提高系统吞吐量
+### 日志配置（可选）
 
-### 2. 幂等性设计
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `LOG_SERVICE` | 日志服务 | `console` |
+| `LOG_LEVEL` | 日志级别 | `info` |
+| `AXIOM_DATASET` | Axiom数据集 | - |
+| `AXIOM_TOKEN` | Axiom Token | - |
 
-使用分布式锁确保同一开奖周期只执行一次结算：
+### 其他可选变量
 
-```javascript
-// lib/lock.js - 分布式锁模块
-const { drawLock } = require('./lib/lock');
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `REDIS_URL` | Redis连接URL | 无 |
+| `ALLOWED_ORIGINS` | 允许跨域域名 | `*` |
 
-// 使用锁执行开奖结算
-const result = await drawLock.withDrawLock(date, interval, period, async () => {
-    // 执行结算逻辑
-    return await processSettlement();
-});
-```
-
-**幂等性保障**：
-- 分布式锁防止并发执行
-- 数据库唯一索引防止重复记录
-- 状态检查防止重复处理
-
-### 3. 兜底补偿机制
-
-定期扫描数据库，检查并处理遗漏的开奖和结算：
-
-```bash
-# 检查遗漏情况
-curl "https://your-app.vercel.app/api/cron/compensation?secret=YOUR_CRON_SECRET"
-
-# 执行补偿（需要管理员权限）
-curl -X POST "https://your-app.vercel.app/api/cron/compensation" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"action": "all"}'
-```
-
-**补偿策略**：
-- 自动扫描遗漏期号（每5分钟）
-- 补开遗漏的开奖
-- 补结算遗漏的投注
-- 记录补偿日志
-
-### 4. Worker进程
-
-系统提供独立的Worker进程处理异步任务：
-
-```bash
-# 启动结算Worker
-node -e "require('./workers/settlement').startWorker()"
-
-# 启动补偿Worker
-node -e "require('./workers/compensation').startWorker()"
-```
-
-**Worker特性**：
-- 支持消息队列消费
-- 自动重试失败任务
-- 优雅降级处理
-
-## 数据库优化
-
-系统已进行全面的数据库优化：
-
-### 索引优化
-- **User模型**：用户名唯一索引、角色+状态索引、余额索引
-- **Draw模型**：日期+周期+期号唯一索引、日期索引、状态索引
-- **Transaction模型**：用户+时间索引、状态索引、类型+状态索引
-- **Bet模型**：用户投注历史索引、期号结算索引（关键）
-
-### 数据归档
-定期清理超过90天的历史数据，保持数据库轻盈：
-
-```bash
-# 查看数据库统计
-curl https://your-app.vercel.app/api/admin/archive
-
-# 执行归档清理
-curl -X POST https://your-app.vercel.app/api/admin/archive \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{"secret":"your-jwt-secret","archiveDays":90}'
-```
-
-详细优化方案请查看 [DATABASE_OPTIMIZATION.md](./DATABASE_OPTIMIZATION.md)
+---
 
 ## 默认管理员账户
 
@@ -337,134 +358,39 @@ curl -X POST https://your-app.vercel.app/api/admin/archive \
 | admin002 | admin123 |
 | admin003 | admin123 |
 
-⚠️ **重要提示**：请在首次登录后立即修改默认密码！
+⚠️ **重要**：请在首次登录后立即修改默认密码！
 
-### 初始化方式
+### 初始化管理员
 
-**方式一：API初始化（推荐）**
 ```bash
-# 检查初始化状态
-curl https://your-app.vercel.app/api/admin/init
-
-# 执行初始化（使用JWT_SECRET作为密钥）
+# 方式一：API初始化
 curl -X POST https://your-app.vercel.app/api/admin/init \
   -H "Content-Type: application/json" \
   -d '{"secret":"your-jwt-secret"}'
-```
 
-**方式二：命令行初始化**
-```bash
+# 方式二：命令行初始化
 MONGODB_URI="your-mongodb-uri" node scripts/init-admins.js
 ```
 
-## 环境变量
+---
 
-在Vercel项目设置中添加以下环境变量：
+## 定时任务配置
 
-### 必需变量
-- `MONGODB_URI`: MongoDB连接字符串
-- `JWT_SECRET`: JWT签名密钥（随机字符串）
-- `CRON_SECRET`: 定时任务调用密钥
+### 使用 cron-job.org
 
-### 可选变量
-- `ALLOWED_ORIGINS`: 允许的跨域来源，多个用逗号分隔，默认允许所有来源
+| 配置项 | 值 |
+|--------|-----|
+| URL | `https://your-app.vercel.app/api/cron/check-draws?secret=YOUR_CRON_SECRET` |
+| 频率 | 每分钟 (`* * * * *`) |
+| 方法 | GET |
+| 超时 | 30秒 |
 
-### Redis缓存配置（推荐）
-- `REDIS_URL`: Redis连接字符串（支持标准Redis和Upstash）
-  - 标准Redis格式: `redis://localhost:6379`
-  - Upstash格式: `https://your-endpoint.upstash.io`
-  - 带密码: `redis://:password@host:port` 或 `https://:password@endpoint`
-
-**注意**: 如果未配置Redis，系统将正常工作但不使用缓存。
-
-## Redis缓存策略
-
-系统使用Redis缓存提升性能和并发能力：
-
-### 缓存内容
-1. **开奖结果缓存**
-   - 缓存某日某周期的所有开奖预设
-   - TTL: 24小时
-   - 在管理员保存预设后自动失效
-
-2. **用户余额缓存**
-   - 缓存用户当前余额
-   - TTL: 1小时
-   - 在余额变动后自动更新
-
-### 缓存效果
-- 减少数据库查询次数
-- 提升高频访问接口响应速度
-- 支持更高并发访问
-
-### 推荐Redis服务
-- **Upstash Redis**: Serverless友好，按需付费
-- **Redis Labs**: 免费套餐，适合小型项目
-- **自建Redis**: 完全控制，适合私有部署
-
-## 跨域支持
-
-系统已内置完整的CORS支持，允许跨域API调用：
-
-- 支持所有HTTP方法（GET、POST、PUT、PATCH、DELETE、OPTIONS）
-- 支持常见请求头（Content-Type、Authorization等）
-- 支持携带凭证（Cookies）
-- 预检请求缓存24小时
-
-**配置允许的域名**（生产环境推荐）：
+### API密钥（用于程序化管理）
 ```
-ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
+API Key: tCEFJYhQyEbRwlTV9rbuxu27cw1LuysOecCXiX7vk0A=
 ```
 
-## 本地开发
-
-```bash
-# 安装依赖
-pnpm install
-
-# 启动开发服务器
-pnpm run dev
-```
-
-## 部署到Vercel
-
-1. 将代码推送到GitHub
-2. 在Vercel导入项目
-3. 配置环境变量
-4. 部署完成
-
-## 定时开奖
-
-使用外部cron服务（如cron-job.org）每分钟调用：
-
-```
-https://your-app.vercel.app/api/cron/check-draws?secret=YOUR_CRON_SECRET
-```
-
-## 默认管理员账户
-
-首次部署后，需要手动在MongoDB中创建管理员账户，或使用注册接口创建普通用户后，在数据库中将其role改为'admin'。
-
-## API文档
-
-### 认证相关
-- `POST /api/auth/register` - 用户注册
-- `POST /api/auth/login` - 用户登录
-- `GET /api/auth/me` - 获取当前用户信息
-
-### 开奖预设
-- `GET /api/draws/daily?date=YYYY-MM-DD&interval=5` - 获取某日预设
-- `POST /api/draws` - 批量保存预设（需管理员权限）
-
-### 用户管理
-- `GET /api/users` - 获取用户列表（需管理员权限）
-- `PATCH /api/users/[id]` - 禁用/启用用户（需管理员权限）
-- `POST /api/users/balance` - 调整用户余额（需管理员权限）
-
-### 交易管理
-- `GET /api/transactions` - 获取交易记录
-- `POST /api/transactions/request` - 提交充值/提现申请
-- `PATCH /api/transactions/[id]` - 审核交易（需管理员权限）
+---
 
 ## 许可证
 

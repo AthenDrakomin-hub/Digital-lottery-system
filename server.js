@@ -47,21 +47,29 @@ app.use((req, res, next) => {
 
 // 动态加载API路由
 const apiRoutes = {
+    // 认证接口
     '/api/auth/register': './api/auth/register',
     '/api/auth/login': './api/auth/login',
     '/api/auth/me': './api/auth/me',
     '/api/auth/change-password': './api/auth/change-password',
+    // 用户管理接口
     '/api/users': './api/users/index',
     '/api/users/balance': './api/users/balance',
     '/api/users/create': './api/users/create',
+    // 开奖管理接口
     '/api/draws': './api/draws/index',
     '/api/draws/daily': './api/draws/daily',
+    // 资金管理接口
     '/api/transactions': './api/transactions/index',
     '/api/transactions/request': './api/transactions/request',
+    // 定时任务接口
     '/api/cron/check-draws': './api/cron/check-draws',
     '/api/cron/compensation': './api/cron/compensation',
+    // 管理员接口
     '/api/admin/init': './api/admin/init',
     '/api/admin/archive': './api/admin/archive',
+    '/api/admin/verify': './api/admin/verify',
+    // 投注管理接口
     '/api/bets': './api/bets/index',
     '/api/bets/period': './api/bets/period',
     '/api/bets/history': './api/bets/history',
