@@ -6,6 +6,8 @@ const PORT = process.env.DEPLOY_RUN_PORT || 5000;
 
 // 中间件
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // 支付宝回调使用form-urlencoded
+app.use(express.text({ type: 'text/xml' })); // 微信回调使用XML
 app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS支持 - 完整配置
@@ -63,7 +65,12 @@ const apiRoutes = {
     '/api/bets': './api/bets/index',
     '/api/bets/period': './api/bets/period',
     '/api/bets/history': './api/bets/history',
-    '/api/bets/admin': './api/bets/admin'
+    '/api/bets/admin': './api/bets/admin',
+    // 支付回调接口
+    '/api/payment/alipay/notify': './api/payment/alipay/notify',
+    '/api/payment/wechat/notify': './api/payment/wechat/notify',
+    '/api/payment/payout/process': './api/payment/payout/process',
+    '/api/payment/payout/callback': './api/payment/payout/callback'
 };
 
 // 注册API路由
