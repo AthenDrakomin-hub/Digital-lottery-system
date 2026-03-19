@@ -35,7 +35,30 @@ const drawSchema = new mongoose.Schema({
     }
 });
 
-// 复合索引确保同一日期同一周期同期的唯一性
-drawSchema.index({ date: 1, interval: 1, period: 1 }, { unique: true });
+// 索引
+drawSchema.index({ date: 1, interval: 1, period: 1 }, { unique: true }); // 唯一约束
+drawSchema.index({ date: -1 }); // 按日期倒序查询
+drawSchema.index({ interval: 1, date: -1 }); // 按周期和日期查询
+drawSchema.index({ status: 1, date: -1 }); // 按状态和日期查询
+drawSchema.index({ updatedAt: -1 }); // 按更新时间查询
+drawSchema.index({ date: 1, status: 1, interval: 1 }); // 复合查询优化
+
+// 虚拟字段：格式化时间
+drawSchema.virtual('formattedTime').get(function() {
+    const minutes = this.period * this.interval;
+    const hour = Math.floor(minutes / 60);
+    const minute = minutes % 60;
+    return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+});
+
+// 虚拟字段：期号（1-based）
+drawSchema.virtual('periodNumber').get(function() {
+    return this.period + 1;
+});
+
+// 静态方法：获取某天的总期数
+drawSchema.statics.getTotalPeriods = function(interval) {
+    return interval === 5 ? 288 : (interval === 10 ? 144 : 96);
+};
 
 module.exports = mongoose.model('Draw', drawSchema);

@@ -37,6 +37,31 @@
 └── README.md
 ```
 
+## 数据库优化
+
+系统已进行全面的数据库优化：
+
+### 索引优化
+- **User模型**：用户名唯一索引、角色+状态索引、余额索引
+- **Draw模型**：日期+周期+期号唯一索引、日期索引、状态索引
+- **Transaction模型**：用户+时间索引、状态索引、类型+状态索引
+- **Bet模型**：用户投注历史索引、期号结算索引（关键）
+
+### 数据归档
+定期清理超过90天的历史数据，保持数据库轻盈：
+
+```bash
+# 查看数据库统计
+curl https://your-app.vercel.app/api/admin/archive
+
+# 执行归档清理
+curl -X POST https://your-app.vercel.app/api/admin/archive \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"secret":"your-jwt-secret","archiveDays":90}'
+```
+
+详细优化方案请查看 [DATABASE_OPTIMIZATION.md](./DATABASE_OPTIMIZATION.md)
+
 ## 默认管理员账户
 
 系统预设三个管理员账户：

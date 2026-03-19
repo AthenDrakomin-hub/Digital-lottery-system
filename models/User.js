@@ -33,7 +33,14 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-// 索引（username已通过unique: true自动创建索引）
+// 索引
 userSchema.index({ createdAt: -1 });
+userSchema.index({ role: 1, isActive: 1 }); // 用于管理员查询活跃用户
+userSchema.index({ balance: -1 }); // 用于余额排序
+
+// 虚拟字段：格式化余额
+userSchema.virtual('formattedBalance').get(function() {
+    return `¥${this.balance.toFixed(2)}`;
+});
 
 module.exports = mongoose.model('User', userSchema);

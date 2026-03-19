@@ -56,7 +56,8 @@ const apiRoutes = {
     '/api/transactions': './api/transactions/index',
     '/api/transactions/request': './api/transactions/request',
     '/api/cron/check-draws': './api/cron/check-draws',
-    '/api/admin/init': './api/admin/init'
+    '/api/admin/init': './api/admin/init',
+    '/api/admin/archive': './api/admin/archive'
 };
 
 // 注册API路由
