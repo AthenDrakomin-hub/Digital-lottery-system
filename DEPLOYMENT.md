@@ -156,23 +156,93 @@ curl -X POST https://your-app.vercel.app/api/admin/init \
 | `ALLOWED_ORIGINS` | 允许的跨域域名 | `*`（所有） |
 | `DB_POOL_SIZE` | 数据库连接池大小 | 10 |
 
-## 六、监控与告警
+## 六、免费额度监控与告警 ⚠️
 
-### 1. MongoDB监控
-- Atlas Dashboard查看连接数和存储使用
-- 设置存储使用告警（>80%）
+### 1. MongoDB Atlas M0 免费套餐
 
-### 2. Vercel监控
-- Functions标签查看执行时间和错误
-- Analytics查看访问量
+| 资源 | 免费额度 | 监控指标 | 告警阈值 |
+|------|---------|---------|---------|
+| 存储 | 512MB | 存储使用量 | > 400MB (80%) |
+| 连接数 | 500 | 当前连接数 | > 400 |
+| 备份 | 每日1次 | 保留1天 | ⚠️ 需手动导出 |
 
-### 3. 日志检查
+**监控设置步骤：**
+1. Atlas Dashboard → Alerts → Add Alert
+2. 配置存储告警：`Data Size > 400MB`
+3. 配置连接数告警：`Connections > 400`
+
+**⚠️ 数据备份提醒：**
+- M0免费套餐仅保留1天备份
+- 建议每月手动导出数据
+- 导出命令：
 ```bash
-# 检查应用日志
-vercel logs your-app
+# 使用mongodump导出
+mongodump --uri="mongodb+srv://user:pass@cluster.mongodb.net/lottery" --out=./backup
 
-# 或在Vercel Dashboard中查看
+# 或使用mongoexport导出CSV
+mongoexport --uri="..." --collection=bets --type=csv --out=bets.csv
 ```
+
+### 2. Vercel Hobby 免费套餐
+
+| 资源 | 免费额度 | 月使用估算 | 利用率 |
+|------|---------|-----------|-------|
+| 带宽 | 100GB/月 | ~5GB | ~5% |
+| 函数调用 | 100万次/月 | ~43,200次 | ~4% |
+| 函数执行时间 | 100GB-Hrs | ~2GB-Hrs | ~2% |
+| 构建时间 | 6000分钟/月 | ~100分钟 | ~2% |
+
+**单期开奖任务调用量计算：**
+```
+每分钟1次 × 60分钟 × 24小时 × 30天 = 43,200次/月
+```
+**结论**：远低于100万次限制，非常安全！
+
+**监控设置：**
+1. Vercel Dashboard → Usage
+2. 关注 Bandwidth 和 Serverless Functions
+3. 设置用量邮件通知（默认已开启）
+
+### 3. cron-job.org 免费服务
+
+| 特性 | 说明 |
+|------|------|
+| 价格 | 完全免费 |
+| 执行频率 | 每分钟执行一次 ✅ |
+| 超时时间 | 30秒 |
+| 失败重试 | 支持（建议开启） |
+
+**监控配置：**
+1. 登录 cron-job.org
+2. 创建任务时勾选 "Enable failure notifications"
+3. 设置备用通知邮箱
+
+### 4. 监控检查清单
+
+| 检查项 | 频率 | 方法 |
+|--------|------|------|
+| MongoDB存储 | 每周 | Atlas Dashboard |
+| Vercel带宽 | 每周 | Vercel Dashboard |
+| 数据备份 | 每月 | 手动导出 |
+| API错误日志 | 每周 | Vercel Logs |
+| Cron执行状态 | 每天 | cron-job.org Dashboard |
+
+### 5. 超限预警处理
+
+**MongoDB存储即将满（>400MB）：**
+```bash
+# 1. 归档旧数据
+curl -X POST https://your-app.vercel.app/api/admin/archive \
+  -H "Authorization: Bearer TOKEN" \
+  -d '{"archiveDays":60}'
+
+# 2. 删除已归档数据（需手动在Atlas执行）
+```
+
+**Vercel带宽超限：**
+- 检查是否有异常流量
+- 考虑启用CDN缓存
+- 升级到Pro套餐（$20/月）
 
 ## 七、故障排查
 
