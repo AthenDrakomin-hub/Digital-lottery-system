@@ -122,12 +122,45 @@ CRON_SECRET=your-cron-secret-string
 
 5. 点击Deploy
 
-### 步骤3: 配置定时任务
+### 步骤3: 配置定时任务 (cron-job.org)
 
-使用外部cron服务（如cron-job.org）：
-- **URL**: `https://your-app.vercel.app/api/cron/check-draws?secret=YOUR_CRON_SECRET`
-- **频率**: 每分钟一次
-- **方法**: GET
+#### 3.1 创建账户并登录
+1. 访问 [cron-job.org](https://cron-job.org)
+2. 注册免费账户并登录
+
+#### 3.2 创建定时任务
+| 配置项 | 值 |
+|--------|-----|
+| **任务名称** | 数字开奖系统 |
+| **URL** | `https://your-app.vercel.app/api/cron/check-draws?secret=YOUR_CRON_SECRET` |
+| **执行频率** | 每分钟 (`* * * * *`) |
+| **请求方法** | GET |
+| **超时时间** | 30秒 |
+| **失败重试** | 开启 (3次) |
+
+#### 3.3 API 密钥配置（可选）
+如需通过 API 管理定时任务，可使用以下密钥：
+```
+API Key: tCEFJYhQyEbRwlTV9rbuxu27cw1LuysOecCXiX7vk0A=
+```
+
+#### 3.4 验证任务执行
+```bash
+# 查看 Vercel 函数日志
+vercel logs your-app --filter "check-draws"
+
+# 或手动触发测试
+curl "https://your-app.vercel.app/api/cron/check-draws?secret=YOUR_CRON_SECRET"
+```
+
+#### 3.5 cron-job.org 免费额度
+| 特性 | 说明 |
+|------|------|
+| 价格 | 完全免费 |
+| 执行频率 | 每分钟 ✅ |
+| 超时时间 | 30秒 |
+| 失败通知 | 邮件提醒 |
+| 任务数量 | 无限制 |
 
 ### 步骤4: 初始化管理员
 
@@ -148,7 +181,30 @@ curl -X POST https://your-app.vercel.app/api/admin/init \
 | `JWT_SECRET` | JWT签名密钥 | 随机字符串，至少32位 |
 | `CRON_SECRET` | 定时任务密钥 | 随机字符串 |
 
-### 可选变量
+### 支付配置（可选）
+
+| 变量名 | 说明 | 用途 |
+|-------|------|------|
+| `ALIPAY_APP_ID` | 支付宝应用ID | 支付宝支付/代付 |
+| `ALIPAY_PUBLIC_KEY` | 支付宝公钥 | 签名验证 |
+| `ALIPAY_PRIVATE_KEY` | 应用私钥 | 签名生成 |
+| `ALIPAY_PAYOUT_ENABLED` | 启用支付宝代付 | `true`/`false` |
+| `WECHAT_APP_ID` | 微信应用ID | 微信支付/代付 |
+| `WECHAT_MCH_ID` | 微信商户号 | 微信支付 |
+| `WECHAT_API_KEY` | 微信API密钥 | 签名验证 |
+| `WECHAT_PAYOUT_ENABLED` | 启用微信代付 | `true`/`false` |
+
+### 日志配置（可选）
+
+| 变量名 | 说明 | 默认值 |
+|-------|------|-------|
+| `LOG_SERVICE` | 日志服务 | `console` |
+| `LOG_LEVEL` | 日志级别 | `info` |
+| `AXIOM_DATASET` | Axiom数据集 | - |
+| `AXIOM_TOKEN` | Axiom Token | - |
+| `LOGTAIL_SOURCE_TOKEN` | Logtail Token | - |
+
+### 其他可选变量
 
 | 变量名 | 说明 | 默认值 |
 |-------|------|-------|
