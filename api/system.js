@@ -148,7 +148,7 @@ async function handleDrawsCreate(req, res) {
     }));
 
     if (ops.length > 0) await Draw.bulkWrite(ops);
-    await cache.deleteDailyDraws(date, intervalNum);
+    await cache.delDailyDraws(date, intervalNum);
 
     res.json({ success: true, message: `成功保存${periods.length}期开奖预设` });
 }
