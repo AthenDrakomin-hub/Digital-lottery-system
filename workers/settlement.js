@@ -31,9 +31,13 @@ class DrawSettlementProcessor {
      * @returns {object} { isWin, winAmount }
      */
     checkWin(bet, result) {
-        const { betType, numbers, amount, odds } = bet;
+        const { betType, numbers, amount, odds, championNumbers } = bet;
         
         switch (betType) {
+            case 'champion':
+                // 冠军玩法：投注数字中包含开奖结果第一个数字即中奖
+                return this.checkChampionWin(championNumbers, result);
+            
             case 'direct':
                 // 直选：投注号码与开奖结果完全匹配
                 return this.checkDirectWin(numbers, result, amount, odds);
@@ -53,6 +57,29 @@ class DrawSettlementProcessor {
             default:
                 return { isWin: false, winAmount: 0 };
         }
+    }
+
+    /**
+     * 冠军玩法
+     * 开奖结果的第一个数字是冠军
+     * 投注数字中只要有一个等于冠军数字就中奖
+     * 中奖固定获得19.5元
+     */
+    checkChampionWin(championNumbers, result) {
+        // 获取冠军数字（开奖结果第一个数字）
+        const championNumber = parseInt(result[0]);
+        
+        // 检查投注数字是否包含冠军数字
+        const isWin = championNumbers && championNumbers.includes(championNumber);
+        
+        // 中奖固定金额19.5元
+        const WIN_AMOUNT = 19.5;
+        
+        return {
+            isWin,
+            winAmount: isWin ? WIN_AMOUNT : 0,
+            championNumber
+        };
     }
 
     /**
@@ -192,13 +219,20 @@ class DrawSettlementProcessor {
 
             // 处理每笔投注
             for (const bet of pendingBets) {
-                const { isWin, winAmount } = this.checkWin(bet, result);
+                const checkResult = this.checkWin(bet, result);
+                const { isWin, winAmount, championNumber } = checkResult;
                 
                 // 更新投注状态
                 bet.status = isWin ? 'won' : 'lost';
                 bet.winAmount = winAmount;
                 bet.result = result;
                 bet.settledAt = new Date();
+                
+                // 冠军玩法保存冠军数字
+                if (bet.betType === 'champion' && championNumber !== undefined) {
+                    bet.championNumber = championNumber;
+                }
+                
                 await bet.save();
 
                 if (isWin) {
