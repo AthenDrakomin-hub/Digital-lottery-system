@@ -37,6 +37,36 @@
 └── README.md
 ```
 
+## 默认管理员账户
+
+系统预设三个管理员账户：
+
+| 用户名 | 密码 |
+|--------|------|
+| admin001 | admin123 |
+| admin002 | admin123 |
+| admin003 | admin123 |
+
+⚠️ **重要提示**：请在首次登录后立即修改默认密码！
+
+### 初始化方式
+
+**方式一：API初始化（推荐）**
+```bash
+# 检查初始化状态
+curl https://your-app.vercel.app/api/admin/init
+
+# 执行初始化（使用JWT_SECRET作为密钥）
+curl -X POST https://your-app.vercel.app/api/admin/init \
+  -H "Content-Type: application/json" \
+  -d '{"secret":"your-jwt-secret"}'
+```
+
+**方式二：命令行初始化**
+```bash
+MONGODB_URI="your-mongodb-uri" node scripts/init-admins.js
+```
+
 ## 环境变量
 
 在Vercel项目设置中添加以下环境变量：

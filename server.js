@@ -48,13 +48,15 @@ const apiRoutes = {
     '/api/auth/register': './api/auth/register',
     '/api/auth/login': './api/auth/login',
     '/api/auth/me': './api/auth/me',
+    '/api/auth/change-password': './api/auth/change-password',
     '/api/users': './api/users/index',
     '/api/users/balance': './api/users/balance',
     '/api/draws': './api/draws/index',
     '/api/draws/daily': './api/draws/daily',
     '/api/transactions': './api/transactions/index',
     '/api/transactions/request': './api/transactions/request',
-    '/api/cron/check-draws': './api/cron/check-draws'
+    '/api/cron/check-draws': './api/cron/check-draws',
+    '/api/admin/init': './api/admin/init'
 };
 
 // 注册API路由
