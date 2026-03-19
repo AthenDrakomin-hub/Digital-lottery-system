@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "数字开奖管理系统 - 多周期开奖管理平台",
   "scripts": {
-    "dev": "node server.js",
+    "dev": "node server.local.js",
     "build": "echo 'Build complete'",
-    "start": "node server.js"
+    "start": "node server.local.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

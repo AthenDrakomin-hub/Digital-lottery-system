@@ -31,6 +31,9 @@
  *   POST   /api/system?type=payment&action=callback  - 代付回调
  */
 
+// 加载环境变量（必须在最前面）
+require('dotenv').config();
+
 const dbConnect = require('../lib/db');
 const User = require('../models/User');
 const Draw = require('../models/Draw');

@@ -9,6 +9,9 @@
  *   GET    /api/admin?action=stats     - 获取运营统计数据
  */
 
+// 加载环境变量（必须在最前面）
+require('dotenv').config();
+
 const dbConnect = require('../lib/db');
 const User = require('../models/User');
 const Draw = require('../models/Draw');

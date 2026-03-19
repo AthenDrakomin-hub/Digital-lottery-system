@@ -10,6 +10,9 @@
  *   DELETE /api/users?id=xxx             - 删除用户（管理员）
  */
 
+// 加载环境变量（必须在最前面）
+require('dotenv').config();
+
 const dbConnect = require('../lib/db');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
