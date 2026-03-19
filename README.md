@@ -59,6 +59,10 @@ pnpm run dev
 
 ## API 文档
 
+**共计 38 个 API 接口**
+
+详细接口文档请查看 [API_DOC.md](./API_DOC.md)
+
 ### 认证接口 (4个)
 
 | 接口 | 方法 | 说明 | 权限 |
@@ -307,6 +311,10 @@ Authorization: Bearer <token>
 │   ├── rateLimiter.js            # 限流中间件
 │   ├── riskControl.js            # 风控检查
 │   └── logger.js                 # 日志服务
+├── middleware/                   # 中间件
+│   ├── auth.js                   # 认证中间件
+│   ├── error.js                  # 错误处理中间件
+│   └── validator.js              # 参数验证中间件
 ├── workers/                      # Worker进程
 │   ├── settlement.js             # 开奖结算Worker
 │   └── compensation.js           # 补偿Worker
@@ -410,3 +418,25 @@ API Key: tCEFJYhQyEbRwlTV9rbuxu27cw1LuysOecCXiX7vk0A=
 ## 许可证
 
 MIT
+
+---
+
+## 测试
+
+### API集成测试
+
+```bash
+# 确保服务已启动（端口5000）
+# 运行测试脚本
+chmod +x scripts/test-api.sh
+./scripts/test-api.sh
+
+# 或指定服务地址
+./scripts/test-api.sh https://your-app.vercel.app
+```
+
+### 类型检查
+
+```bash
+npx tsc --noEmit
+```

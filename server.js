@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const { errorHandler, notFoundHandler } = require('./middleware/error');
 
 const app = express();
 const PORT = process.env.DEPLOY_RUN_PORT || 5000;
@@ -222,6 +223,12 @@ app.all('/api/bets/:id/status', async (req, res) => {
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// 404 处理
+app.use(notFoundHandler);
+
+// 全局错误处理
+app.use(errorHandler);
 
 // 启动服务器
 app.listen(PORT, () => {

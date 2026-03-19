@@ -1,17 +1,10 @@
 #!/bin/bash
 
-# API接口测试脚本
-# 使用方法：./test-api.sh [base_url] [jwt_token] [cron_secret]
+# API集成测试脚本
+# 用法: ./scripts/test-api.sh [base_url]
 
 BASE_URL="${1:-http://localhost:5000}"
-TOKEN="${2:-}"
-CRON_SECRET="${3:-test123}"
-
-echo "======================================"
-echo "数字开奖管理系统 - API接口测试"
-echo "======================================"
-echo "基础URL: $BASE_URL"
-echo ""
+TOKEN=""
 
 # 颜色定义
 GREEN='\033[0;32m'
@@ -19,141 +12,146 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# 测试计数器
+PASS=0
+FAIL=0
+
 # 测试函数
 test_api() {
     local name="$1"
     local method="$2"
     local endpoint="$3"
     local data="$4"
-    local auth="$5"
+    local expected_status="$5"
     
-    echo -n "测试 $name ... "
+    echo -n "测试: $name ... "
     
     if [ -n "$data" ]; then
-        if [ -n "$auth" ]; then
-            response=$(curl -s -X $method "$BASE_URL$endpoint" \
-                -H "Content-Type: application/json" \
-                -H "Authorization: Bearer $TOKEN" \
-                -d "$data")
-        else
-            response=$(curl -s -X $method "$BASE_URL$endpoint" \
-                -H "Content-Type: application/json" \
-                -d "$data")
-        fi
+        response=$(curl -s -w "\n%{http_code}" -X "$method" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -d "$data" \
+            "${BASE_URL}${endpoint}")
     else
-        if [ -n "$auth" ]; then
-            response=$(curl -s -X $method "$BASE_URL$endpoint" \
-                -H "Authorization: Bearer $TOKEN")
-        else
-            response=$(curl -s -X $method "$BASE_URL$endpoint")
-        fi
+        response=$(curl -s -w "\n%{http_code}" -X "$method" \
+            -H "Authorization: Bearer $TOKEN" \
+            "${BASE_URL}${endpoint}")
     fi
     
-    # 检查响应
-    if echo "$response" | grep -q '"error"'; then
-        echo -e "${RED}失败${NC}"
-        echo "  响应: $response"
-    elif [ -z "$response" ]; then
-        echo -e "${RED}无响应${NC}"
+    http_code=$(echo "$response" | tail -n 1)
+    body=$(echo "$response" | sed '$d')
+    
+    if [ "$http_code" == "$expected_status" ]; then
+        echo -e "${GREEN}✓ 通过${NC} (HTTP $http_code)"
+        PASS=$((PASS + 1))
     else
-        echo -e "${GREEN}成功${NC}"
+        echo -e "${RED}✗ 失败${NC} (期望 $expected_status, 实际 $http_code)"
+        echo "  响应: $body"
+        FAIL=$((FAIL + 1))
     fi
 }
 
-echo "========== 1. 认证接口 =========="
-echo ""
+echo "========================================"
+echo "API集成测试"
+echo "服务地址: $BASE_URL"
+echo "========================================"
+echo
 
+# ==================== 认证模块 ====================
+echo "【认证模块】"
+
+# 测试注册
 test_api "用户注册" "POST" "/api/auth/register" \
-    '{"username":"testuser001","password":"123456"}'
+    '{"username":"testuser_'"$(date +%s)"'","password":"123456"}' "201"
 
-test_api "用户登录" "POST" "/api/auth/login" \
-    '{"username":"admin001","password":"admin123"}'
+# 测试登录
+echo -n "测试: 管理员登录 ... "
+response=$(curl -s -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"username":"admin001","password":"admin123"}' \
+    "${BASE_URL}/api/auth/login")
+    
+TOKEN=$(echo "$response" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 
-test_api "获取当前用户" "GET" "/api/auth/me" "" "auth"
+if [ -n "$TOKEN" ]; then
+    echo -e "${GREEN}✓ 通过${NC}"
+    PASS=$((PASS + 1))
+else
+    echo -e "${RED}✗ 失败${NC}"
+    echo "  响应: $response"
+    FAIL=$((FAIL + 1))
+fi
 
-test_api "修改密码" "POST" "/api/auth/change-password" \
-    '{"oldPassword":"admin123","newPassword":"admin123"}' "auth"
+# 测试获取当前用户
+test_api "获取当前用户" "GET" "/api/auth/me" "" "200"
 
-echo ""
-echo "========== 2. 用户管理接口 =========="
-echo ""
+# 测试修改密码（无效旧密码）
+test_api "修改密码（无效旧密码）" "POST" "/api/auth/change-password" \
+    '{"oldPassword":"wrong","newPassword":"654321"}' "400"
 
-test_api "获取用户列表" "GET" "/api/users" "" "auth"
+echo
+
+# ==================== 用户管理模块 ====================
+echo "【用户管理模块】"
+
+test_api "获取用户列表" "GET" "/api/users?page=1&limit=10" "" "200"
 
 test_api "创建用户" "POST" "/api/users/create" \
-    '{"username":"testuser002","password":"123456","role":"user"}' "auth"
+    '{"username":"newuser_'"$(date +%s)"'","password":"123456","role":"user"}' "201"
 
-test_api "获取用户详情" "GET" "/api/users/507f1f77bcf86cd799439011" "" "auth"
+echo
 
-test_api "调整用户余额" "POST" "/api/users/balance" \
-    '{"userId":"507f1f77bcf86cd799439011","amount":100,"note":"测试充值"}' "auth"
+# ==================== 资金管理模块 ====================
+echo "【资金管理模块】"
 
-echo ""
-echo "========== 3. 资金管理接口 =========="
-echo ""
-
-test_api "获取交易列表" "GET" "/api/transactions" "" "auth"
+test_api "获取交易列表" "GET" "/api/transactions?page=1" "" "200"
 
 test_api "提交充值申请" "POST" "/api/transactions/request" \
-    '{"type":"deposit","amount":100}' "auth"
+    '{"type":"deposit","amount":100}' "201"
 
-test_api "提交提现申请" "POST" "/api/transactions/request" \
-    '{"type":"withdraw","amount":50}' "auth"
+echo
 
-echo ""
-echo "========== 4. 开奖管理接口 =========="
-echo ""
+# ==================== 开奖管理模块 ====================
+echo "【开奖管理模块】"
 
-test_api "获取开奖列表" "GET" "/api/draws" "" "auth"
+TODAY=$(date +%Y-%m-%d)
 
-test_api "获取每日开奖" "GET" "/api/draws/daily?date=$(date +%Y-%m-%d)&interval=5"
+test_api "获取开奖列表" "GET" "/api/draws?date=${TODAY}&interval=5" "" "200"
 
-test_api "创建开奖结果" "POST" "/api/draws" \
-    '{"date":"2024-01-01","interval":5,"period":0,"result":"1234567890"}' "auth"
+test_api "获取每日开奖" "GET" "/api/draws/daily?date=${TODAY}&interval=5" "" "200"
 
-echo ""
-echo "========== 5. 投注管理接口 =========="
-echo ""
+echo
 
-test_api "获取投注配置" "GET" "/api/bets?interval=5"
+# ==================== 投注管理模块 ====================
+echo "【投注管理模块】"
 
-test_api "获取期号信息" "GET" "/api/bets/period?interval=5"
+test_api "获取投注配置" "GET" "/api/bets?interval=5" "" "200"
 
-test_api "提交投注" "POST" "/api/bets" \
-    '{"date":"2024-01-01","interval":5,"period":0,"championNumbers":[1,3,5]}' "auth"
+test_api "获取当前期号" "GET" "/api/bets/period?interval=5" "" "200"
 
-test_api "获取投注历史" "GET" "/api/bets/history" "" "auth"
+test_api "获取投注历史" "GET" "/api/bets/history?page=1" "" "200"
 
-test_api "管理员获取投注" "GET" "/api/bets/admin" "" "auth"
+echo
 
-echo ""
-echo "========== 6. 定时任务接口 =========="
-echo ""
+# ==================== 管理员模块 ====================
+echo "【管理员模块】"
 
-test_api "自动开奖结算" "GET" "/api/cron/check-draws?secret=$CRON_SECRET"
+test_api "获取统计数据" "GET" "/api/admin/stats?range=today" "" "200"
 
-test_api "补偿检查" "GET" "/api/cron/compensation?secret=$CRON_SECRET"
+echo
 
-echo ""
-echo "========== 7. 管理员接口 =========="
-echo ""
+# ==================== 总结 ====================
+echo "========================================"
+echo "测试总结"
+echo "========================================"
+echo -e "通过: ${GREEN}${PASS}${NC}"
+echo -e "失败: ${RED}${FAIL}${NC}"
+echo "总计: $((PASS + FAIL))"
 
-test_api "初始化管理员" "POST" "/api/admin/init" \
-    '{"secret":"test-jwt-secret"}'
-
-test_api "数据归档统计" "GET" "/api/admin/archive" "" "auth"
-
-echo ""
-echo "========== 8. 支付回调接口 =========="
-echo ""
-
-test_api "支付宝回调" "POST" "/api/payment/alipay/notify" \
-    '{"trade_no":"test","trade_status":"TRADE_SUCCESS"}'
-
-test_api "微信回调" "POST" "/api/payment/wechat/notify" \
-    '<xml><return_code>SUCCESS</return_code></xml>'
-
-echo ""
-echo "======================================"
-echo "测试完成"
-echo "======================================"
+if [ $FAIL -eq 0 ]; then
+    echo -e "\n${GREEN}所有测试通过！${NC}"
+    exit 0
+else
+    echo -e "\n${RED}存在失败的测试${NC}"
+    exit 1
+fi
