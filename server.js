@@ -51,6 +51,7 @@ const apiRoutes = {
     '/api/auth/change-password': './api/auth/change-password',
     '/api/users': './api/users/index',
     '/api/users/balance': './api/users/balance',
+    '/api/users/create': './api/users/create',
     '/api/draws': './api/draws/index',
     '/api/draws/daily': './api/draws/daily',
     '/api/transactions': './api/transactions/index',
@@ -61,7 +62,8 @@ const apiRoutes = {
     '/api/admin/archive': './api/admin/archive',
     '/api/bets': './api/bets/index',
     '/api/bets/period': './api/bets/period',
-    '/api/bets/history': './api/bets/history'
+    '/api/bets/history': './api/bets/history',
+    '/api/bets/admin': './api/bets/admin'
 };
 
 // 注册API路由
@@ -101,6 +103,44 @@ app.all('/api/users/:id', async (req, res) => {
         await handler(vercelReq, res);
     } catch (error) {
         console.error('API错误 [/api/users/:id]:', error);
+        res.status(500).json({ error: '服务器内部错误' });
+    }
+});
+
+// 处理动态路由（交易ID）
+app.all('/api/transactions/:id', async (req, res) => {
+    const handler = require('./api/transactions/[id]');
+    const vercelReq = {
+        ...req,
+        query: { id: req.params.id, ...req.query },
+        body: req.body,
+        headers: req.headers,
+        method: req.method
+    };
+    
+    try {
+        await handler(vercelReq, res);
+    } catch (error) {
+        console.error('API错误 [/api/transactions/:id]:', error);
+        res.status(500).json({ error: '服务器内部错误' });
+    }
+});
+
+// 处理动态路由（投注ID）
+app.all('/api/bets/:id', async (req, res) => {
+    const handler = require('./api/bets/[id]');
+    const vercelReq = {
+        ...req,
+        query: { id: req.params.id, ...req.query },
+        body: req.body,
+        headers: req.headers,
+        method: req.method
+    };
+    
+    try {
+        await handler(vercelReq, res);
+    } catch (error) {
+        console.error('API错误 [/api/bets/:id]:', error);
         res.status(500).json({ error: '服务器内部错误' });
     }
 });

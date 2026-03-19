@@ -103,6 +103,19 @@ const betSchema = new mongoose.Schema({
         type: Number
     }, // 冠军数字（开奖结果第一个数字）
     
+    // 取消相关
+    cancelledAt: {
+        type: Date
+    }, // 取消时间
+    cancelledBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }, // 取消人
+    refundAmount: {
+        type: Number,
+        default: 0
+    }, // 退款金额
+    
     // 时间戳
     createdAt: { 
         type: Date, 

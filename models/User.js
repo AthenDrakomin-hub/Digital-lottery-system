@@ -27,9 +27,16 @@ const userSchema = new mongoose.Schema({
         type: Boolean, 
         default: true 
     },
+    deletedAt: {
+        type: Date
+    }, // 删除时间（软删除）
     createdAt: { 
         type: Date, 
         default: Date.now 
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
     }
 });
 

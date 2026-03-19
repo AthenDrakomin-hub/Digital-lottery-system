@@ -9,7 +9,7 @@
 - ✅ 管理员预设开奖结果
 - ✅ 用户资金管理（充值/提现）
 - ✅ 管理员审核交易
-- ✅ 用户账户管理
+- ✅ 用户账户管理（增删改查）
 - ✅ 定时开奖检查（需外部cron触发）
 - ✅ Redis缓存支持（开奖结果、用户余额）
 - ✅ 消息队列处理异步任务
@@ -17,37 +17,144 @@
 - ✅ 兜底补偿机制
 - ✅ 投注API接口（供外部系统调用）
 
-## 投注API服务
+---
 
-本系统提供投注API接口，供外部投注前端系统调用。
+## API文档
 
-### 冠军玩法规则
+### 认证相关 API
 
-**游戏规则**：
-- 开奖结果为10位不重复数字（0-9），第一个数字为"冠军数字"
-- 用户可选择1-5个数字进行投注，每个数字投注金额为2元
-- 投注数字中只要有一个等于冠军数字即中奖，中奖固定获得19.5元
-- 每期只能投注一次，开奖前1分钟停止投注
+| 接口 | 方法 | 说明 | 权限 |
+|-----|------|------|------|
+| `/api/auth/register` | POST | 用户注册 | 公开 |
+| `/api/auth/login` | POST | 用户登录 | 公开 |
+| `/api/auth/me` | GET | 获取当前用户信息 | 登录 |
+| `/api/auth/change-password` | POST | 修改密码 | 登录 |
 
-**赔率表**：
+### 用户管理 API
 
-| 选择数字数 | 投注金额 | 中奖概率 | 赔率 | 中奖金额 |
-|-----------|---------|---------|------|---------|
-| 1个 | ¥2 | 10% | 9.75倍 | ¥19.5 |
-| 2个 | ¥4 | 20% | 4.875倍 | ¥19.5 |
-| 3个 | ¥6 | 30% | 3.25倍 | ¥19.5 |
-| 4个 | ¥8 | 40% | 2.44倍 | ¥19.5 |
-| 5个 | ¥10 | 50% | 1.95倍 | ¥19.5 |
+| 接口 | 方法 | 说明 | 权限 |
+|-----|------|------|------|
+| `/api/users` | GET | 获取用户列表 | 管理员 |
+| `/api/users` | POST | 创建用户 | 管理员 |
+| `/api/users/create` | POST | 创建用户（管理员） | 管理员 |
+| `/api/users/:id` | GET | 获取用户详情 | 管理员 |
+| `/api/users/:id` | PUT | 更新用户信息 | 管理员 |
+| `/api/users/:id` | PATCH | 禁用/启用用户 | 管理员 |
+| `/api/users/:id` | DELETE | 删除用户（软删除） | 管理员 |
+| `/api/users/balance` | POST | 调整用户余额 | 管理员 |
 
-### API接口
+### 资金管理 API
+
+| 接口 | 方法 | 说明 | 权限 |
+|-----|------|------|------|
+| `/api/transactions` | GET | 获取交易记录 | 登录 |
+| `/api/transactions` | PATCH | 审核交易 | 管理员 |
+| `/api/transactions/request` | POST | 提交充值/提现申请 | 登录 |
+| `/api/transactions/:id` | GET | 获取交易详情 | 登录 |
+| `/api/transactions/:id` | DELETE | 取消交易 | 登录 |
+
+### 开奖管理 API
+
+| 接口 | 方法 | 说明 | 权限 |
+|-----|------|------|------|
+| `/api/draws` | GET | 获取开奖预设列表 | 登录 |
+| `/api/draws` | POST | 批量保存开奖预设 | 管理员 |
+| `/api/draws/daily` | GET | 获取某日开奖预设 | 公开 |
+| `/api/cron/check-draws` | GET | 定时开奖检查 | Cron Secret |
+| `/api/cron/compensation` | GET/POST | 补偿检查/执行 | 管理员 |
+
+### 投注管理 API
+
+| 接口 | 方法 | 说明 | 权限 |
+|-----|------|------|------|
+| `/api/bets` | GET | 获取投注配置 | 公开 |
+| `/api/bets` | POST | 提交投注 | 登录 |
+| `/api/bets/period` | GET | 获取期号信息 | 公开 |
+| `/api/bets/history` | GET | 获取投注历史 | 登录 |
+| `/api/bets/admin` | GET | 获取所有投注（管理员） | 管理员 |
+| `/api/bets/:id` | GET | 获取投注详情 | 登录 |
+| `/api/bets/:id` | DELETE | 取消投注 | 登录 |
+
+---
+
+## API详细说明
+
+### 用户管理
+
+**创建用户（管理员）**
+```bash
+POST /api/users/create
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{
+    "username": "testuser",
+    "password": "123456",
+    "role": "user",
+    "balance": 100,
+    "isActive": true
+}
+```
+
+**更新用户**
+```bash
+PUT /api/users/:id
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{
+    "username": "newname",
+    "role": "user",
+    "isActive": true
+}
+```
+
+**删除用户**
+```bash
+DELETE /api/users/:id
+Authorization: Bearer <admin-token>
+```
+
+### 资金管理
+
+**调整用户余额**
+```bash
+POST /api/users/balance
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{
+    "userId": "user_id",
+    "amount": 100,
+    "note": "系统赠送"
+}
+```
+
+**获取交易记录**
+```bash
+GET /api/transactions?page=1&limit=20&status=pending
+Authorization: Bearer <token>
+```
+
+**审核交易**
+```bash
+PATCH /api/transactions
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{
+    "transactionId": "trans_id",
+    "status": "approved",
+    "note": "审核通过"
+}
+```
+
+### 投注管理
 
 **获取投注配置**
 ```bash
 GET /api/bets?interval=5
 ```
-
-**提交投注**
-```bash
 POST /api/bets
 Authorization: Bearer <token>
 Content-Type: application/json

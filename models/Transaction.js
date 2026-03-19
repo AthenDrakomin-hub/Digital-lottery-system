@@ -17,9 +17,9 @@ const transactionSchema = new mongoose.Schema({
     }, // 金额（正数）
     status: { 
         type: String, 
-        enum: ['pending', 'approved', 'rejected'], 
+        enum: ['pending', 'approved', 'rejected', 'cancelled'], 
         default: 'pending' 
-    }, // pending-待处理，approved-已批准，rejected-已拒绝
+    }, // pending-待处理，approved-已批准，rejected-已拒绝，cancelled-已取消
     note: { 
         type: String 
     }, // 备注
@@ -33,7 +33,14 @@ const transactionSchema = new mongoose.Schema({
     processedBy: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User' 
-    } // 处理人（管理员）
+    }, // 处理人（管理员）
+    cancelledAt: {
+        type: Date
+    }, // 取消时间
+    cancelledBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    } // 取消人
 });
 
 // 索引
