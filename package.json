@@ -1,7 +1,7 @@
 {
-  "name": "lottery-admin-system",
+  "name": "number-draw-system",
   "version": "1.0.0",
-  "description": "多用户彩票开奖管理系统",
+  "description": "数字开奖管理系统 - 多周期开奖管理平台",
   "scripts": {
     "dev": "node server.js",
     "build": "echo 'Build complete'",
