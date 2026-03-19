@@ -356,23 +356,27 @@ curl -X POST https://your-app.vercel.app/api/admin/archive \
 | `/api/users/:id` | DELETE | 删除用户 |
 | `/api/users/balance` | POST | 调整余额 |
 
-### 资金管理接口 (4个)
+### 资金管理接口 (6个)
 | 接口 | 方法 | 说明 |
 |------|------|------|
 | `/api/transactions` | GET | 交易列表 |
+| `/api/transactions` | PATCH | 审核交易 |
 | `/api/transactions/request` | POST | 提交申请 |
 | `/api/transactions/:id` | GET | 交易详情 |
-| `/api/transactions/:id` | DELETE | 取消交易 |
+| `/api/transactions/:id/approve` | POST | 批准交易 |
+| `/api/transactions/:id/reject` | POST | 拒绝交易 |
 
-### 开奖管理接口 (4个)
+### 开奖管理接口 (5个)
 | 接口 | 方法 | 说明 |
 |------|------|------|
 | `/api/draws` | GET | 开奖列表 |
 | `/api/draws` | POST | 创建开奖 |
 | `/api/draws/daily` | GET | 每日开奖 |
-| `/api/admin/archive` | GET/POST | 数据归档 |
+| `/api/draws/:id` | GET | 开奖详情 |
+| `/api/draws/:id` | PUT | 更新开奖 |
+| `/api/draws/:id` | DELETE | 删除开奖 |
 
-### 投注管理接口 (6个)
+### 投注管理接口 (8个)
 | 接口 | 方法 | 说明 |
 |------|------|------|
 | `/api/bets` | GET | 投注配置 |
@@ -380,13 +384,23 @@ curl -X POST https://your-app.vercel.app/api/admin/archive \
 | `/api/bets/period` | GET | 期号信息 |
 | `/api/bets/history` | GET | 投注历史 |
 | `/api/bets/admin` | GET | 管理员查询 |
+| `/api/bets/:id` | GET | 投注详情 |
 | `/api/bets/:id` | DELETE | 取消投注 |
+| `/api/bets/:id/status` | PATCH | 修改状态 |
 
 ### 定时任务接口 (2个)
 | 接口 | 方法 | 说明 |
 |------|------|------|
 | `/api/cron/check-draws` | GET | 自动开奖 |
 | `/api/cron/compensation` | GET/POST | 补偿机制 |
+
+### 管理员接口 (4个)
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/admin/init` | GET/POST | 初始化 |
+| `/api/admin/archive` | GET/POST | 数据归档 |
+| `/api/admin/verify` | GET | 权限验证 |
+| `/api/admin/stats` | GET | 数据统计 |
 
 ### 支付回调接口 (4个)
 | 接口 | 方法 | 说明 |
@@ -396,14 +410,7 @@ curl -X POST https://your-app.vercel.app/api/admin/archive \
 | `/api/payment/payout/process` | POST | 提现处理 |
 | `/api/payment/payout/callback` | POST | 代付回调 |
 
-### 管理员接口 (3个)
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| `/api/admin/init` | GET/POST | 初始化 |
-| `/api/admin/archive` | GET/POST | 数据归档 |
-| `/api/admin/verify` | GET | 权限验证 |
-
-**总计：28个API接口**
+**总计：38个API接口**
 
 ## 十、快速测试
 

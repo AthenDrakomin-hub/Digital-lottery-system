@@ -79,25 +79,29 @@ pnpm run dev
 | `/api/users/:id` | DELETE | 删除用户（软删除） | 管理员 |
 | `/api/users/balance` | POST | 调整用户余额 | 管理员 |
 
-### 资金管理接口 (4个)
+### 资金管理接口 (6个)
 
 | 接口 | 方法 | 说明 | 权限 |
 |------|------|------|------|
 | `/api/transactions` | GET | 获取交易记录 | 登录 |
+| `/api/transactions` | PATCH | 审核交易 | 管理员 |
 | `/api/transactions/request` | POST | 提交充值/提现申请 | 登录 |
 | `/api/transactions/:id` | GET | 获取交易详情 | 登录 |
-| `/api/transactions/:id` | DELETE | 取消交易 | 登录 |
+| `/api/transactions/:id/approve` | POST | 批准交易 | 管理员 |
+| `/api/transactions/:id/reject` | POST | 拒绝交易 | 管理员 |
 
-### 开奖管理接口 (4个)
+### 开奖管理接口 (5个)
 
 | 接口 | 方法 | 说明 | 权限 |
 |------|------|------|------|
 | `/api/draws` | GET | 获取开奖列表 | 登录 |
 | `/api/draws` | POST | 创建开奖结果 | 管理员 |
 | `/api/draws/daily` | GET | 获取某日开奖预设 | 公开 |
-| `/api/admin/archive` | GET/POST | 数据归档 | 管理员 |
+| `/api/draws/:id` | GET | 获取开奖详情 | 登录 |
+| `/api/draws/:id` | PUT | 更新开奖结果 | 管理员 |
+| `/api/draws/:id` | DELETE | 删除开奖记录 | 管理员 |
 
-### 投注管理接口 (6个)
+### 投注管理接口 (8个)
 
 | 接口 | 方法 | 说明 | 权限 |
 |------|------|------|------|
@@ -106,7 +110,9 @@ pnpm run dev
 | `/api/bets/period` | GET | 获取期号信息 | 公开 |
 | `/api/bets/history` | GET | 获取投注历史 | 登录 |
 | `/api/bets/admin` | GET | 获取所有投注 | 管理员 |
+| `/api/bets/:id` | GET | 获取投注详情 | 登录 |
 | `/api/bets/:id` | DELETE | 取消投注 | 登录 |
+| `/api/bets/:id/status` | PATCH | 修改投注状态 | 管理员 |
 
 ### 定时任务接口 (2个)
 
@@ -114,6 +120,15 @@ pnpm run dev
 |------|------|------|------|
 | `/api/cron/check-draws` | GET | 自动开奖结算 | CRON_SECRET |
 | `/api/cron/compensation` | GET/POST | 补偿机制 | 管理员 |
+
+### 管理员接口 (4个)
+
+| 接口 | 方法 | 说明 | 权限 |
+|------|------|------|------|
+| `/api/admin/init` | GET/POST | 初始化系统 | 内部 |
+| `/api/admin/archive` | GET/POST | 数据归档 | 管理员 |
+| `/api/admin/verify` | GET | 验证管理员权限 | 管理员 |
+| `/api/admin/stats` | GET | 获取统计数据 | 管理员 |
 
 ### 支付回调接口 (4个)
 

@@ -69,6 +69,7 @@ const apiRoutes = {
     '/api/admin/init': './api/admin/init',
     '/api/admin/archive': './api/admin/archive',
     '/api/admin/verify': './api/admin/verify',
+    '/api/admin/stats': './api/admin/stats',
     // 投注管理接口
     '/api/bets': './api/bets/index',
     '/api/bets/period': './api/bets/period',
@@ -156,6 +157,63 @@ app.all('/api/bets/:id', async (req, res) => {
         await handler(vercelReq, res);
     } catch (error) {
         console.error('API错误 [/api/bets/:id]:', error);
+        res.status(500).json({ error: '服务器内部错误' });
+    }
+});
+
+// 处理动态路由（开奖ID）
+app.all('/api/draws/:id', async (req, res) => {
+    const handler = require('./api/draws/[id]');
+    const vercelReq = {
+        ...req,
+        query: { id: req.params.id, ...req.query },
+        body: req.body,
+        headers: req.headers,
+        method: req.method
+    };
+    
+    try {
+        await handler(vercelReq, res);
+    } catch (error) {
+        console.error('API错误 [/api/draws/:id]:', error);
+        res.status(500).json({ error: '服务器内部错误' });
+    }
+});
+
+// 处理交易审核动态路由
+app.all('/api/transactions/:id/:action', async (req, res) => {
+    const handler = require('./api/transactions/[id]/approve');
+    const vercelReq = {
+        ...req,
+        query: { id: req.params.id, action: req.params.action, ...req.query },
+        body: req.body,
+        headers: req.headers,
+        method: req.method
+    };
+    
+    try {
+        await handler(vercelReq, res);
+    } catch (error) {
+        console.error('API错误 [/api/transactions/:id/:action]:', error);
+        res.status(500).json({ error: '服务器内部错误' });
+    }
+});
+
+// 处理投注状态修改动态路由
+app.all('/api/bets/:id/status', async (req, res) => {
+    const handler = require('./api/bets/[id]/status');
+    const vercelReq = {
+        ...req,
+        query: { id: req.params.id, ...req.query },
+        body: req.body,
+        headers: req.headers,
+        method: req.method
+    };
+    
+    try {
+        await handler(vercelReq, res);
+    } catch (error) {
+        console.error('API错误 [/api/bets/:id/status]:', error);
         res.status(500).json({ error: '服务器内部错误' });
     }
 });
