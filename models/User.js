@@ -33,8 +33,7 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-// 索引
-userSchema.index({ username: 1 }, { unique: true });
+// 索引（username已通过unique: true自动创建索引）
 userSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('User', userSchema);

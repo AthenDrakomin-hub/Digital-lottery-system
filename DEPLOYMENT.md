@@ -37,7 +37,13 @@
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/lottery?retryWrites=true&w=majority
 JWT_SECRET=your-random-secret-key-at-least-32-characters-long
 CRON_SECRET=your-random-cron-secret-key
+ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
 ```
+
+**跨域配置说明**：
+- `ALLOWED_ORIGINS`（可选）：限制允许跨域访问的域名，多个域名用逗号分隔
+- 如不设置 `ALLOWED_ORIGINS`，默认允许所有来源（`*`）访问API
+- 生产环境建议设置具体域名，提高安全性
 
 #### 步骤4：部署
 

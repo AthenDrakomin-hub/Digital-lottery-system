@@ -1,5 +1,6 @@
 const dbConnect = require('../../lib/db');
 const Draw = require('../../models/Draw');
+const { setCorsHeaders, handlePreflightRequest } = require('../../lib/cors');
 
 /**
  * 生成随机10位数字字符串（不重复）
@@ -16,13 +17,11 @@ function generateRandomResult() {
 
 module.exports = async (req, res) => {
     // 设置CORS头
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    setCorsHeaders(req, res);
 
     // 处理OPTIONS预检请求
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+    if (handlePreflightRequest(req, res)) {
+        return;
     }
 
     if (req.method !== 'GET') {

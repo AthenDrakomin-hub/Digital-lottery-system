@@ -3,16 +3,15 @@ const User = require('../../models/User');
 const Transaction = require('../../models/Transaction');
 const { extractUserFromRequest } = require('../../lib/auth');
 const adminVerify = require('../admin/verify');
+const { setCorsHeaders, handlePreflightRequest } = require('../../lib/cors');
 
 module.exports = async (req, res) => {
     // 设置CORS头
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, PATCH, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    setCorsHeaders(req, res);
 
     // 处理OPTIONS预检请求
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+    if (handlePreflightRequest(req, res)) {
+        return;
     }
 
     // GET: 获取交易记录

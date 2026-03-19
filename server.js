@@ -8,14 +8,38 @@ const PORT = process.env.DEPLOY_RUN_PORT || 5000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CORS支持
+// CORS支持 - 完整配置
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+    // 允许所有来源（生产环境建议指定具体域名）
+    const allowedOrigins = process.env.ALLOWED_ORIGINS 
+        ? process.env.ALLOWED_ORIGINS.split(',') 
+        : ['*'];
+    
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin || '*');
     }
+    
+    // 允许的HTTP方法
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    
+    // 允许的请求头
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Request-ID');
+    
+    // 允许携带凭证（cookies）
+    res.header('Access-Control-Allow-Credentials', 'true');
+    
+    // 预检请求缓存时间（秒）
+    res.header('Access-Control-Max-Age', '86400');
+    
+    // 暴露给客户端的响应头
+    res.header('Access-Control-Expose-Headers', 'X-Total-Count, X-Page, X-Per-Page');
+    
+    // 处理OPTIONS预检请求
+    if (req.method === 'OPTIONS') {
+        return res.status(204).end();
+    }
+    
     next();
 });
 

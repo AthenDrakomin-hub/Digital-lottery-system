@@ -44,6 +44,21 @@
 - `MONGODB_URI`: MongoDB连接字符串
 - `JWT_SECRET`: JWT签名密钥（随机字符串）
 - `CRON_SECRET`: 定时任务调用密钥
+- `ALLOWED_ORIGINS`: (可选) 允许的跨域来源，多个用逗号分隔，默认允许所有来源
+
+## 跨域支持
+
+系统已内置完整的CORS支持，允许跨域API调用：
+
+- 支持所有HTTP方法（GET、POST、PUT、PATCH、DELETE、OPTIONS）
+- 支持常见请求头（Content-Type、Authorization等）
+- 支持携带凭证（Cookies）
+- 预检请求缓存24小时
+
+**配置允许的域名**（生产环境推荐）：
+```
+ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
+```
 
 ## 本地开发
 

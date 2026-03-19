@@ -1,16 +1,15 @@
 const dbConnect = require('../../lib/db');
 const Draw = require('../../models/Draw');
 const adminVerify = require('../admin/verify');
+const { setCorsHeaders, handlePreflightRequest } = require('../../lib/cors');
 
 module.exports = async (req, res) => {
     // 设置CORS头
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    setCorsHeaders(req, res);
 
     // 处理OPTIONS预检请求
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+    if (handlePreflightRequest(req, res)) {
+        return;
     }
 
     // GET: 获取所有开奖预设（带分页）
