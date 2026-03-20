@@ -18,7 +18,8 @@ export default function LoginPage() {
     if (!authLoading && isLoggedIn) {
       router.push('/client/invest')
     }
-  }, [authLoading, isLoggedIn, router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isLoggedIn])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

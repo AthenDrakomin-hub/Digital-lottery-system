@@ -40,9 +40,10 @@ export default function InvestPage() {
   // 未登录重定向 - 等待加载完成后再判断
   useEffect(() => {
     if (!loading && !isLoggedIn) {
-      router.push('/login')
+      router.push('/client/login')
     }
-  }, [loading, isLoggedIn, router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, isLoggedIn])
 
   // 加载中或未登录时显示
   if (loading || !isLoggedIn) {

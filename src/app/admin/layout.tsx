@@ -43,7 +43,8 @@ export default function AdminLayout({
       }
     }
     checkAuth()
-  }, [pathname, router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
 
   const handleLogout = async () => {
     try {
