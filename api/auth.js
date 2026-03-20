@@ -227,12 +227,6 @@ const handler = async (req, res) => {
 
     try {
         switch (action) {
-            case 'register':
-                if (req.method !== 'POST') {
-                    return res.status(405).json({ error: '方法不允许' });
-                }
-                return await handleRegister(req, res);
-
             case 'login':
                 if (req.method !== 'POST') {
                     return res.status(405).json({ error: '方法不允许' });
