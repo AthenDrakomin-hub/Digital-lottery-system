@@ -962,52 +962,84 @@
                 const res = await fetch('/api/admin?action=stats', { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
                 if (res.ok) {
-                    // 修复：匹配API返回的嵌套数据结构
+                    // 统计数据
                     document.getElementById('statUsers').textContent = data.users?.total || 0;
                     document.getElementById('statBets').textContent = data.bets?.total || 0;
-                    document.getElementById('statAmount').textContent = `¥${(data.bets?.amount || 0).toFixed(2)}`;
+                    // 今日交易额 = 充值+提现
+                    const transAmount = (data.transactions?.depositAmount || 0) + (data.transactions?.withdrawAmount || 0);
+                    document.getElementById('statAmount').textContent = `¥${transAmount.toLocaleString()}`;
                     document.getElementById('statPending').textContent = data.transactions?.pending || 0;
-                    document.getElementById('statBalance').textContent = `¥${(data.users?.totalBalance || 0).toFixed(2)}`;
+                    document.getElementById('statBalance').textContent = `¥${(data.users?.totalBalance || 0).toLocaleString()}`;
                 }
                 
-                // 最新开奖 - 获取三个周期的数据
+                // 最新开奖 - 使用daily接口获取今日数据
                 const date = new Date().toISOString().split('T')[0];
                 let html = '<table class="data-table"><tr><th>周期</th><th>最新期号</th><th>结果</th><th>冠军</th><th>状态</th></tr>';
                 
                 try {
                     const [d5, d10, d15] = await Promise.all([
-                        fetch(`/api/system?type=draws&date=${date}&interval=5&limit=1`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
-                        fetch(`/api/system?type=draws&date=${date}&interval=10&limit=1`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
-                        fetch(`/api/system?type=draws&date=${date}&interval=15&limit=1`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
+                        fetch(`/api/system?type=draws&action=daily&date=${date}&interval=5`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+                        fetch(`/api/system?type=draws&action=daily&date=${date}&interval=10`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+                        fetch(`/api/system?type=draws&action=daily&date=${date}&interval=15`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
                     ]);
                     
                     const intervals = [
-                        { label: '5分钟', data: d5 },
-                        { label: '10分钟', data: d10 },
-                        { label: '15分钟', data: d15 }
+                        { label: '5分钟', interval: 5, data: d5 },
+                        { label: '10分钟', interval: 10, data: d10 },
+                        { label: '15分钟', interval: 15, data: d15 }
                     ];
                     
+                    const now = new Date();
+                    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+                    
                     for (const item of intervals) {
-                        if (item.data.draws && item.data.draws.length > 0) {
-                            // 找最新已开奖的记录
-                            const settled = item.data.draws.find(d => d.status === 'settled') || item.data.draws[item.data.draws.length - 1];
-                            const statusBadge = settled.status === 'settled' ? 
-                                '<span class="badge badge-success">已开奖</span>' : 
-                                settled.status === 'drawn' ? 
-                                '<span class="badge badge-warning">待结算</span>' : 
-                                '<span class="badge badge-secondary">待开奖</span>';
-                            html += `<tr>
-                                <td>${item.label}</td>
-                                <td>第${settled.period + 1}期</td>
-                                <td style="font-family:monospace;font-size:16px">${settled.result || '-'}</td>
-                                <td style="font-size:18px;font-weight:bold;color:#dc3545">${settled.result ? settled.result[0] : '-'}</td>
-                                <td>${statusBadge}</td>
-                            </tr>`;
+                        const draws = item.data.draws || [];
+                        if (draws.length > 0) {
+                            // 计算当前应该到第几期
+                            const currentPeriod = Math.floor(currentMinutes / item.interval);
+                            
+                            // 找到最新已开奖的
+                            let latestDraw = null;
+                            for (let i = draws.length - 1; i >= 0; i--) {
+                                if (draws[i].result) {
+                                    latestDraw = draws[i];
+                                    break;
+                                }
+                            }
+                            
+                            // 如果没有已开奖的，取当前期
+                            if (!latestDraw) {
+                                latestDraw = draws[Math.min(currentPeriod, draws.length - 1)];
+                            }
+                            
+                            if (latestDraw) {
+                                const periodNum = latestDraw.period + 1;
+                                const periodId = `${date.replace(/-/g, '')}${String(periodNum).padStart(3, '0')}`;
+                                const statusBadge = latestDraw.status === 'settled' ? 
+                                    '<span class="badge badge-success">已开奖</span>' : 
+                                    latestDraw.result ? 
+                                    '<span class="badge badge-info">已开奖</span>' : 
+                                    '<span class="badge badge-secondary">待开奖</span>';
+                                    
+                                const result = latestDraw.result || '-';
+                                const champion = latestDraw.result ? latestDraw.result[0] : '-';
+                                
+                                html += `<tr>
+                                    <td>${item.label}</td>
+                                    <td style="font-family:monospace">${periodId}</td>
+                                    <td style="font-family:monospace;font-size:16px;letter-spacing:2px">${result}</td>
+                                    <td style="font-size:18px;font-weight:bold;color:#d4af37">${champion}</td>
+                                    <td>${statusBadge}</td>
+                                </tr>`;
+                            } else {
+                                html += `<tr><td>${item.label}</td><td colspan="4">暂无数据</td></tr>`;
+                            }
                         } else {
                             html += `<tr><td>${item.label}</td><td colspan="4">暂无数据</td></tr>`;
                         }
                     }
                 } catch (e) {
+                    console.error('获取开奖数据失败:', e);
                     html += '<tr><td colspan="5">加载失败</td></tr>';
                 }
                 

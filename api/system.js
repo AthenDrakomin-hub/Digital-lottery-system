@@ -120,15 +120,16 @@ function getTotalPeriods(interval) {
 // ===== 开奖管理处理函数 =====
 
 async function handleDrawsList(req, res) {
-    const { date, interval, page = 1, limit = 50 } = req.query;
+    const { date, interval, page = 1, limit = 50, sort = 'desc' } = req.query;
     
     let query = {};
     if (date) query.date = date;
     if (interval) query.interval = parseInt(interval);
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
+    const sortOrder = sort === 'asc' ? 1 : -1;
     const draws = await Draw.find(query)
-        .sort({ date: -1, interval: 1, period: 1 })
+        .sort({ date: -1, interval: 1, period: sortOrder })
         .skip(skip)
         .limit(parseInt(limit));
 
