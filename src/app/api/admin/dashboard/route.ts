@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import User from '@/models/User'
 import Transaction from '@/models/Transaction'
 import LotteryResult from '@/models/LotteryResult'
-import { connectDB } from '@/lib/mongodb'
+import dbConnect from '@/lib/db'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: '未授權' }, { status: 401 })
     }
 
-    await connectDB()
+    await dbConnect()
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)

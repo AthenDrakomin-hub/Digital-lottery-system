@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import Admin from '@/models/Admin'
-import { connectDB } from '@/lib/mongodb'
+import dbConnect from '@/lib/db'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 export async function POST(request: NextRequest) {
   try {
-    await connectDB()
+    await dbConnect()
     
     const { username, password } = await request.json()
 
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find admin
-    const admin = await Admin.findOne({ username })
+    const admin = await Admin.findOne({ username: username.trim() })
     if (!admin) {
       return NextResponse.json({ success: false, error: '用戶名或密碼錯誤' }, { status: 401 })
     }
@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({
       success: true,
+      token,
       admin: {
         id: admin._id,
         username: admin.username,
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    await connectDB()
+    await dbConnect()
     
     const token = request.cookies.get('admin_token')?.value
     if (!token) {

@@ -19,12 +19,23 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 // 获取当前用户信息
 export async function GET(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    await dbConnect()
+    
+    // 优先从 cookie 获取 token
+    let token = req.cookies.get('user_token')?.value
+    
+    // 如果没有 cookie，尝试从 header 获取
+    if (!token) {
+      const authHeader = req.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1]
+      }
+    }
+    
+    if (!token) {
       return NextResponse.json({ success: false, error: '未登录' }, { status: 401 })
     }
 
-    const token = authHeader.split(' ')[1]
     let decoded: JwtPayload
     
     try {
@@ -33,7 +44,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Token无效或已过期' }, { status: 401 })
     }
 
-    await dbConnect()
     const user = await User.findById(decoded.id || decoded.userId).select('-password -idCard')
     
     if (!user || !user.isActive) {
@@ -95,7 +105,7 @@ export async function POST(req: NextRequest) {
       { expiresIn: '7d' }
     )
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       token,
       user: {
@@ -108,13 +118,26 @@ export async function POST(req: NextRequest) {
         email: user.email,
       }
     })
+
+    // 设置 cookie
+    response.cookies.set('user_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7天
+      path: '/',
+    })
+
+    return response
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json({ success: false, error: '服务器错误' }, { status: 500 })
   }
 }
 
-// 登出（客户端清除Token即可）
+// 登出
 export async function DELETE() {
-  return NextResponse.json({ success: true, message: '已登出' })
+  const response = NextResponse.json({ success: true, message: '已登出' })
+  response.cookies.delete('user_token')
+  return response
 }

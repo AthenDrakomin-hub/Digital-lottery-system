@@ -2,11 +2,11 @@ import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
 import Admin from '@/models/Admin'
 import Config from '@/models/Config'
-import { connectDB } from '@/lib/mongodb'
+import dbConnect from '@/lib/db'
 
 async function initAdmin() {
   try {
-    await connectDB()
+    await dbConnect()
 
     // Check if admin exists
     const existingAdmin = await Admin.findOne({ username: 'admin' })

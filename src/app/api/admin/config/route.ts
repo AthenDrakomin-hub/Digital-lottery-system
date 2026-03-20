@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import Config from '@/models/Config'
-import { connectDB } from '@/lib/mongodb'
+import dbConnect from '@/lib/db'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
@@ -25,7 +25,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, error: '未授權' }, { status: 401 })
     }
 
-    await connectDB()
+    await dbConnect()
 
     const body = await request.json()
 

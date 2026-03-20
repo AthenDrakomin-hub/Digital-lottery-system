@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Config from '@/models/Config'
-import { connectDB } from '@/lib/mongodb'
+import dbConnect from '@/lib/db'
 
 // 获取配置
 export async function GET() {
   try {
-    await connectDB()
+    await dbConnect()
 
     let config = await Config.findOne()
     

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import User from '@/models/User'
-import { connectDB } from '@/lib/mongodb'
+import dbConnect from '@/lib/db'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: '未授權' }, { status: 401 })
     }
 
-    await connectDB()
+    await dbConnect()
 
     const users = await User.find().sort({ createdAt: -1 }).select('-password')
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '未授權' }, { status: 401 })
     }
 
-    await connectDB()
+    await dbConnect()
 
     const { username, password, realName, phone, email, balance } = await request.json()
 

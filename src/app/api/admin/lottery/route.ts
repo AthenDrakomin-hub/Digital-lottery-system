@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import LotteryResult from '@/models/LotteryResult'
-import { connectDB } from '@/lib/mongodb'
+import dbConnect from '@/lib/db'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: '未授權' }, { status: 401 })
     }
 
-    await connectDB()
+    await dbConnect()
 
     const { searchParams } = new URL(request.url)
     const date = searchParams.get('date') || new Date().toISOString().split('T')[0]
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '未授權' }, { status: 401 })
     }
 
-    await connectDB()
+    await dbConnect()
 
     const { date, cycle, result } = await request.json()
 
