@@ -292,7 +292,7 @@ export default function LotteryPage() {
                     <tbody>
                       {cycleDraws.map((draw) => (
                         <tr key={draw._id} className="text-gray-300 border-b border-gray-700/50 hover:bg-gray-700/30">
-                          <td className="px-6 py-3 font-medium">#{draw.period}</td>
+                          <td className="px-6 py-3 font-medium">#{String(draw.date.replace(/-/g, '')).padStart(8, '0')}{String(draw.interval).padStart(2, '0')}{String(draw.period).padStart(3, '0')}</td>
                           <td className="px-6 py-3">
                             {renderResult(draw.result)}
                           </td>

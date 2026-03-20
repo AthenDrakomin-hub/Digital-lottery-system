@@ -305,7 +305,7 @@ export default function InvestPage() {
           <div className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-2xl p-8 max-w-md w-full mx-4 text-center border border-green-500/30 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="text-4xl mb-4">🎰</div>
             <h2 className="text-2xl font-bold text-white mb-2">
-              第 {latestDraw.period} 期開獎結果
+              第 {latestDraw.date.replace(/-/g, '')}{String(latestDraw.interval).padStart(2, '0')}{String(latestDraw.period).padStart(3, '0')} 期開獎結果
             </h2>
             <p className="text-gray-400 text-sm mb-6">{latestDraw.date}</p>
             
