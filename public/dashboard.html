@@ -680,6 +680,116 @@
                         <tbody id="adminsBody"></tbody>
                     </table>
                 </div>
+
+                <!-- 客户端接口调试面板 -->
+                <div class="card">
+                    <h3>🔧 客户端接口调试面板 <button class="btn btn-secondary btn-sm" style="float:right" onclick="clearApiDebugPanel()">清空</button></h3>
+                    <p style="color:#666;font-size:12px;margin-bottom:15px">测试客户端API接口，查看请求参数和响应结果。支持投注、查询期号、历史记录等接口。</p>
+                    
+                    <div style="display:grid;grid-template-columns:300px 1fr;gap:20px">
+                        <!-- 左侧：接口列表 -->
+                        <div>
+                            <h4 style="margin:0 0 10px 0;color:#333;font-size:14px">API 接口列表</h4>
+                            <div style="border:1px solid #e0e0e0;border-radius:4px;max-height:400px;overflow-y:auto">
+                                <!-- 认证接口 -->
+                                <div style="background:#f8f9fa;padding:8px 12px;font-weight:600;border-bottom:1px solid #e0e0e0">🔐 认证接口</div>
+                                <div class="api-item" style="padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer" onclick="selectApi('auth-login')">
+                                    <div style="font-weight:500;color:#333">POST /api/auth?action=login</div>
+                                    <div style="font-size:11px;color:#888">用户登录</div>
+                                </div>
+                                <div class="api-item" style="padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer" onclick="selectApi('auth-register')">
+                                    <div style="font-weight:500;color:#333">POST /api/auth?action=register</div>
+                                    <div style="font-size:11px;color:#888">用户注册</div>
+                                </div>
+                                <div class="api-item" style="padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer" onclick="selectApi('auth-me')">
+                                    <div style="font-weight:500;color:#333">GET /api/auth?action=me</div>
+                                    <div style="font-size:11px;color:#888">获取当前用户信息</div>
+                                </div>
+                                
+                                <!-- 期号接口 -->
+                                <div style="background:#f8f9fa;padding:8px 12px;font-weight:600;border-bottom:1px solid #e0e0e0">⏰ 期号接口</div>
+                                <div class="api-item" style="padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer" onclick="selectApi('bets-period')">
+                                    <div style="font-weight:500;color:#333">GET /api/system?type=bets&action=period</div>
+                                    <div style="font-size:11px;color:#888">获取当前期号信息</div>
+                                </div>
+                                
+                                <!-- 投注接口 -->
+                                <div style="background:#f8f9fa;padding:8px 12px;font-weight:600;border-bottom:1px solid #e0e0e0">🎫 投注接口</div>
+                                <div class="api-item" style="padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer" onclick="selectApi('bets-config')">
+                                    <div style="font-weight:500;color:#333">GET /api/system?type=bets</div>
+                                    <div style="font-size:11px;color:#888">获取投注配置和赔率表</div>
+                                </div>
+                                <div class="api-item" style="padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer" onclick="selectApi('bets-place')">
+                                    <div style="font-weight:500;color:#333">POST /api/system?type=bets</div>
+                                    <div style="font-size:11px;color:#888">提交投注</div>
+                                </div>
+                                <div class="api-item" style="padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer" onclick="selectApi('bets-history')">
+                                    <div style="font-weight:500;color:#333">GET /api/system?type=bets&action=history</div>
+                                    <div style="font-size:11px;color:#888">获取投注历史</div>
+                                </div>
+                                
+                                <!-- 开奖接口 -->
+                                <div style="background:#f8f9fa;padding:8px 12px;font-weight:600;border-bottom:1px solid #e0e0e0">🎲 开奖接口</div>
+                                <div class="api-item" style="padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer" onclick="selectApi('draws-daily')">
+                                    <div style="font-weight:500;color:#333">GET /api/system?type=draws&action=daily</div>
+                                    <div style="font-size:11px;color:#888">获取每日开奖数据</div>
+                                </div>
+                                <div class="api-item" style="padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer" onclick="selectApi('draws-list')">
+                                    <div style="font-weight:500;color:#333">GET /api/system?type=draws&action=list</div>
+                                    <div style="font-size:11px;color:#888">获取开奖记录列表</div>
+                                </div>
+                                
+                                <!-- 用户接口 -->
+                                <div style="background:#f8f9fa;padding:8px 12px;font-weight:600;border-bottom:1px solid #e0e0e0">👤 用户接口</div>
+                                <div class="api-item" style="padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer" onclick="selectApi('user-balance')">
+                                    <div style="font-weight:500;color:#333">GET /api/user?action=balance</div>
+                                    <div style="font-size:11px;color:#888">获取用户余额</div>
+                                </div>
+                                <div class="api-item" style="padding:10px 12px;cursor:pointer" onclick="selectApi('user-transactions')">
+                                    <div style="font-weight:500;color:#333">GET /api/user?action=transactions</div>
+                                    <div style="font-size:11px;color:#888">获取交易记录</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 右侧：请求和响应 -->
+                        <div>
+                            <div style="display:flex;gap:10px;margin-bottom:15px">
+                                <select id="apiMethod" class="form-control" style="width:100px" onchange="updateApiUrl()">
+                                    <option value="GET">GET</option>
+                                    <option value="POST">POST</option>
+                                    <option value="PUT">PUT</option>
+                                    <option value="DELETE">DELETE</option>
+                                </select>
+                                <input type="text" id="apiUrl" class="form-control" placeholder="输入API路径，如 /api/system?type=bets&action=period" style="flex:1">
+                                <button class="btn btn-primary" onclick="sendApiRequest()">🚀 发送</button>
+                            </div>
+                            
+                            <!-- 参数区域 -->
+                            <div id="apiParamsArea" style="margin-bottom:15px">
+                                <h4 style="margin:0 0 10px 0;color:#333;font-size:14px">请求参数</h4>
+                                <div style="background:#1e1e1e;color:#d4d4d4;padding:15px;border-radius:4px;font-family:monospace;font-size:13px">
+                                    <textarea id="apiRequestBody" style="width:100%;height:120px;background:transparent;border:none;color:#d4d4d4;font-family:monospace;font-size:13px;resize:vertical" placeholder='{"key": "value"}'></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- 响应区域 -->
+                            <div>
+                                <h4 style="margin:0 0 10px 0;color:#333;font-size:14px">响应结果 <span id="apiResponseStatus" style="font-size:12px;font-weight:normal"></span></h4>
+                                <div style="background:#1e1e1e;color:#d4d4d4;padding:15px;border-radius:4px;font-family:monospace;font-size:13px;max-height:300px;overflow:auto">
+                                    <pre id="apiResponse" style="margin:0;white-space:pre-wrap;word-break:break-all">// 选择左侧接口或输入URL，点击发送按钮测试API</pre>
+                                </div>
+                            </div>
+                            
+                            <!-- 快捷操作 -->
+                            <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap">
+                                <button class="btn btn-secondary btn-sm" onclick="copyApiResponse()">📋 复制响应</button>
+                                <button class="btn btn-secondary btn-sm" onclick="formatApiResponse()">✨ 格式化JSON</button>
+                                <button class="btn btn-info btn-sm" onclick="testWithRealUser()">🧪 用测试用户登录</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2629,6 +2739,184 @@
         // 工具函数
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
         function logout() { localStorage.removeItem('token'); location.href = 'login.html'; }
+
+        // ========== API调试面板 ==========
+        let apiDebugToken = '';
+        
+        // API配置
+        const apiConfigs = {
+            'auth-login': { method: 'POST', url: '/api/auth?action=login', body: { username: 'testuser', password: '123456' } },
+            'auth-register': { method: 'POST', url: '/api/auth?action=register', body: { username: 'newuser', password: '123456' } },
+            'auth-me': { method: 'GET', url: '/api/auth?action=me' },
+            'bets-period': { method: 'GET', url: '/api/system?type=bets&action=period&interval=5' },
+            'bets-config': { method: 'GET', url: '/api/system?type=bets&interval=5' },
+            'bets-place': { method: 'POST', url: '/api/system?type=bets', body: { date: new Date().toISOString().split('T')[0], interval: 5, period: 0, championNumbers: [1, 3, 5] } },
+            'bets-history': { method: 'GET', url: '/api/system?type=bets&action=history&page=1&limit=10' },
+            'draws-daily': { method: 'GET', url: '/api/system?type=draws&action=daily&date=' + new Date().toISOString().split('T')[0] + '&interval=5' },
+            'draws-list': { method: 'GET', url: '/api/system?type=draws&action=list&page=1&limit=10' },
+            'user-balance': { method: 'GET', url: '/api/user?action=balance' },
+            'user-transactions': { method: 'GET', url: '/api/user?action=transactions&page=1&limit=10' }
+        };
+
+        function selectApi(apiId) {
+            const config = apiConfigs[apiId];
+            if (!config) return;
+            
+            // 高亮选中项
+            document.querySelectorAll('.api-item').forEach(item => item.style.background = '');
+            event.currentTarget.style.background = '#e8f4fd';
+            
+            // 填充表单
+            document.getElementById('apiMethod').value = config.method;
+            document.getElementById('apiUrl').value = config.url;
+            
+            if (config.body) {
+                document.getElementById('apiRequestBody').value = JSON.stringify(config.body, null, 2);
+            } else {
+                document.getElementById('apiRequestBody').value = '';
+            }
+        }
+
+        function updateApiUrl() {
+            // 可以在这里添加URL更新逻辑
+        }
+
+        async function sendApiRequest() {
+            const method = document.getElementById('apiMethod').value;
+            const url = document.getElementById('apiUrl').value;
+            const bodyText = document.getElementById('apiRequestBody').value.trim();
+            
+            if (!url) {
+                alert('请输入API路径');
+                return;
+            }
+            
+            document.getElementById('apiResponse').textContent = '请求中...';
+            document.getElementById('apiResponseStatus').textContent = '';
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                
+                // 添加认证头
+                const useToken = apiDebugToken || token;
+                if (useToken) {
+                    options.headers['Authorization'] = `Bearer ${useToken}`;
+                }
+                
+                // 添加请求体
+                if (['POST', 'PUT', 'PATCH'].includes(method) && bodyText) {
+                    try {
+                        options.body = bodyText;
+                    } catch (e) {
+                        document.getElementById('apiResponse').textContent = '请求体JSON格式错误: ' + e.message;
+                        return;
+                    }
+                }
+                
+                const startTime = Date.now();
+                const res = await fetch(url, options);
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                const contentType = res.headers.get('content-type') || '';
+                let data;
+                if (contentType.includes('application/json')) {
+                    data = await res.json();
+                } else {
+                    data = await res.text();
+                }
+                
+                // 显示状态
+                const statusEl = document.getElementById('apiResponseStatus');
+                statusEl.innerHTML = `<span style="color:${res.ok ? '#28a745' : '#dc3545'}">HTTP ${res.status}</span> | 耗时: ${duration}ms`;
+                
+                // 显示响应
+                if (typeof data === 'object') {
+                    document.getElementById('apiResponse').textContent = JSON.stringify(data, null, 2);
+                } else {
+                    document.getElementById('apiResponse').textContent = data;
+                }
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = '请求失败: ' + e.message;
+                document.getElementById('apiResponseStatus').innerHTML = '<span style="color:#dc3545">网络错误</span>';
+            }
+        }
+
+        function copyApiResponse() {
+            const text = document.getElementById('apiResponse').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('已复制到剪贴板');
+            }).catch(() => {
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('已复制到剪贴板');
+            });
+        }
+
+        function formatApiResponse() {
+            try {
+                const text = document.getElementById('apiResponse').textContent;
+                const json = JSON.parse(text);
+                document.getElementById('apiResponse').textContent = JSON.stringify(json, null, 2);
+            } catch (e) {
+                alert('响应不是有效的JSON格式');
+            }
+        }
+
+        async function testWithRealUser() {
+            // 创建一个测试用户并登录
+            const testUsername = 'testuser_' + Date.now().toString(36);
+            const testPassword = 'Test123456';
+            
+            try {
+                // 先注册
+                const regRes = await fetch('/api/auth?action=register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: testUsername, password: testPassword })
+                });
+                const regData = await regRes.json();
+                
+                if (!regRes.ok && !regData.error?.includes('已存在')) {
+                    alert('注册失败: ' + (regData.error || '未知错误'));
+                    return;
+                }
+                
+                // 登录
+                const loginRes = await fetch('/api/auth?action=login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: testUsername, password: testPassword })
+                });
+                const loginData = await loginRes.json();
+                
+                if (loginRes.ok && loginData.token) {
+                    apiDebugToken = loginData.token;
+                    alert(`测试用户登录成功！\n用户名: ${testUsername}\n密码: ${testPassword}\n\nToken已保存，后续请求将使用此Token`);
+                    document.getElementById('apiResponse').textContent = JSON.stringify(loginData, null, 2);
+                } else {
+                    alert('登录失败: ' + (loginData.error || '未知错误'));
+                }
+            } catch (e) {
+                alert('操作失败: ' + e.message);
+            }
+        }
+
+        function clearApiDebugPanel() {
+            document.getElementById('apiUrl').value = '';
+            document.getElementById('apiRequestBody').value = '';
+            document.getElementById('apiResponse').textContent = '// 选择左侧接口或输入URL，点击发送按钮测试API';
+            document.getElementById('apiResponseStatus').textContent = '';
+            document.querySelectorAll('.api-item').forEach(item => item.style.background = '');
+        }
     </script>
 </body>
 </html>
