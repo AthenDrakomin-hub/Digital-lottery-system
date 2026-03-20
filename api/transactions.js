@@ -44,7 +44,7 @@ async function handleList(req, res) {
         return res.status(401).json({ error: '未授权，请先登录' });
     }
 
-    const { page = 1, limit = 20, type, status, userId } = req.query;
+    const { page = 1, limit = 20, type, status, userId, user } = req.query;
 
     // 构建查询条件
     let query = {};
@@ -55,7 +55,24 @@ async function handleList(req, res) {
         query.userId = userData.id;
     } else {
         // 管理员可以查看指定用户的交易记录
-        if (userId) {
+        if (user && !userId) {
+            // 支持用户名搜索
+            const userDoc = await User.findOne({ username: { $regex: user, $options: 'i' } });
+            if (userDoc) {
+                query.userId = userDoc._id;
+            } else {
+                // 用户不存在，返回空结果
+                return res.json({
+                    transactions: [],
+                    pagination: {
+                        page: parseInt(page),
+                        limit: parseInt(limit),
+                        total: 0,
+                        pages: 0
+                    }
+                });
+            }
+        } else if (userId) {
             query.userId = userId;
         }
     }

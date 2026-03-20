@@ -409,11 +409,24 @@ async function handleBetsAdmin(req, res) {
     const admin = await verifyAdmin(req);
     if (!admin) return res.status(401).json({ error: '需要管理员权限' });
 
-    const { page = 1, limit = 20, status, date, userId } = req.query;
+    const { page = 1, limit = 20, status, date, userId, user, interval } = req.query;
     let query = {};
     if (status) query.status = status;
     if (date) query.date = date;
-    if (userId) query.userId = userId;
+    if (interval) query.interval = parseInt(interval);
+
+    // 支持用户名搜索
+    if (user && !userId) {
+        const userDoc = await User.findOne({ username: { $regex: user, $options: 'i' } });
+        if (userDoc) {
+            query.userId = userDoc._id;
+        } else {
+            // 用户不存在，返回空结果
+            return res.json({ bets: [], pagination: { page: parseInt(page), limit: parseInt(limit), total: 0, pages: 0 } });
+        }
+    } else if (userId) {
+        query.userId = userId;
+    }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const bets = await Bet.find(query).populate('userId', 'username').sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));

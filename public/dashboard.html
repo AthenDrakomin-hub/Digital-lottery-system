@@ -211,13 +211,21 @@
             <div id="draws" class="tab-content">
                 <div class="card">
                     <div class="toolbar">
+                        <input type="text" id="drawPeriodSearch" placeholder="期号搜索" style="width:120px">
                         <input type="date" id="drawDate">
                         <select id="drawInterval">
                             <option value="5">5分钟期</option>
                             <option value="10">10分钟期</option>
                             <option value="15">15分钟期</option>
                         </select>
+                        <select id="drawStatus">
+                            <option value="">全部状态</option>
+                            <option value="settled">已结算</option>
+                            <option value="drawn">已开奖</option>
+                            <option value="pending">待开奖</option>
+                        </select>
                         <button class="btn btn-primary btn-sm" onclick="searchDraws()">查询</button>
+                        <button class="btn btn-secondary btn-sm" onclick="resetDrawSearch()">重置</button>
                     </div>
                     <table class="data-table">
                         <thead>
@@ -243,6 +251,7 @@
             <div id="bets" class="tab-content">
                 <div class="card">
                     <div class="toolbar">
+                        <input type="text" id="betUserSearch" placeholder="用户名" style="width:100px">
                         <input type="date" id="betDate">
                         <select id="betInterval">
                             <option value="">全部周期</option>
@@ -257,6 +266,7 @@
                             <option value="lost">未中奖</option>
                         </select>
                         <button class="btn btn-primary btn-sm" onclick="searchBets()">查询</button>
+                        <button class="btn btn-secondary btn-sm" onclick="resetBetsSearch()">重置</button>
                     </div>
                     <table class="data-table">
                         <thead>
@@ -282,6 +292,7 @@
                 <div class="card">
                     <h3>交易记录</h3>
                     <div class="toolbar">
+                        <input type="text" id="transUserSearch" placeholder="用户名" style="width:100px">
                         <select id="transType">
                             <option value="">全部类型</option>
                             <option value="deposit">充值</option>
@@ -297,6 +308,7 @@
                             <option value="cancelled">已取消</option>
                         </select>
                         <button class="btn btn-primary btn-sm" onclick="searchTransactions()">查询</button>
+                        <button class="btn btn-secondary btn-sm" onclick="resetTransSearch()">重置</button>
                     </div>
                     <table class="data-table">
                         <thead>
@@ -887,9 +899,21 @@
             loadDraws();
         }
 
+        function resetDrawSearch() {
+            document.getElementById('drawPeriodSearch').value = '';
+            document.getElementById('drawDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('drawInterval').value = '5';
+            document.getElementById('drawStatus').value = '';
+            drawsPageState.page = 1;
+            loadDraws();
+        }
+
         async function loadDraws() {
             const date = document.getElementById('drawDate').value;
             const interval = document.getElementById('drawInterval').value;
+            const periodSearch = document.getElementById('drawPeriodSearch').value.trim();
+            const statusFilter = document.getElementById('drawStatus').value;
+            
             if (!date) return;
 
             try {
@@ -898,8 +922,30 @@
                 const data = await res.json();
                 
                 // 保存数据到分页状态
-                drawsPageState.data = data.draws || [];
-                drawsPageState.total = drawsPageState.data.length;
+                let allData = data.draws || [];
+                
+                // 根据期号搜索过滤
+                if (periodSearch) {
+                    const periodNum = parseInt(periodSearch);
+                    if (!isNaN(periodNum)) {
+                        allData = allData.filter(d => d.period + 1 === periodNum);
+                    } else {
+                        // 支持完整期号格式如 20260320001
+                        const dateStr = date.replace(/-/g, '');
+                        allData = allData.filter(d => {
+                            const fullPeriodId = `${dateStr}${String(d.period + 1).padStart(3, '0')}`;
+                            return fullPeriodId.includes(periodSearch);
+                        });
+                    }
+                }
+                
+                // 根据状态过滤
+                if (statusFilter) {
+                    allData = allData.filter(d => d.status === statusFilter);
+                }
+                
+                drawsPageState.data = allData;
+                drawsPageState.total = allData.length;
                 drawsPageState.page = 1;
                 
                 // 渲染当前页
@@ -1096,7 +1142,17 @@
             loadBets();
         }
 
+        function resetBetsSearch() {
+            document.getElementById('betUserSearch').value = '';
+            document.getElementById('betDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('betInterval').value = '';
+            document.getElementById('betStatus').value = '';
+            betsPageState.page = 1;
+            loadBets();
+        }
+
         async function loadBets() {
+            const userSearch = document.getElementById('betUserSearch').value.trim();
             const date = document.getElementById('betDate').value;
             const interval = document.getElementById('betInterval').value;
             const status = document.getElementById('betStatus').value;
@@ -1104,6 +1160,7 @@
             const params = new URLSearchParams();
             params.append('page', betsPageState.page);
             params.append('limit', betsPageState.pageSize);
+            if (userSearch) params.append('user', userSearch);
             if (date) params.append('date', date);
             if (interval) params.append('interval', interval);
             if (status) params.append('status', status);
@@ -1252,13 +1309,23 @@
             loadTransactions();
         }
 
+        function resetTransSearch() {
+            document.getElementById('transUserSearch').value = '';
+            document.getElementById('transType').value = '';
+            document.getElementById('transStatus').value = '';
+            transPageState.page = 1;
+            loadTransactions();
+        }
+
         async function loadTransactions() {
             const params = new URLSearchParams();
+            const userSearch = document.getElementById('transUserSearch').value.trim();
             const type = document.getElementById('transType').value;
             const status = document.getElementById('transStatus').value;
             
             params.append('page', transPageState.page);
             params.append('limit', transPageState.pageSize);
+            if (userSearch) params.append('user', userSearch);
             if (type) params.append('type', type);
             if (status) params.append('status', status);
 
