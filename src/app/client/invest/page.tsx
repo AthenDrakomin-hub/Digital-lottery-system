@@ -100,7 +100,7 @@ export default function InvestPage() {
   // 获取期号状态
   const fetchPeriodStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/period/status?cycle=5', { credentials: 'include' })
+      const res = await fetch('/api/config?period=true&cycle=5', { credentials: 'include' })
       const data = await res.json()
       if (data.success) {
         setPeriodStatus(data.data)

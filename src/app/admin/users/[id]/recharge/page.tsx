@@ -30,7 +30,7 @@ export default function RechargePage() {
 
   const fetchUser = async () => {
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await fetch(`/api/users?id=${userId}`, {
         credentials: 'include',
       })
       const data = await res.json()
@@ -57,12 +57,12 @@ export default function RechargePage() {
     }
 
     try {
-      const res = await fetch(`/api/admin/users/${userId}/recharge`, {
+      const res = await fetch('/api/bet?type=recharge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          amount: type === 'withdraw' ? -amountNum : amountNum, 
-          type,
+          userId,
+          amount: type === 'withdraw' ? -amountNum : amountNum,
           remark 
         }),
         credentials: 'include',
@@ -128,7 +128,7 @@ export default function RechargePage() {
         <form 
           onSubmit={handleSubmit} 
           className="space-y-6"
-          action={`/api/admin/users/${userId}/recharge`}
+          action={`/api/bet?type=recharge`}
           method="post"
         >
           <div>

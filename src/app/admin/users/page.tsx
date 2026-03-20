@@ -26,7 +26,7 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch('/api/users', {
         credentials: 'include',
       })
       const data = await res.json()
@@ -43,7 +43,7 @@ export default function UsersPage() {
   const handleToggleStatus = async (userId: string, currentStatus: string) => {
     const newStatus = currentStatus === 'active' ? 'disabled' : 'active'
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await fetch(`/api/users?id=${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),

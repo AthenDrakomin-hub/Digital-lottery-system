@@ -34,7 +34,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/admin/dashboard', {
+        const res = await fetch('/api/config?dashboard=true', {
           credentials: 'include',
         })
         const data = await res.json()

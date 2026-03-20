@@ -38,7 +38,7 @@ export default function RecordsPage() {
         ...(filter !== 'all' && { type: filter }),
       })
 
-      const res = await fetch(`/api/admin/records?${params}`, {
+      const res = await fetch(`/api/transactions?${params}`, {
         credentials: 'include',
       })
       const data = await res.json()

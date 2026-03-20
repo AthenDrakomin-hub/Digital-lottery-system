@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import Transaction from '@/models/Transaction'
 import dbConnect from '@/lib/db'
+import Transaction from '@/models/Transaction'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 async function verifyAdmin(request: NextRequest) {
   const token = request.cookies.get('admin_token')?.value
   if (!token) return null
-  
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; role: string }
     if (decoded.role !== 'admin') return null
@@ -18,19 +17,25 @@ async function verifyAdmin(request: NextRequest) {
   }
 }
 
+/**
+ * 交易管理 API（管理员）
+ * 
+ * GET /api/transactions - 获取交易记录
+ */
 export async function GET(request: NextRequest) {
   try {
+    await dbConnect()
     const admin = await verifyAdmin(request)
     if (!admin) {
       return NextResponse.json({ success: false, error: '未授權' }, { status: 401 })
     }
 
-    await dbConnect()
-
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     const type = searchParams.get('type')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '100')
 
     const query: Record<string, unknown> = {}
 
@@ -45,10 +50,14 @@ export async function GET(request: NextRequest) {
       query.type = type
     }
 
-    const records = await Transaction.find(query)
-      .populate('userId', 'username realName')
-      .sort({ createdAt: -1 })
-      .limit(100)
+    const [records, total] = await Promise.all([
+      Transaction.find(query)
+        .populate('userId', 'username realName')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      Transaction.countDocuments(query),
+    ])
 
     return NextResponse.json({
       success: true,
@@ -61,9 +70,11 @@ export async function GET(request: NextRequest) {
         remark: r.remark,
         createdAt: r.createdAt,
       })),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     })
+
   } catch (error) {
-    console.error('Get records error:', error)
+    console.error('Get transactions error:', error)
     return NextResponse.json({ success: false, error: '服務器錯誤' }, { status: 500 })
   }
 }

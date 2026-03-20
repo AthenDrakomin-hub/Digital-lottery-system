@@ -17,7 +17,7 @@ export default function AdminLoginPage() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/admin/auth', {
+      const res = await fetch('/api/auth?type=admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
         <div className="bg-gray-800 rounded-xl p-8 shadow-xl">
           <form 
             onSubmit={handleSubmit} 
-            action="/api/admin/auth" 
+            action="/api/auth?type=admin" 
             method="post"
           >
             <div className="mb-6">

@@ -82,7 +82,7 @@ export default function DrawsPage() {
       if (filter.interval !== 'all') params.append('interval', filter.interval)
       if (filter.status !== 'all') params.append('status', filter.status)
 
-      const res = await fetch(`/api/admin/draws?${params}`, {
+      const res = await fetch(`/api/draws?admin=true&${params}`, {
         credentials: 'include',
       })
       const data = await res.json()

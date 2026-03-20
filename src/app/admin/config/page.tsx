@@ -82,7 +82,7 @@ export default function ConfigPage() {
 
   const fetchConfig = async () => {
     try {
-      const res = await fetch('/api/admin/config', { credentials: 'include' })
+      const res = await fetch('/api/config?admin=true', { credentials: 'include' })
       const data = await res.json()
       if (data.success && data.config) {
         setConfig({
@@ -110,7 +110,7 @@ export default function ConfigPage() {
     setMessage({ type: '', text: '' })
 
     try {
-      const res = await fetch('/api/admin/config', {
+      const res = await fetch('/api/config', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, action, data, id }),

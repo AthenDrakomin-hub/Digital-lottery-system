@@ -23,7 +23,7 @@ export default function CreateUserPage() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -59,7 +59,7 @@ export default function CreateUserPage() {
         <form 
           onSubmit={handleSubmit} 
           className="space-y-6"
-          action="/api/admin/users"
+          action="/api/users"
           method="post"
         >
           <div className="grid grid-cols-2 gap-6">

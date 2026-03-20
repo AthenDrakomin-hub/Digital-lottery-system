@@ -73,7 +73,7 @@ export default function LotteryPage() {
   const fetchDraws = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/admin/draws?date=${selectedDate}`, {
+      const res = await fetch(`/api/draws?admin=true&date=${selectedDate}`, {
         credentials: 'include',
       })
       const data = await res.json()
@@ -108,7 +108,7 @@ export default function LotteryPage() {
 
     setSubmitting(true)
     try {
-      const res = await fetch('/api/admin/draws', {
+      const res = await fetch('/api/draws', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -154,7 +154,7 @@ export default function LotteryPage() {
 
     setSubmitting(true)
     try {
-      const res = await fetch('/api/admin/draws', {
+      const res = await fetch('/api/draws', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

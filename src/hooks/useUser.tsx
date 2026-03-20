@@ -30,7 +30,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = useCallback(async () => {
     try {
-      const res = await fetch('/api/users/me', {
+      const res = await fetch('/api/users', {
         method: 'GET',
         credentials: 'include',
       })

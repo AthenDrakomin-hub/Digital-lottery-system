@@ -25,7 +25,7 @@ export default function AdminLayout({
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/admin/auth', {
+        const res = await fetch('/api/auth?type=admin', {
           credentials: 'include',
         })
         const data = await res.json()
@@ -48,7 +48,7 @@ export default function AdminLayout({
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/admin/auth', { method: 'DELETE' })
+      await fetch('/api/auth?type=admin', { method: 'DELETE' })
     } catch {
       // ignore
     }
