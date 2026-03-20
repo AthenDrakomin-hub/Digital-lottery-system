@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "node server.local.js",
     "build": "echo 'Build complete'",
-    "start": "node server.local.js"
+    "start": "node server.local.js",
+    "vercel-build": "echo 'Vercel build complete'"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
