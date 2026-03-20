@@ -48,7 +48,8 @@ const apiRoutes = {
 
 // 注册API路由
 Object.keys(apiRoutes).forEach(route => {
-    const handler = require(apiRoutes[route]);
+    const module = require(apiRoutes[route]);
+    const handler = module.handler || module.handleAuth || module.handleUsers || module.handleTransactions || module.handleAdmin || module.handleSystem || module;
     
     app.all(route, async (req, res) => {
         const vercelReq = {
