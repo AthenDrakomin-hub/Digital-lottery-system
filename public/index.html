@@ -19,33 +19,20 @@
     </div>
 
     <script>
-        // 检查是否已登录
         const token = localStorage.getItem('token');
-        const userStr = localStorage.getItem('user');
-
-        if (token && userStr) {
-            // 验证token是否有效
-            fetch('/api/auth?action=me', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
+        if (token) {
+            fetch('/api/auth?action=me', { headers: { 'Authorization': `Bearer ${token}` } })
             .then(res => res.json())
             .then(data => {
                 if (data.user) {
-                    // 已登录，跳转到dashboard
                     window.location.href = 'dashboard.html';
                 } else {
-                    // token无效，跳转到登录页
                     localStorage.removeItem('token');
-                    localStorage.removeItem('user');
                     window.location.href = 'login.html';
                 }
             })
-            .catch(() => {
-                // 网络错误，跳转到登录页
-                window.location.href = 'login.html';
-            });
+            .catch(() => { window.location.href = 'login.html'; });
         } else {
-            // 未登录，跳转到登录页
             window.location.href = 'login.html';
         }
     </script>

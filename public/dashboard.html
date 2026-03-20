@@ -3,426 +3,343 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>数字开奖管理系统 - 管理后台</title>
+    <title>数字开奖系统 - 管理后台</title>
     <link rel="stylesheet" href="/style.css">
     <style>
         .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
-        .server-time { font-size: 14px; color: #00ff88; margin-right: 20px; font-family: monospace; }
+        .server-time { font-family: monospace; color: #00ff88; margin-right: 20px; }
         
-        /* 导航标签 */
+        /* 导航 */
         .nav-tabs { background: #f8f9fa; border-bottom: 2px solid #e9ecef; }
-        .nav-tab { padding: 15px 25px; font-weight: 500; }
-        .nav-tab.active { background: #fff; border-bottom: 3px solid #007bff; color: #007bff; }
-        
-        /* 实时开奖卡片 */
-        .live-draw-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; }
-        .live-draw-card .period-info { font-size: 18px; margin-bottom: 15px; }
-        .live-draw-card .countdown { font-size: 48px; font-weight: bold; font-family: monospace; text-align: center; margin: 20px 0; }
-        .live-draw-card .countdown.warning { color: #ffcc00; animation: blink 1s infinite; }
-        .live-draw-card .status { text-align: center; font-size: 14px; opacity: 0.9; }
-        
-        @keyframes blink { 50% { opacity: 0.5; } }
-        
-        /* 周期选择器 */
-        .interval-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .interval-tab { padding: 10px 25px; background: #f0f0f0; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.3s; }
-        .interval-tab.active { background: #007bff; color: white; }
-        .interval-tab:hover { background: #e0e0e0; }
-        .interval-tab.active:hover { background: #0056b3; }
-        
-        /* 开奖结果展示 */
-        .result-display { display: flex; justify-content: center; gap: 8px; margin: 20px 0; }
-        .result-digit { width: 45px; height: 55px; background: #fff; color: #333; font-size: 28px; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .result-digit.champion { background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%); color: #fff; }
-        
-        /* 开奖历史表格 */
-        .history-table { width: 100%; border-collapse: collapse; }
-        .history-table th, .history-table td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
-        .history-table th { background: #f8f9fa; font-weight: 600; }
-        .history-table tr:hover { background: #f5f5f5; }
-        .history-table .period-col { font-weight: bold; color: #333; }
-        .history-table .result-col { font-family: monospace; font-size: 16px; letter-spacing: 2px; }
-        .history-table .champion-digit { color: #d4af37; font-weight: bold; }
+        .nav-tab { padding: 12px 20px; font-weight: 500; font-size: 14px; }
+        .nav-tab.active { background: #fff; border-bottom: 3px solid #dc3545; color: #dc3545; }
         
         /* 统计卡片 */
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }
-        .stat-card h4 { margin: 0 0 8px 0; opacity: 0.9; font-size: 13px; }
-        .stat-card .value { font-size: 24px; font-weight: bold; }
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 18px; border-radius: 8px; }
+        .stat-card h4 { margin: 0 0 6px 0; opacity: 0.9; font-size: 12px; }
+        .stat-card .value { font-size: 22px; font-weight: bold; }
         .stat-card:nth-child(2) { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
         .stat-card:nth-child(3) { background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%); }
         .stat-card:nth-child(4) { background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%); }
+        .stat-card:nth-child(5) { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); }
         
         /* 工具栏 */
         .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
-        .toolbar input, .toolbar select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
-        
-        /* 分页 */
-        .pagination { display: flex; justify-content: center; align-items: center; gap: 5px; margin-top: 15px; }
-        .pagination button { padding: 8px 15px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 5px; }
-        .pagination button:hover { background: #f0f0f0; }
-        .pagination button.active { background: #007bff; color: white; border-color: #007bff; }
-        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .pagination span { padding: 0 15px; color: #666; }
+        .toolbar input, .toolbar select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
         
         /* 表格 */
-        .user-table td { vertical-align: middle; }
-        .action-btns .btn { margin: 2px; padding: 4px 8px; font-size: 12px; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+        .data-table th { background: #f8f9fa; font-weight: 600; color: #333; }
+        .data-table tr:hover { background: #f5f5f5; }
         
         /* 标签 */
-        .badge { padding: 3px 8px; border-radius: 10px; font-size: 11px; }
+        .badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
         .badge-success { background: #d4edda; color: #155724; }
         .badge-danger { background: #f8d7da; color: #721c24; }
         .badge-warning { background: #fff3cd; color: #856404; }
         .badge-info { background: #d1ecf1; color: #0c5460; }
+        .badge-secondary { background: #e2e3e5; color: #383d41; }
+        
+        /* 分页 */
+        .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 15px; }
+        .pagination button { padding: 6px 12px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px; font-size: 13px; }
+        .pagination button:hover { background: #f0f0f0; }
+        .pagination button.active { background: #dc3545; color: white; border-color: #dc3545; }
+        
+        /* 操作按钮 */
+        .action-btns .btn { margin: 2px; padding: 4px 8px; font-size: 11px; }
         
         /* 模态框 */
         .modal-content { max-width: 500px; }
-        .modal-content.wide { max-width: 600px; }
+        .modal-content.wide { max-width: 650px; }
         .form-row { display: flex; gap: 15px; }
         .form-row .form-group { flex: 1; }
         
-        /* 系统状态 */
-        .status-indicator { display: inline-flex; align-items: center; gap: 5px; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .status-dot.online { background: #28a745; }
-        .status-dot.offline { background: #dc3545; }
-        
-        .config-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
+        /* 配置项 */
+        .config-section { margin-bottom: 20px; }
+        .config-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
         .config-item:last-child { border-bottom: none; }
         .config-label { font-weight: 500; }
-        .config-value { color: #666; }
+        .config-desc { color: #888; font-size: 12px; }
         
-        /* 隐藏admin-only */
-        body:not(.is-admin) .admin-only { display: none !important; }
+        /* 状态指示 */
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .status-dot.online { background: #28a745; }
+        .status-dot.offline { background: #dc3545; }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- 头部 -->
         <div class="header">
-            <h1>🎰 数字开奖管理系统</h1>
+            <h1>⚙️ 管理后台</h1>
             <div class="header-right">
                 <span class="server-time" id="serverTime">--</span>
                 <span class="user-info" id="userInfo"></span>
-                <button class="btn btn-danger" onclick="logout()">退出</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">退出</button>
             </div>
         </div>
 
-        <!-- 导航标签 -->
+        <!-- 导航 -->
         <div class="nav-tabs">
-            <button class="nav-tab active" data-tab="live">🔴 实时开奖</button>
-            <button class="nav-tab" data-tab="history">📜 开奖历史</button>
-            <button class="nav-tab admin-only" data-tab="users">👥 用户管理</button>
-            <button class="nav-tab" data-tab="transactions">💰 交易记录</button>
-            <button class="nav-tab admin-only" data-tab="system">⚙️ 系统管理</button>
+            <button class="nav-tab active" data-tab="overview">📊 概览</button>
+            <button class="nav-tab" data-tab="users">👥 用户管理</button>
+            <button class="nav-tab" data-tab="draws">🎲 开奖记录</button>
+            <button class="nav-tab" data-tab="bets">🎫 投注记录</button>
+            <button class="nav-tab" data-tab="transactions">💰 交易审核</button>
+            <button class="nav-tab" data-tab="config">🔧 系统配置</button>
         </div>
 
-        <!-- 内容区域 -->
+        <!-- 内容 -->
         <div class="content">
-            <!-- 实时开奖 -->
-            <div id="live" class="tab-content active">
-                <!-- 周期选择 -->
-                <div class="interval-tabs">
-                    <button class="interval-tab active" data-interval="5">5分钟期</button>
-                    <button class="interval-tab" data-interval="10">10分钟期</button>
-                    <button class="interval-tab" data-interval="15">15分钟期</button>
-                </div>
-                
-                <!-- 实时开奖卡片 -->
-                <div class="live-draw-card" id="liveDrawCard">
-                    <div class="period-info" id="periodInfo">加载中...</div>
-                    <div class="countdown" id="countdown">--:--</div>
-                    <div class="status" id="drawStatus">正在获取期号信息...</div>
-                </div>
-                
-                <!-- 最新开奖结果 -->
-                <div class="card">
-                    <h3>最新开奖结果 <span id="latestPeriodInfo"></span></h3>
-                    <div class="result-display" id="latestResult">
-                        <div class="result-digit">-</div>
-                        <div class="result-digit">-</div>
-                        <div class="result-digit">-</div>
-                        <div class="result-digit">-</div>
-                        <div class="result-digit">-</div>
-                        <div class="result-digit">-</div>
-                        <div class="result-digit">-</div>
-                        <div class="result-digit">-</div>
-                        <div class="result-digit">-</div>
-                        <div class="result-digit">-</div>
-                    </div>
-                    <p style="text-align:center;color:#888;margin-top:10px;">
-                        冠军数字：<strong id="championNumber" style="color:#d4af37;font-size:20px;">-</strong>
-                    </p>
-                </div>
-                
-                <!-- 快速操作 -->
-                <div class="card">
-                    <h3>快速操作</h3>
-                    <div class="toolbar">
-                        <button class="btn btn-primary" onclick="showDepositModal()">充值申请</button>
-                        <button class="btn btn-secondary" onclick="showWithdrawModal()">提现申请</button>
-                        <button class="btn btn-secondary" onclick="showChangePasswordModal()">修改密码</button>
-                        <button class="btn btn-info" onclick="refreshLiveDraw()">🔄 刷新状态</button>
-                    </div>
-                </div>
-                
-                <!-- 统计 -->
+            <!-- 概览 -->
+            <div id="overview" class="tab-content active">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h4>账户余额</h4>
-                        <div class="value" id="balanceDisplay">¥0.00</div>
+                        <h4>注册用户</h4>
+                        <div class="value" id="statUsers">-</div>
                     </div>
                     <div class="stat-card">
-                        <h4>账户状态</h4>
-                        <div class="value" id="statusDisplay">正常</div>
+                        <h4>今日投注</h4>
+                        <div class="value" id="statBets">-</div>
                     </div>
-                    <div class="stat-card admin-only">
-                        <h4>注册用户</h4>
-                        <div class="value" id="userCountDisplay">-</div>
+                    <div class="stat-card">
+                        <h4>今日交易额</h4>
+                        <div class="value" id="statAmount">-</div>
                     </div>
-                    <div class="stat-card admin-only">
-                        <h4>待审核交易</h4>
-                        <div class="value" id="pendingTransactionsDisplay">-</div>
+                    <div class="stat-card">
+                        <h4>待审核</h4>
+                        <div class="value" id="statPending">-</div>
                     </div>
-                </div>
-            </div>
-
-            <!-- 开奖历史 -->
-            <div id="history" class="tab-content">
-                <div class="card">
-                    <h3>开奖历史查询</h3>
-                    <div class="toolbar">
-                        <label>日期：</label>
-                        <input type="date" id="historyDate">
-                        <label>周期：</label>
-                        <select id="historyInterval">
-                            <option value="5">5分钟期</option>
-                            <option value="10">10分钟期</option>
-                            <option value="15">15分钟期</option>
-                        </select>
-                        <button class="btn btn-primary" onclick="loadHistory()">查询</button>
+                    <div class="stat-card">
+                        <h4>系统余额</h4>
+                        <div class="value" id="statBalance">-</div>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3>开奖记录 <span id="historyInfo"></span></h3>
-                    <div class="table-wrapper">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th>期号</th>
-                                    <th>开奖时间</th>
-                                    <th>开奖号码</th>
-                                    <th>冠军</th>
-                                    <th>状态</th>
-                                    <th class="admin-only">投注数</th>
-                                </tr>
-                            </thead>
-                            <tbody id="historyBody">
-                                <tr><td colspan="6" class="loading"><div class="spinner"></div>加载中...</td></tr>
-                            </tbody>
-                        </table>
+                    <h3>系统状态</h3>
+                    <div class="config-item">
+                        <div><span class="config-label">服务状态</span></div>
+                        <div><span class="status-dot online"></span><span style="color:#28a745">运行中</span></div>
                     </div>
-                    <div class="pagination" id="historyPagination"></div>
+                    <div class="config-item">
+                        <div><span class="config-label">数据库</span></div>
+                        <div id="dbStatus"><span class="status-dot online"></span><span style="color:#28a745">已连接</span></div>
+                    </div>
+                    <div class="config-item">
+                        <div><span class="config-label">自动开奖</span></div>
+                        <div><span class="status-dot online"></span><span style="color:#28a745">每10秒检查</span></div>
+                    </div>
+                    <div class="config-item">
+                        <div><span class="config-label">开奖周期</span></div>
+                        <div>5分钟 / 10分钟 / 15分钟</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>最新开奖</h3>
+                    <div id="latestDraws">加载中...</div>
                 </div>
             </div>
 
             <!-- 用户管理 -->
             <div id="users" class="tab-content">
                 <div class="card">
-                    <h3>用户管理</h3>
                     <div class="toolbar">
-                        <input type="text" id="userSearch" placeholder="搜索用户名">
-                        <select id="userRoleFilter">
-                            <option value="">所有角色</option>
+                        <input type="text" id="userSearch" placeholder="用户名" style="width:150px">
+                        <select id="userRole">
+                            <option value="">全部角色</option>
                             <option value="admin">管理员</option>
-                            <option value="user">普通用户</option>
+                            <option value="user">用户</option>
                         </select>
-                        <button class="btn btn-primary" onclick="loadUsers()">搜索</button>
-                        <button class="btn btn-success" onclick="showCreateUserModal()">+ 新建用户</button>
+                        <select id="userStatus">
+                            <option value="">全部状态</option>
+                            <option value="true">启用</option>
+                            <option value="false">禁用</option>
+                        </select>
+                        <button class="btn btn-primary btn-sm" onclick="loadUsers()">搜索</button>
+                        <button class="btn btn-success btn-sm" onclick="showUserModal()">+ 新建用户</button>
                     </div>
-                </div>
-
-                <div class="card">
-                    <h3>用户列表</h3>
-                    <div class="table-wrapper">
-                        <table class="user-table">
-                            <thead>
-                                <tr>
-                                    <th>用户名</th>
-                                    <th>角色</th>
-                                    <th>余额</th>
-                                    <th>状态</th>
-                                    <th>注册时间</th>
-                                    <th style="width:180px;">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="usersBody">
-                                <tr><td colspan="6" class="loading"><div class="spinner"></div>加载中...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="pagination" id="userPagination"></div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>用户名</th>
+                                <th>角色</th>
+                                <th>余额</th>
+                                <th>状态</th>
+                                <th>注册时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersBody"></tbody>
+                    </table>
+                    <div class="pagination" id="usersPage"></div>
                 </div>
             </div>
 
-            <!-- 交易记录 -->
+            <!-- 开奖记录 -->
+            <div id="draws" class="tab-content">
+                <div class="card">
+                    <div class="toolbar">
+                        <input type="date" id="drawDate">
+                        <select id="drawInterval">
+                            <option value="5">5分钟期</option>
+                            <option value="10">10分钟期</option>
+                            <option value="15">15分钟期</option>
+                        </select>
+                        <button class="btn btn-primary btn-sm" onclick="loadDraws()">查询</button>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>期号</th>
+                                <th>时间</th>
+                                <th>开奖号码</th>
+                                <th>冠军</th>
+                                <th>投注数</th>
+                                <th>派奖</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drawsBody"></tbody>
+                    </table>
+                    <div class="pagination" id="drawsPage"></div>
+                </div>
+            </div>
+
+            <!-- 投注记录 -->
+            <div id="bets" class="tab-content">
+                <div class="card">
+                    <div class="toolbar">
+                        <input type="date" id="betDate">
+                        <select id="betInterval">
+                            <option value="">全部周期</option>
+                            <option value="5">5分钟</option>
+                            <option value="10">10分钟</option>
+                            <option value="15">15分钟</option>
+                        </select>
+                        <select id="betStatus">
+                            <option value="">全部状态</option>
+                            <option value="pending">待开奖</option>
+                            <option value="won">已中奖</option>
+                            <option value="lost">未中奖</option>
+                        </select>
+                        <button class="btn btn-primary btn-sm" onclick="loadBets()">查询</button>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>用户</th>
+                                <th>日期/期号</th>
+                                <th>投注数字</th>
+                                <th>金额</th>
+                                <th>开奖结果</th>
+                                <th>中奖</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody id="betsBody"></tbody>
+                    </table>
+                    <div class="pagination" id="betsPage"></div>
+                </div>
+            </div>
+
+            <!-- 交易审核 -->
             <div id="transactions" class="tab-content">
                 <div class="card">
-                    <h3>交易记录</h3>
                     <div class="toolbar">
-                        <select id="transTypeFilter">
-                            <option value="">所有类型</option>
+                        <select id="transType">
+                            <option value="">全部类型</option>
                             <option value="deposit">充值</option>
                             <option value="withdraw">提现</option>
                             <option value="adjust">调账</option>
                         </select>
-                        <select id="transStatusFilter">
-                            <option value="">所有状态</option>
-                            <option value="pending">待处理</option>
+                        <select id="transStatus">
+                            <option value="">全部状态</option>
+                            <option value="pending">待审核</option>
                             <option value="approved">已批准</option>
                             <option value="rejected">已拒绝</option>
                         </select>
-                        <button class="btn btn-primary" onclick="loadTransactions()">搜索</button>
+                        <button class="btn btn-primary btn-sm" onclick="loadTransactions()">查询</button>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>用户</th>
+                                <th>类型</th>
+                                <th>金额</th>
+                                <th>备注</th>
+                                <th>时间</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transBody"></tbody>
+                    </table>
+                    <div class="pagination" id="transPage"></div>
+                </div>
+            </div>
+
+            <!-- 系统配置 -->
+            <div id="config" class="tab-content">
+                <div class="card">
+                    <h3>开奖配置</h3>
+                    <div class="config-item">
+                        <div>
+                            <div class="config-label">5分钟周期</div>
+                            <div class="config-desc">每天288期，00:00 - 23:55</div>
+                        </div>
+                        <div><span class="badge badge-success">启用</span></div>
+                    </div>
+                    <div class="config-item">
+                        <div>
+                            <div class="config-label">10分钟周期</div>
+                            <div class="config-desc">每天144期，00:00 - 23:50</div>
+                        </div>
+                        <div><span class="badge badge-success">启用</span></div>
+                    </div>
+                    <div class="config-item">
+                        <div>
+                            <div class="config-label">15分钟周期</div>
+                            <div class="config-desc">每天96期，00:00 - 23:45</div>
+                        </div>
+                        <div><span class="badge badge-success">启用</span></div>
                     </div>
                 </div>
 
                 <div class="card">
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>用户</th>
-                                    <th>类型</th>
-                                    <th>金额</th>
-                                    <th>状态</th>
-                                    <th>备注</th>
-                                    <th>时间</th>
-                                    <th class="admin-only">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transactionsBody">
-                                <tr><td colspan="7" class="loading"><div class="spinner"></div>加载中...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="pagination" id="transPagination"></div>
-                </div>
-            </div>
-
-            <!-- 系统管理 -->
-            <div id="system" class="tab-content">
-                <div class="card">
-                    <h3>系统状态</h3>
+                    <h3>玩法配置</h3>
                     <div class="config-item">
-                        <div>
-                            <div class="config-label">自动开奖</div>
-                            <div class="config-value">内置定时器，每10秒检查</div>
-                        </div>
-                        <div class="status-indicator">
-                            <span class="status-dot online"></span>
-                            <span>运行中</span>
-                        </div>
+                        <div><div class="config-label">冠军玩法投注金额</div></div>
+                        <div>每注 2 元</div>
                     </div>
                     <div class="config-item">
-                        <div>
-                            <div class="config-label">开奖周期</div>
-                            <div class="config-value">5分钟 / 10分钟 / 15分钟</div>
-                        </div>
+                        <div><div class="config-label">冠军玩法中奖金额</div></div>
+                        <div>固定 19.5 元</div>
                     </div>
                     <div class="config-item">
-                        <div>
-                            <div class="config-label">中奖金额</div>
-                            <div class="config-value">冠军玩法固定 19.5 元</div>
-                        </div>
+                        <div><div class="config-label">最大投注数字数</div></div>
+                        <div>5 个</div>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3>系统统计</h3>
-                    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
-                        <div class="stat-card">
-                            <h4>总用户数</h4>
-                            <div class="value" id="totalUsers">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>总投注数</h4>
-                            <div class="value" id="totalBets">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>总交易额</h4>
-                            <div class="value" id="totalAmount">-</div>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="loadSystemStats()">刷新统计</button>
+                    <h3>管理员账户</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>用户名</th><th>状态</th><th>创建时间</th></tr>
+                        </thead>
+                        <tbody id="adminsBody"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 模态框：充值 -->
-    <div id="depositModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>充值申请</h3>
-                <button class="modal-close" onclick="closeModal('depositModal')">&times;</button>
-            </div>
-            <div class="form-group">
-                <label>充值金额</label>
-                <input type="number" id="depositAmount" class="form-control" placeholder="请输入充值金额" min="1">
-            </div>
-            <div class="form-group">
-                <label>备注（可选）</label>
-                <input type="text" id="depositNote" class="form-control" placeholder="备注信息">
-            </div>
-            <button class="btn btn-primary" onclick="submitDeposit()" style="width: 100%">提交申请</button>
-        </div>
-    </div>
-
-    <!-- 模态框：提现 -->
-    <div id="withdrawModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>提现申请</h3>
-                <button class="modal-close" onclick="closeModal('withdrawModal')">&times;</button>
-            </div>
-            <div class="form-group">
-                <label>可提现余额</label>
-                <input type="text" id="withdrawBalance" class="form-control" readonly>
-            </div>
-            <div class="form-group">
-                <label>提现金额</label>
-                <input type="number" id="withdrawAmount" class="form-control" placeholder="请输入提现金额" min="1">
-            </div>
-            <button class="btn btn-primary" onclick="submitWithdraw()" style="width: 100%">提交申请</button>
-        </div>
-    </div>
-
-    <!-- 模态框：改密 -->
-    <div id="changePasswordModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>修改密码</h3>
-                <button class="modal-close" onclick="closeModal('changePasswordModal')">&times;</button>
-            </div>
-            <div class="form-group">
-                <label>当前密码</label>
-                <input type="password" id="oldPassword" class="form-control" placeholder="请输入当前密码">
-            </div>
-            <div class="form-group">
-                <label>新密码</label>
-                <input type="password" id="newPassword" class="form-control" placeholder="至少6个字符">
-            </div>
-            <div class="form-group">
-                <label>确认新密码</label>
-                <input type="password" id="confirmNewPassword" class="form-control" placeholder="再次输入新密码">
-            </div>
-            <button class="btn btn-primary" onclick="submitChangePassword()" style="width: 100%">确认修改</button>
-        </div>
-    </div>
-
-    <!-- 模态框：新建/编辑用户 -->
+    <!-- 用户编辑模态框 -->
     <div id="userModal" class="modal">
         <div class="modal-content wide">
             <div class="modal-header">
@@ -432,11 +349,11 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>用户名</label>
-                    <input type="text" id="editUsername" class="form-control" placeholder="3-50个字符">
+                    <input type="text" id="editUsername" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label>密码 <span id="passwordHint" style="color:#888;font-size:12px;">(至少6位)</span></label>
-                    <input type="text" id="editPassword" class="form-control" placeholder="留空则不修改">
+                    <label>密码</label>
+                    <input type="text" id="editPassword" class="form-control" placeholder="留空不修改">
                 </div>
             </div>
             <div class="form-row">
@@ -454,17 +371,17 @@
             </div>
             <div class="form-group">
                 <label>状态</label>
-                <select id="editStatus" class="form-control">
+                <select id="editActive" class="form-control">
                     <option value="true">启用</option>
                     <option value="false">禁用</option>
                 </select>
             </div>
             <input type="hidden" id="editUserId">
-            <button class="btn btn-primary" onclick="submitUser()" style="width: 100%">保存</button>
+            <button class="btn btn-primary" onclick="saveUser()" style="width:100%">保存</button>
         </div>
     </div>
 
-    <!-- 模态框：调账 -->
+    <!-- 调账模态框 -->
     <div id="adjustModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -473,341 +390,149 @@
             </div>
             <div class="form-group">
                 <label>用户</label>
-                <input type="text" id="adjustUsername" class="form-control" readonly>
+                <input type="text" id="adjustUser" class="form-control" readonly>
             </div>
             <div class="form-group">
                 <label>当前余额</label>
-                <input type="text" id="adjustCurrentBalance" class="form-control" readonly>
+                <input type="text" id="adjustBalance" class="form-control" readonly>
             </div>
             <div class="form-group">
-                <label>调整金额 (正数增加，负数减少)</label>
+                <label>调整金额 (+增加/-减少)</label>
                 <input type="number" id="adjustAmount" class="form-control" step="0.01">
             </div>
             <div class="form-group">
                 <label>备注</label>
-                <input type="text" id="adjustNote" class="form-control" placeholder="请填写调整原因">
+                <input type="text" id="adjustNote" class="form-control" placeholder="调整原因">
             </div>
-            <button class="btn btn-primary" onclick="submitAdjust()" style="width: 100%">确认调账</button>
+            <button class="btn btn-primary" onclick="submitAdjust()" style="width:100%">确认调账</button>
         </div>
     </div>
 
     <script>
-        // ==================== 全局变量 ====================
-        let currentUser = null;
-        let token = null;
-        let currentInterval = 5;
-        let countdownTimer = null;
+        let token = localStorage.getItem('token');
+        if (!token) location.href = 'login.html';
 
-        // ==================== 初始化 ====================
+        // 初始化
         document.addEventListener('DOMContentLoaded', () => {
-            token = localStorage.getItem('token');
-            if (!token) { window.location.href = 'login.html'; return; }
-
-            // 设置默认日期
-            document.getElementById('historyDate').value = new Date().toISOString().split('T')[0];
-
-            // 导航标签切换
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    tab.classList.add('active');
-                    document.getElementById(tab.dataset.tab).classList.add('active');
+            document.getElementById('drawDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('betDate').value = new Date().toISOString().split('T')[0];
+            
+            document.querySelectorAll('.nav-tab').forEach(t => {
+                t.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-tab').forEach(x => x.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+                    t.classList.add('active');
+                    document.getElementById(t.dataset.tab).classList.add('active');
+                    loadTab(t.dataset.tab);
                 });
             });
-
-            // 周期选择
-            document.querySelectorAll('.interval-tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.interval-tab').forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    currentInterval = parseInt(tab.dataset.interval);
-                    refreshLiveDraw();
-                });
-            });
-
-            loadDashboard();
-            startLiveUpdate();
+            
+            loadOverview();
+            setInterval(() => {
+                document.getElementById('serverTime').textContent = new Date().toLocaleString('zh-CN');
+            }, 1000);
+            checkAdmin();
         });
 
-        // ==================== 实时开奖更新 ====================
-        
-        function startLiveUpdate() {
-            updateServerTime();
-            setInterval(updateServerTime, 1000);
-            refreshLiveDraw();
-            setInterval(refreshLiveDraw, 5000);
-        }
-
-        function updateServerTime() {
-            const now = new Date();
-            document.getElementById('serverTime').textContent = now.toLocaleString('zh-CN', { 
-                year: 'numeric', month: '2-digit', day: '2-digit',
-                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false 
-            });
-        }
-
-        async function refreshLiveDraw() {
-            try {
-                // 获取期号信息
-                const res = await fetch(`/api/system?type=bets&action=period&interval=${currentInterval}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await res.json();
-                
-                if (res.ok) {
-                    const { date, currentPeriod, totalPeriods, secondsUntilDraw } = data;
-                    
-                    // 更新期号信息
-                    document.getElementById('periodInfo').textContent = 
-                        `📅 ${date} | 第 ${currentPeriod.period + 1} / ${totalPeriods} 期`;
-                    
-                    // 更新倒计时
-                    updateCountdown(secondsUntilDraw);
-                    
-                    // 更新状态
-                    const status = document.getElementById('drawStatus');
-                    if (secondsUntilDraw > 60) {
-                        status.textContent = `✅ 可投注 (剩余 ${Math.floor(secondsUntilDraw / 60)}分${secondsUntilDraw % 60}秒)`;
-                        status.style.color = '#90EE90';
-                    } else if (secondsUntilDraw > 0) {
-                        status.textContent = `⚠️ 封盘倒计时 (${secondsUntilDraw}秒后开奖)`;
-                        status.style.color = '#FFD700';
-                    } else {
-                        status.textContent = '🎲 正在开奖...';
-                        status.style.color = '#FFA07A';
-                    }
-                    
-                    // 获取最新开奖结果
-                    await loadLatestResult();
-                }
-            } catch (error) {
-                console.error('获取期号失败:', error);
-            }
-        }
-
-        function updateCountdown(seconds) {
-            const el = document.getElementById('countdown');
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            el.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-            el.classList.toggle('warning', seconds <= 60 && seconds > 0);
-        }
-
-        async function loadLatestResult() {
-            try {
-                const date = new Date().toISOString().split('T')[0];
-                const res = await fetch(`/api/system?type=draws&date=${date}&interval=${currentInterval}&nocache=1`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await res.json();
-                
-                if (res.ok && data.draws && data.draws.length > 0) {
-                    // 找到最新的已开奖期号
-                    const now = new Date();
-                    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-                    const currentPeriod = Math.floor(currentMinutes / currentInterval);
-                    
-                    // 查找最近已开奖的期号
-                    let latestDraw = null;
-                    for (let i = currentPeriod; i >= 0; i--) {
-                        const draw = data.draws.find(d => d.period === i && d.result);
-                        if (draw) { latestDraw = draw; break; }
-                    }
-                    
-                    if (latestDraw && latestDraw.result) {
-                        displayResult(latestDraw.result);
-                        document.getElementById('latestPeriodInfo').textContent = 
-                            `(第 ${latestDraw.period + 1} 期)`;
-                        document.getElementById('championNumber').textContent = latestDraw.result[0];
-                    }
-                }
-            } catch (error) {
-                console.error('获取开奖结果失败:', error);
-            }
-        }
-
-        function displayResult(result) {
-            const container = document.getElementById('latestResult');
-            container.innerHTML = result.split('').map((digit, i) => 
-                `<div class="result-digit ${i === 0 ? 'champion' : ''}">${digit}</div>`
-            ).join('');
-        }
-
-        // ==================== 开奖历史 ====================
-
-        async function loadHistory(page = 1) {
-            const date = document.getElementById('historyDate').value;
-            const interval = document.getElementById('historyInterval').value;
-            
-            if (!date) { showMessage('请选择日期', 'error'); return; }
-
-            const tbody = document.getElementById('historyBody');
-            tbody.innerHTML = '<tr><td colspan="6" class="loading"><div class="spinner"></div>加载中...</td></tr>';
-
-            try {
-                const res = await fetch(`/api/system?type=draws&date=${date}&interval=${interval}&nocache=1`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await res.json();
-                
-                if (res.ok) {
-                    const pageSize = 20;
-                    const startIdx = (page - 1) * pageSize;
-                    const pageData = data.draws.slice(startIdx, startIdx + pageSize);
-                    
-                    document.getElementById('historyInfo').textContent = 
-                        `(共 ${data.totalPeriods} 期，显示第 ${startIdx + 1}-${Math.min(startIdx + pageSize, data.totalPeriods)} 期)`;
-                    
-                    renderHistoryTable(pageData, parseInt(interval));
-                    renderHistoryPagination(data.totalPeriods, pageSize, page);
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="6">加载失败</td></tr>';
-                }
-            } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="6">网络错误</td></tr>';
-            }
-        }
-
-        function renderHistoryTable(draws, interval) {
-            const tbody = document.getElementById('historyBody');
-            tbody.innerHTML = '';
-            
-            if (draws.length === 0) { tbody.innerHTML = '<tr><td colspan="6">暂无数据</td></tr>'; return; }
-
-            draws.forEach(draw => {
-                const periodTime = calculatePeriodTime(interval, draw.period);
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="period-col">第 ${draw.period + 1} 期</td>
-                    <td>${periodTime}</td>
-                    <td class="result-col">
-                        ${draw.result ? 
-                            `<span class="champion-digit">${draw.result[0]}</span>${draw.result.slice(1)}` : 
-                            '<span style="color:#999">待开奖</span>'}
-                    </td>
-                    <td>${draw.result ? `<strong style="color:#d4af37">${draw.result[0]}</strong>` : '-'}</td>
-                    <td>${draw.status === 'settled' ? '<span class="badge badge-success">已开奖</span>' : 
-                         draw.result ? '<span class="badge badge-info">已开奖</span>' : 
-                         '<span class="badge badge-warning">待开奖</span>'}</td>
-                    <td class="admin-only">${draw.settlementStats?.totalBets || '-'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function calculatePeriodTime(interval, period) {
-            const startMinutes = period * interval;
-            const endMinutes = (period + 1) * interval;
-            const format = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-            return `${format(startMinutes)} - ${format(endMinutes)}`;
-        }
-
-        function renderHistoryPagination(total, pageSize, current) {
-            const pages = Math.ceil(total / pageSize);
-            const el = document.getElementById('historyPagination');
-            if (pages <= 1) { el.innerHTML = ''; return; }
-            
-            let html = '';
-            for (let i = 1; i <= Math.min(pages, 10); i++) {
-                html += `<button onclick="loadHistory(${i})" class="${i === current ? 'active' : ''}">${i}</button>`;
-            }
-            if (pages > 10) html += `<span>... 共${pages}页</span>`;
-            el.innerHTML = html;
-        }
-
-        // ==================== 控制台 ====================
-
-        async function loadDashboard() {
+        async function checkAdmin() {
             try {
                 const res = await fetch('/api/auth?action=me', { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
-                
-                if (res.ok) {
-                    currentUser = data.user;
-                    document.getElementById('balanceDisplay').textContent = `¥${currentUser.balance.toFixed(2)}`;
-                    document.getElementById('statusDisplay').textContent = currentUser.isActive ? '正常' : '已禁用';
-                    document.getElementById('userInfo').textContent = `${currentUser.username} (${currentUser.role === 'admin' ? '管理员' : '用户'})`;
-                    
-                    if (currentUser.role === 'admin') {
-                        document.body.classList.add('is-admin');
-                        loadAdminStats();
-                    }
-                } else {
-                    localStorage.removeItem('token');
-                    window.location.href = 'login.html';
+                if (!res.ok || data.user.role !== 'admin') {
+                    alert('需要管理员权限');
+                    location.href = 'index.html';
                 }
-            } catch (error) {
-                console.error('加载失败:', error);
+                document.getElementById('userInfo').textContent = `${data.user.username}`;
+            } catch (e) {
+                location.href = 'login.html';
             }
         }
 
-        async function loadAdminStats() {
-            try {
-                const [usersRes, transRes] = await Promise.all([
-                    fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } }),
-                    fetch('/api/transactions?status=pending', { headers: { 'Authorization': `Bearer ${token}` } })
-                ]);
-                const usersData = await usersRes.json();
-                const transData = await transRes.json();
-                document.getElementById('userCountDisplay').textContent = usersData.pagination?.total || 0;
-                document.getElementById('pendingTransactionsDisplay').textContent = transData.pagination?.total || 0;
-            } catch (error) { console.error(error); }
+        function loadTab(tab) {
+            switch(tab) {
+                case 'overview': loadOverview(); break;
+                case 'users': loadUsers(); break;
+                case 'draws': loadDraws(); break;
+                case 'bets': loadBets(); break;
+                case 'transactions': loadTransactions(); break;
+                case 'config': loadAdmins(); break;
+            }
         }
 
-        // ==================== 用户管理 ====================
+        // 概览
+        async function loadOverview() {
+            try {
+                const res = await fetch('/api/admin?action=stats', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('statUsers').textContent = data.stats?.totalUsers || 0;
+                    document.getElementById('statBets').textContent = data.stats?.totalBets || 0;
+                    document.getElementById('statAmount').textContent = `¥${(data.stats?.totalAmount || 0).toFixed(2)}`;
+                    document.getElementById('statBalance').textContent = `¥${(data.stats?.totalBalance || 0).toFixed(2)}`;
+                }
+                
+                const pending = await fetch('/api/transactions?status=pending', { headers: { 'Authorization': `Bearer ${token}` } });
+                const pendingData = await pending.json();
+                document.getElementById('statPending').textContent = pendingData.pagination?.total || 0;
+                
+                // 最新开奖
+                const date = new Date().toISOString().split('T')[0];
+                const draws5 = await fetch(`/api/system?type=draws&date=${date}&interval=5&limit=5`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const d5 = await draws5.json();
+                let html = '<table class="data-table"><tr><th>周期</th><th>最新期号</th><th>结果</th><th>冠军</th></tr>';
+                if (d5.draws && d5.draws.length > 0) {
+                    const last = d5.draws[d5.draws.length - 1];
+                    html += `<tr><td>5分钟</td><td>第${last.period + 1}期</td><td style="font-family:monospace">${last.result || '-'}</td><td>${last.result ? last.result[0] : '-'}</td></tr>`;
+                }
+                html += '</table>';
+                document.getElementById('latestDraws').innerHTML = html;
+            } catch (e) {
+                console.error(e);
+            }
+        }
 
+        // 用户管理
         async function loadUsers() {
-            const search = document.getElementById('userSearch').value;
-            const role = document.getElementById('userRoleFilter').value;
             const params = new URLSearchParams();
+            const search = document.getElementById('userSearch').value;
+            const role = document.getElementById('userRole').value;
+            const status = document.getElementById('userStatus').value;
             if (search) params.append('search', search);
             if (role) params.append('role', role);
-            params.append('limit', 20);
-
-            const tbody = document.getElementById('usersBody');
-            tbody.innerHTML = '<tr><td colspan="6" class="loading"><div class="spinner"></div>加载中...</td></tr>';
+            if (status) params.append('isActive', status);
+            params.append('limit', '20');
 
             try {
                 const res = await fetch(`/api/users?${params}`, { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
-                if (res.ok) renderUsersTable(data.users);
-            } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="6">网络错误</td></tr>';
+                const tbody = document.getElementById('usersBody');
+                tbody.innerHTML = data.users.map(u => `
+                    <tr>
+                        <td><strong>${u.username}</strong></td>
+                        <td>${u.role === 'admin' ? '<span class="badge badge-info">管理员</span>' : '<span class="badge badge-secondary">用户</span>'}</td>
+                        <td style="color:#28a745;font-weight:bold">¥${u.balance.toFixed(2)}</td>
+                        <td>${u.isActive ? '<span class="badge badge-success">启用</span>' : '<span class="badge badge-danger">禁用</span>'}</td>
+                        <td>${new Date(u.createdAt).toLocaleString('zh-CN')}</td>
+                        <td class="action-btns">
+                            <button class="btn btn-primary btn-sm" onclick="editUser('${u._id}','${u.username}','${u.role}',${u.balance},${u.isActive})">编辑</button>
+                            <button class="btn btn-secondary btn-sm" onclick="showAdjust('${u._id}','${u.username}',${u.balance})">调账</button>
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="6">暂无数据</td></tr>';
+            } catch (e) {
+                document.getElementById('usersBody').innerHTML = '<tr><td colspan="6">加载失败</td></tr>';
             }
         }
 
-        function renderUsersTable(users) {
-            const tbody = document.getElementById('usersBody');
-            tbody.innerHTML = '';
-            if (users.length === 0) { tbody.innerHTML = '<tr><td colspan="6">暂无数据</td></tr>'; return; }
-
-            users.forEach(user => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${user.username}</strong></td>
-                    <td>${user.role === 'admin' ? '<span class="badge badge-info">管理员</span>' : '<span class="badge">用户</span>'}</td>
-                    <td style="font-weight:bold;color:#28a745;">¥${user.balance.toFixed(2)}</td>
-                    <td>${user.isActive ? '<span class="badge badge-success">启用</span>' : '<span class="badge badge-danger">禁用</span>'}</td>
-                    <td>${new Date(user.createdAt).toLocaleString('zh-CN')}</td>
-                    <td class="action-btns">
-                        <button class="btn btn-primary" onclick="editUser('${user._id}', '${user.username}', '${user.role}', ${user.balance}, ${user.isActive})">编辑</button>
-                        <button class="btn btn-secondary" onclick="showAdjustModal('${user._id}', '${user.username}', ${user.balance})">调账</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function showCreateUserModal() {
-            document.getElementById('userModalTitle').textContent = '新建用户';
-            document.getElementById('editUserId').value = '';
+        function showUserModal(id = '') {
+            document.getElementById('userModalTitle').textContent = id ? '编辑用户' : '新建用户';
+            document.getElementById('editUserId').value = id;
             document.getElementById('editUsername').value = '';
             document.getElementById('editUsername').removeAttribute('readonly');
             document.getElementById('editPassword').value = '';
             document.getElementById('editRole').value = 'user';
             document.getElementById('editBalance').value = '0';
-            document.getElementById('editStatus').value = 'true';
+            document.getElementById('editActive').value = 'true';
             document.getElementById('userModal').classList.add('active');
         }
 
@@ -819,121 +544,170 @@
             document.getElementById('editPassword').value = '';
             document.getElementById('editRole').value = role;
             document.getElementById('editBalance').value = balance;
-            document.getElementById('editStatus').value = isActive ? 'true' : 'false';
+            document.getElementById('editActive').value = isActive ? 'true' : 'false';
             document.getElementById('userModal').classList.add('active');
         }
 
-        async function submitUser() {
-            const userId = document.getElementById('editUserId').value;
-            const username = document.getElementById('editUsername').value.trim();
-            const password = document.getElementById('editPassword').value;
-            const role = document.getElementById('editRole').value;
-            const balance = parseFloat(document.getElementById('editBalance').value) || 0;
-            const isActive = document.getElementById('editStatus').value === 'true';
-
-            if (!username) { showMessage('请输入用户名', 'error'); return; }
-            if (!userId && !password) { showMessage('新建用户必须设置密码', 'error'); return; }
+        async function saveUser() {
+            const id = document.getElementById('editUserId').value;
+            const body = {
+                username: document.getElementById('editUsername').value.trim(),
+                password: document.getElementById('editPassword').value || undefined,
+                role: document.getElementById('editRole').value,
+                balance: parseFloat(document.getElementById('editBalance').value) || 0,
+                isActive: document.getElementById('editActive').value === 'true'
+            };
+            if (!body.username) return alert('请输入用户名');
 
             try {
-                let res;
-                if (userId) {
-                    const body = { role, balance, isActive };
-                    if (password) body.password = password;
-                    res = await fetch(`/api/users?id=${userId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify(body)
-                    });
-                } else {
-                    res = await fetch('/api/users?action=create', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ username, password, role, balance })
-                    });
-                }
+                const url = id ? `/api/users?id=${id}` : '/api/users?action=create';
+                const res = await fetch(url, {
+                    method: id ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(body)
+                });
                 const data = await res.json();
-                if (res.ok) { showMessage('操作成功', 'success'); closeModal('userModal'); loadUsers(); }
-                else showMessage(data.error, 'error');
-            } catch (error) { showMessage('网络错误', 'error'); }
+                if (res.ok) { closeModal('userModal'); loadUsers(); }
+                else alert(data.error);
+            } catch (e) { alert('操作失败'); }
         }
 
-        function showAdjustModal(userId, username, balance) {
-            document.getElementById('adjustUsername').value = username;
-            document.getElementById('adjustCurrentBalance').value = `¥${balance.toFixed(2)}`;
+        function showAdjust(id, username, balance) {
+            document.getElementById('adjustModal').dataset.id = id;
+            document.getElementById('adjustUser').value = username;
+            document.getElementById('adjustBalance').value = `¥${balance.toFixed(2)}`;
             document.getElementById('adjustAmount').value = '';
-            document.getElementById('adjustModal').dataset.userId = userId;
+            document.getElementById('adjustNote').value = '';
             document.getElementById('adjustModal').classList.add('active');
         }
 
         async function submitAdjust() {
-            const userId = document.getElementById('adjustModal').dataset.userId;
+            const id = document.getElementById('adjustModal').dataset.id;
             const amount = parseFloat(document.getElementById('adjustAmount').value);
-            if (!amount) { showMessage('请输入金额', 'error'); return; }
+            const note = document.getElementById('adjustNote').value;
+            if (!amount) return alert('请输入金额');
 
             try {
                 const res = await fetch('/api/users?action=balance', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ userId, amount, note: '管理员调账' })
+                    body: JSON.stringify({ userId: id, amount, note: note || '管理员调账' })
                 });
                 const data = await res.json();
-                if (res.ok) { showMessage('调账成功', 'success'); closeModal('adjustModal'); loadUsers(); }
-                else showMessage(data.error, 'error');
-            } catch (error) { showMessage('网络错误', 'error'); }
+                if (res.ok) { closeModal('adjustModal'); loadUsers(); }
+                else alert(data.error);
+            } catch (e) { alert('操作失败'); }
         }
 
-        // ==================== 交易记录 ====================
+        // 开奖记录
+        async function loadDraws() {
+            const date = document.getElementById('drawDate').value;
+            const interval = document.getElementById('drawInterval').value;
+            if (!date) return;
 
-        async function loadTransactions() {
-            const type = document.getElementById('transTypeFilter').value;
-            const status = document.getElementById('transStatusFilter').value;
+            try {
+                const res = await fetch(`/api/system?type=draws&date=${date}&interval=${interval}&nocache=1`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                const tbody = document.getElementById('drawsBody');
+                
+                // 只显示最近50条
+                const draws = (data.draws || []).slice(-50).reverse();
+                tbody.innerHTML = draws.map(d => {
+                    const time = calcTime(parseInt(interval), d.period);
+                    return `
+                    <tr>
+                        <td>第${d.period + 1}期</td>
+                        <td>${time}</td>
+                        <td style="font-family:monospace;letter-spacing:2px">${d.result || '-'}</td>
+                        <td><strong style="color:#d4af37">${d.result ? d.result[0] : '-'}</strong></td>
+                        <td>${d.settlementStats?.totalBets || 0}</td>
+                        <td style="color:#28a745">¥${(d.settlementStats?.totalWinAmount || 0).toFixed(2)}</td>
+                        <td>${d.status === 'settled' ? '<span class="badge badge-success">已结算</span>' : '<span class="badge badge-warning">待开奖</span>'}</td>
+                    </tr>`;
+                }).join('') || '<tr><td colspan="7">暂无数据</td></tr>';
+            } catch (e) {
+                document.getElementById('drawsBody').innerHTML = '<tr><td colspan="7">加载失败</td></tr>';
+            }
+        }
+
+        function calcTime(interval, period) {
+            const start = period * interval;
+            const end = (period + 1) * interval;
+            const fmt = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+            return `${fmt(start)}-${fmt(end)}`;
+        }
+
+        // 投注记录
+        async function loadBets() {
             const params = new URLSearchParams();
+            const date = document.getElementById('betDate').value;
+            const interval = document.getElementById('betInterval').value;
+            const status = document.getElementById('betStatus').value;
+            params.append('limit', '50');
+            if (date) params.append('date', date);
+            if (interval) params.append('interval', interval);
+            if (status) params.append('status', status);
+
+            try {
+                const res = await fetch(`/api/system?type=bets&action=admin&${params}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                const tbody = document.getElementById('betsBody');
+                tbody.innerHTML = (data.bets || []).map(b => `
+                    <tr>
+                        <td>${b.userId?.username || '-'}</td>
+                        <td>${b.date} 第${b.period + 1}期</td>
+                        <td style="font-family:monospace">${b.championNumbers?.join(',') || '-'}</td>
+                        <td>¥${b.amount.toFixed(2)}</td>
+                        <td style="font-family:monospace">${b.result || '-'}</td>
+                        <td style="color:#28a745">${b.winAmount > 0 ? '¥' + b.winAmount.toFixed(2) : '-'}</td>
+                        <td>${b.status === 'won' ? '<span class="badge badge-success">中奖</span>' : 
+                             b.status === 'lost' ? '<span class="badge badge-danger">未中</span>' : 
+                             '<span class="badge badge-warning">待开奖</span>'}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="7">暂无数据</td></tr>';
+            } catch (e) {
+                document.getElementById('betsBody').innerHTML = '<tr><td colspan="7">加载失败</td></tr>';
+            }
+        }
+
+        // 交易审核
+        async function loadTransactions() {
+            const params = new URLSearchParams();
+            const type = document.getElementById('transType').value;
+            const status = document.getElementById('transStatus').value;
+            params.append('limit', '50');
             if (type) params.append('type', type);
             if (status) params.append('status', status);
-            params.append('limit', 20);
-
-            const tbody = document.getElementById('transactionsBody');
-            tbody.innerHTML = '<tr><td colspan="7" class="loading"><div class="spinner"></div>加载中...</td></tr>';
 
             try {
                 const res = await fetch(`/api/transactions?${params}`, { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
-                if (res.ok) renderTransactionsTable(data.transactions);
-            } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="7">网络错误</td></tr>';
+                const tbody = document.getElementById('transBody');
+                const typeMap = { deposit: '充值', withdraw: '提现', adjust: '调账' };
+                tbody.innerHTML = (data.transactions || []).map(t => `
+                    <tr>
+                        <td>${t.userId?.username || '-'}</td>
+                        <td><span class="badge ${t.type === 'deposit' ? 'badge-success' : t.type === 'withdraw' ? 'badge-warning' : 'badge-info'}">${typeMap[t.type] || t.type}</span></td>
+                        <td style="font-weight:bold;color:${t.type === 'withdraw' ? '#dc3545' : '#28a745'}">${t.type === 'withdraw' ? '-' : '+'}¥${Math.abs(t.amount).toFixed(2)}</td>
+                        <td>${t.note || '-'}</td>
+                        <td>${new Date(t.createdAt).toLocaleString('zh-CN')}</td>
+                        <td>${t.status === 'approved' ? '<span class="badge badge-success">已批准</span>' : 
+                             t.status === 'rejected' ? '<span class="badge badge-danger">已拒绝</span>' : 
+                             '<span class="badge badge-warning">待审核</span>'}</td>
+                        <td class="action-btns">
+                            ${t.status === 'pending' ? 
+                                `<button class="btn btn-success btn-sm" onclick="processTrans('${t._id}','approved')">批准</button>
+                                 <button class="btn btn-danger btn-sm" onclick="processTrans('${t._id}','rejected')">拒绝</button>` : '-'}
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="7">暂无数据</td></tr>';
+            } catch (e) {
+                document.getElementById('transBody').innerHTML = '<tr><td colspan="7">加载失败</td></tr>';
             }
         }
 
-        function renderTransactionsTable(transactions) {
-            const tbody = document.getElementById('transactionsBody');
-            tbody.innerHTML = '';
-            if (transactions.length === 0) { tbody.innerHTML = '<tr><td colspan="7">暂无数据</td></tr>'; return; }
-
-            const typeMap = { 'deposit': '<span class="badge badge-success">充值</span>', 'withdraw': '<span class="badge badge-warning">提现</span>', 'adjust': '<span class="badge badge-info">调账</span>' };
-            const statusMap = { 'pending': '<span class="badge badge-warning">待处理</span>', 'approved': '<span class="badge badge-success">已批准</span>', 'rejected': '<span class="badge badge-danger">已拒绝</span>' };
-
-            transactions.forEach(trans => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${trans.userId?.username || '-'}</td>
-                    <td>${typeMap[trans.type] || trans.type}</td>
-                    <td style="font-weight:bold;color:${trans.type === 'deposit' || (trans.type === 'adjust' && trans.amount > 0) ? '#28a745' : '#dc3545'}">
-                        ${trans.type === 'withdraw' ? '-' : '+'}¥${Math.abs(trans.amount).toFixed(2)}
-                    </td>
-                    <td>${statusMap[trans.status] || trans.status}</td>
-                    <td>${trans.note || '-'}</td>
-                    <td>${new Date(trans.createdAt).toLocaleString('zh-CN')}</td>
-                    <td class="admin-only">
-                        ${trans.status === 'pending' ? 
-                            `<button class="btn btn-success" onclick="processTransaction('${trans._id}', 'approved')">批准</button>
-                             <button class="btn btn-danger" onclick="processTransaction('${trans._id}', 'rejected')">拒绝</button>` : '-'}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        async function processTransaction(id, status) {
+        async function processTrans(id, status) {
+            if (!confirm(`确定要${status === 'approved' ? '批准' : '拒绝'}该交易吗？`)) return;
             try {
                 const res = await fetch('/api/transactions', {
                     method: 'PATCH',
@@ -941,111 +715,29 @@
                     body: JSON.stringify({ transactionId: id, status })
                 });
                 const data = await res.json();
-                if (res.ok) { showMessage('处理成功', 'success'); loadTransactions(); loadDashboard(); }
-                else showMessage(data.error, 'error');
-            } catch (error) { showMessage('网络错误', 'error'); }
+                if (res.ok) { loadTransactions(); loadOverview(); }
+                else alert(data.error);
+            } catch (e) { alert('操作失败'); }
         }
 
-        // ==================== 充值/提现/改密 ====================
-
-        function showDepositModal() {
-            document.getElementById('depositAmount').value = '';
-            document.getElementById('depositModal').classList.add('active');
-        }
-
-        async function submitDeposit() {
-            const amount = parseFloat(document.getElementById('depositAmount').value);
-            if (!amount || amount <= 0) { showMessage('请输入有效金额', 'error'); return; }
-
+        // 管理员列表
+        async function loadAdmins() {
             try {
-                const res = await fetch('/api/transactions?action=request', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ type: 'deposit', amount })
-                });
+                const res = await fetch('/api/users?role=admin', { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
-                if (res.ok) { showMessage('申请已提交', 'success'); closeModal('depositModal'); }
-                else showMessage(data.error, 'error');
-            } catch (error) { showMessage('网络错误', 'error'); }
+                document.getElementById('adminsBody').innerHTML = (data.users || []).map(u => `
+                    <tr>
+                        <td>${u.username}</td>
+                        <td>${u.isActive ? '<span class="badge badge-success">正常</span>' : '<span class="badge badge-danger">禁用</span>'}</td>
+                        <td>${new Date(u.createdAt).toLocaleString('zh-CN')}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {}
         }
 
-        function showWithdrawModal() {
-            document.getElementById('withdrawBalance').value = `¥${currentUser.balance.toFixed(2)}`;
-            document.getElementById('withdrawAmount').value = '';
-            document.getElementById('withdrawModal').classList.add('active');
-        }
-
-        async function submitWithdraw() {
-            const amount = parseFloat(document.getElementById('withdrawAmount').value);
-            if (!amount || amount <= 0) { showMessage('请输入有效金额', 'error'); return; }
-            if (amount > currentUser.balance) { showMessage('余额不足', 'error'); return; }
-
-            try {
-                const res = await fetch('/api/transactions?action=request', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ type: 'withdraw', amount })
-                });
-                const data = await res.json();
-                if (res.ok) { showMessage('申请已提交', 'success'); closeModal('withdrawModal'); }
-                else showMessage(data.error, 'error');
-            } catch (error) { showMessage('网络错误', 'error'); }
-        }
-
-        function showChangePasswordModal() {
-            document.getElementById('changePasswordModal').classList.add('active');
-        }
-
-        async function submitChangePassword() {
-            const oldPassword = document.getElementById('oldPassword').value;
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
-
-            if (!oldPassword || !newPassword || !confirmNewPassword) { showMessage('请填写所有字段', 'error'); return; }
-            if (newPassword !== confirmNewPassword) { showMessage('两次密码不一致', 'error'); return; }
-
-            try {
-                const res = await fetch('/api/auth?action=change-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ oldPassword, newPassword })
-                });
-                const data = await res.json();
-                if (res.ok) { showMessage('密码已修改，请重新登录', 'success'); setTimeout(logout, 2000); }
-                else showMessage(data.error, 'error');
-            } catch (error) { showMessage('网络错误', 'error'); }
-        }
-
-        // ==================== 系统管理 ====================
-
-        async function loadSystemStats() {
-            try {
-                const res = await fetch('/api/admin?action=stats', { headers: { 'Authorization': `Bearer ${token}` } });
-                const data = await res.json();
-                if (res.ok) {
-                    document.getElementById('totalUsers').textContent = data.stats?.totalUsers || '-';
-                    document.getElementById('totalBets').textContent = data.stats?.totalBets || '-';
-                    document.getElementById('totalAmount').textContent = `¥${(data.stats?.totalAmount || 0).toFixed(2)}`;
-                }
-            } catch (error) { console.error(error); }
-        }
-
-        // ==================== 工具函数 ====================
-
+        // 工具函数
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-        function logout() { localStorage.removeItem('token'); window.location.href = 'login.html'; }
-
-        function showMessage(text, type) {
-            const existing = document.querySelector('.message');
-            if (existing) existing.remove();
-            const msg = document.createElement('div');
-            msg.className = `message message-${type}`;
-            msg.textContent = text;
-            msg.style.cssText = 'position:fixed;top:20px;right:20px;padding:15px 25px;border-radius:5px;z-index:9999;font-weight:500;color:white;';
-            msg.style.background = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#ffc107';
-            document.body.appendChild(msg);
-            setTimeout(() => msg.remove(), 3000);
-        }
+        function logout() { localStorage.removeItem('token'); location.href = 'login.html'; }
     </script>
 </body>
 </html>
