@@ -4,6 +4,7 @@
  *   POST /api/auth?action=register     - 用户注册
  *   POST /api/auth?action=login        - 用户登录
  *   GET  /api/auth?action=me           - 获取当前用户信息
+ *   POST /api/auth?action=heartbeat    - 用户心跳（保持在线状态）
  *   POST /api/auth?action=change-password - 修改密码
  */
 
@@ -188,6 +189,10 @@ async function handleMe(req, res) {
         return res.status(403).json({ error: '账户已被禁用' });
     }
 
+    // 更新最后活动时间（用于判断在线状态）
+    user.lastActiveAt = new Date();
+    await user.save();
+
     // 如果缓存中有余额，优先使用缓存值
     const balance = cachedBalance !== null ? cachedBalance : user.balance;
 
@@ -199,6 +204,9 @@ async function handleMe(req, res) {
     // 获取客户端IP
     const clientIp = getClientIp(req);
 
+    // 判断在线状态：最后活动时间在5分钟内
+    const isOnline = user.lastActiveAt && (Date.now() - new Date(user.lastActiveAt).getTime()) < 5 * 60 * 1000;
+
     res.json({
         user: {
             id: user._id,
@@ -206,13 +214,39 @@ async function handleMe(req, res) {
             role: user.role,
             balance: balance,
             isActive: user.isActive,
+            isOnline: isOnline,
             ipWhitelist: user.ipWhitelist,
             ipWhitelistEnabled: user.ipWhitelistEnabled,
             lastLoginIp: user.lastLoginIp,
             lastLoginAt: user.lastLoginAt,
+            lastActiveAt: user.lastActiveAt,
             createdAt: user.createdAt
         },
         clientIp: clientIp
+    });
+}
+
+/**
+ * 用户心跳（保持在线状态）
+ */
+async function handleHeartbeat(req, res) {
+    // 验证Token
+    const userData = extractUserFromRequest(req);
+    if (!userData) {
+        return res.status(401).json({ error: '未授权，请先登录' });
+    }
+
+    await dbConnect();
+
+    // 更新最后活动时间
+    await User.findByIdAndUpdate(userData.id, { 
+        lastActiveAt: new Date() 
+    });
+
+    res.json({ 
+        success: true, 
+        timestamp: new Date().toISOString(),
+        message: '心跳成功'
     });
 }
 
@@ -294,6 +328,12 @@ const handler = async (req, res) => {
                 }
                 return await handleMe(req, res);
 
+            case 'heartbeat':
+                if (req.method !== 'POST' && req.method !== 'GET') {
+                    return res.status(405).json({ error: '方法不允许' });
+                }
+                return await handleHeartbeat(req, res);
+
             case 'change-password':
                 if (req.method !== 'POST') {
                     return res.status(405).json({ error: '方法不允许' });
@@ -303,7 +343,7 @@ const handler = async (req, res) => {
             default:
                 return res.status(400).json({ 
                     error: '无效的action参数',
-                    availableActions: ['register', 'login', 'me', 'change-password']
+                    availableActions: ['register', 'login', 'me', 'heartbeat', 'change-password']
                 });
         }
     } catch (error) {

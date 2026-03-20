@@ -42,7 +42,7 @@ async function handleList(req, res) {
         return res.status(401).json({ error: '需要管理员权限' });
     }
 
-    const { page = 1, limit = 20, search, role, isActive } = req.query;
+    const { page = 1, limit = 20, search, role, isActive, online } = req.query;
 
     // 构建查询条件
     let query = {};
@@ -65,13 +65,38 @@ async function handleList(req, res) {
 
     const total = await User.countDocuments(query);
 
+    // 计算在线状态
+    const now = Date.now();
+    const onlineThreshold = 5 * 60 * 1000; // 5分钟
+    
+    const usersWithOnline = users.map(user => {
+        const userObj = user.toObject();
+        // 在线判定：最后活动时间在5分钟内
+        userObj.isOnline = user.lastActiveAt && (now - new Date(user.lastActiveAt).getTime()) < onlineThreshold;
+        return userObj;
+    });
+
+    // 如果有在线过滤参数
+    let filteredUsers = usersWithOnline;
+    if (online !== undefined) {
+        const isOnlineFilter = online === 'true';
+        filteredUsers = usersWithOnline.filter(u => u.isOnline === isOnlineFilter);
+    }
+
+    // 统计在线用户数
+    const onlineCount = usersWithOnline.filter(u => u.isOnline).length;
+
     res.json({
-        users,
+        users: filteredUsers,
         pagination: {
             page: parseInt(page),
             limit: parseInt(limit),
             total,
             pages: Math.ceil(total / parseInt(limit))
+        },
+        stats: {
+            onlineCount,
+            offlineCount: usersWithOnline.length - onlineCount
         }
     });
 }

@@ -467,9 +467,12 @@ async function handleStats(req, res) {
 
     const dateStr = date || startDate.toISOString().slice(0, 10);
 
+    // 在线用户阈值：5分钟内有活动
+    const onlineThreshold = new Date(Date.now() - 5 * 60 * 1000);
+
     // 并行获取统计数据
     const [
-        userCount, activeUserCount, adminCount, totalBalance,
+        userCount, activeUserCount, adminCount, totalBalance, onlineUserCount,
         totalBets, totalBetAmount, wonBets, lostBets, totalWinAmount,
         totalDraws, settledDraws, pendingDraws,
         totalTransactions, depositAmount, withdrawAmount, pendingTransactions, completedTransactions
@@ -478,6 +481,7 @@ async function handleStats(req, res) {
         User.countDocuments({ deletedAt: null, isActive: true }),
         User.countDocuments({ deletedAt: null, role: 'admin' }),
         User.aggregate([{ $match: { deletedAt: null } }, { $group: { _id: null, total: { $sum: '$balance' } } }]),
+        User.countDocuments({ deletedAt: null, isActive: true, lastActiveAt: { $gte: onlineThreshold } }),
         
         Bet.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
         Bet.aggregate([{ $match: { createdAt: { $gte: startDate, $lte: endDate } } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
@@ -513,7 +517,7 @@ async function handleStats(req, res) {
 
     res.json({
         dateRange: { start: startDate.toISOString(), end: endDate.toISOString(), range },
-        users: { total: userCount, active: activeUserCount, admins: adminCount, totalBalance: totalBalanceValue },
+        users: { total: userCount, active: activeUserCount, admins: adminCount, totalBalance: totalBalanceValue, online: onlineUserCount },
         bets: { total: totalBets, amount: totalBetAmountValue, won: wonBets, lost: lostBets, winAmount: totalWinAmountValue, platformProfit, winRate: totalBets > 0 ? ((wonBets / totalBets) * 100).toFixed(2) + '%' : '0%' },
         draws: { total: totalDraws, settled: settledDraws, pending: pendingDraws },
         transactions: { total: totalTransactions, depositAmount: depositAmountValue, withdrawAmount: withdrawAmountValue, pending: pendingTransactions, completed: completedTransactions, netInflow: depositAmountValue - withdrawAmountValue },

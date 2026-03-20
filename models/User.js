@@ -53,6 +53,13 @@ const userSchema = new mongoose.Schema({
     lastLoginAt: {
         type: Date
     },
+    // 最后活动时间（用于判断在线状态）
+    lastActiveAt: {
+        type: Date,
+        default: Date.now
+    },
+    // 在线状态（内存中维护，不持久化）
+    // 在线判定：最后活动时间在5分钟内
     deletedAt: {
         type: Date
     }, // 删除时间（软删除）
