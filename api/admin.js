@@ -7,6 +7,9 @@
  *   GET    /api/admin?action=archive   - 获取数据库统计信息
  *   POST   /api/admin?action=archive   - 执行归档清理
  *   GET    /api/admin?action=stats     - 获取运营统计数据
+ *   GET    /api/admin?action=config    - 获取系统配置
+ *   POST   /api/admin?action=config    - 更新单个配置项
+ *   PUT    /api/admin?action=config    - 批量更新配置
  */
 
 // 加载环境变量（必须在最前面）
@@ -17,6 +20,7 @@ const User = require('../models/User');
 const Draw = require('../models/Draw');
 const Bet = require('../models/Bet');
 const Transaction = require('../models/Transaction');
+const Config = require('../models/Config');
 const bcrypt = require('bcryptjs');
 const { extractUserFromRequest } = require('../lib/auth');
 const { setCorsHeaders, handlePreflightRequest } = require('../lib/cors');
@@ -353,6 +357,72 @@ async function handleStats(req, res) {
 }
 
 /**
+ * 获取系统配置
+ */
+async function handleConfigGet(req, res) {
+    const admin = await verifyAdmin(req);
+    if (!admin) return res.status(401).json({ error: '需要管理员权限' });
+
+    const configs = await Config.getAll();
+    res.json({ success: true, configs });
+}
+
+/**
+ * 更新系统配置
+ */
+async function handleConfigUpdate(req, res) {
+    const admin = await verifyAdmin(req);
+    if (!admin) return res.status(401).json({ error: '需要管理员权限' });
+
+    const { key, value } = req.body;
+    
+    if (!key) {
+        return res.status(400).json({ error: '缺少配置键名' });
+    }
+
+    // 验证配置键是否有效
+    const validKeys = Object.keys(Config.DEFAULT_CONFIG);
+    if (!validKeys.includes(key)) {
+        return res.status(400).json({ 
+            error: '无效的配置键名',
+            validKeys 
+        });
+    }
+
+    await Config.set(key, value, admin._id);
+    
+    logger.info('配置已更新', { key, value, operator: admin.username });
+    res.json({ success: true, message: '配置已保存' });
+}
+
+/**
+ * 批量更新系统配置
+ */
+async function handleConfigBatchUpdate(req, res) {
+    const admin = await verifyAdmin(req);
+    if (!admin) return res.status(401).json({ error: '需要管理员权限' });
+
+    const { configs } = req.body;
+    
+    if (!configs || typeof configs !== 'object') {
+        return res.status(400).json({ error: '缺少配置数据' });
+    }
+
+    const results = [];
+    for (const [key, value] of Object.entries(configs)) {
+        if (Config.DEFAULT_CONFIG[key]) {
+            await Config.set(key, value, admin._id);
+            results.push({ key, success: true });
+        } else {
+            results.push({ key, success: false, error: '无效的配置键名' });
+        }
+    }
+
+    logger.info('批量配置已更新', { count: results.filter(r => r.success).length, operator: admin.username });
+    res.json({ success: true, results });
+}
+
+/**
  * 主入口 - 路由分发
  */
 const handleAdmin = async (req, res) => {
@@ -393,10 +463,20 @@ const handleAdmin = async (req, res) => {
                 }
                 return await handleStats(req, res);
 
+            case 'config':
+                if (req.method === 'GET') {
+                    return await handleConfigGet(req, res);
+                } else if (req.method === 'POST') {
+                    return await handleConfigUpdate(req, res);
+                } else if (req.method === 'PUT') {
+                    return await handleConfigBatchUpdate(req, res);
+                }
+                return res.status(405).json({ error: '方法不允许' });
+
             default:
                 return res.status(400).json({ 
                     error: '无效的action参数',
-                    availableActions: ['init', 'verify', 'archive', 'stats']
+                    availableActions: ['init', 'verify', 'archive', 'stats', 'config']
                 });
         }
     } catch (error) {

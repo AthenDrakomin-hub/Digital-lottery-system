@@ -63,6 +63,7 @@
         .config-item:last-child { border-bottom: none; }
         .config-label { font-weight: 500; }
         .config-desc { color: #888; font-size: 12px; }
+        .config-value { font-weight: 600; color: #667eea; }
         
         /* 状态指示 */
         .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
@@ -470,18 +471,22 @@
                 </div>
 
                 <div class="card">
-                    <h3>玩法配置</h3>
+                    <h3>玩法配置 <button class="btn btn-primary btn-sm" style="float:right" onclick="editBetConfig()">编辑</button></h3>
                     <div class="config-item">
-                        <div><div class="config-label">冠军玩法投注金额</div></div>
-                        <div>每注 2 元</div>
+                        <div><div class="config-label">每注投注金额</div></div>
+                        <div id="config-betPrice"><span class="config-value">2</span> 元</div>
                     </div>
                     <div class="config-item">
-                        <div><div class="config-label">冠军玩法中奖金额</div></div>
-                        <div>固定 19.5 元</div>
+                        <div><div class="config-label">中奖金额</div></div>
+                        <div id="config-betWin"><span class="config-value">19.5</span> 元</div>
                     </div>
                     <div class="config-item">
                         <div><div class="config-label">最大投注数字数</div></div>
-                        <div>5 个</div>
+                        <div id="config-betMax"><span class="config-value">5</span> 个</div>
+                    </div>
+                    <div class="config-item">
+                        <div><div class="config-label">最小投注数字数</div></div>
+                        <div id="config-betMin"><span class="config-value">1</span> 个</div>
                     </div>
                 </div>
 
@@ -518,22 +523,22 @@
                 </div>
 
                 <div class="card">
-                    <h3>提现配置</h3>
+                    <h3>提现配置 <button class="btn btn-primary btn-sm" style="float:right" onclick="editWithdrawConfig()">编辑</button></h3>
                     <div class="config-item">
                         <div><div class="config-label">最小提现金额</div></div>
-                        <div>10 元</div>
+                        <div id="config-withdrawMin"><span class="config-value">10</span> 元</div>
                     </div>
                     <div class="config-item">
                         <div><div class="config-label">最大提现金额</div></div>
-                        <div>50,000 元</div>
+                        <div id="config-withdrawMax"><span class="config-value">50,000</span> 元</div>
                     </div>
                     <div class="config-item">
                         <div><div class="config-label">提现手续费</div></div>
-                        <div>0%</div>
+                        <div id="config-withdrawFee"><span class="config-value">0</span>%</div>
                     </div>
                     <div class="config-item">
                         <div><div class="config-label">提现到账时间</div></div>
-                        <div>1-24小时</div>
+                        <div id="config-withdrawTime"><span class="config-value">1-24小时</span></div>
                     </div>
                 </div>
 
@@ -692,6 +697,81 @@
         </div>
     </div>
 
+    <!-- 玩法配置编辑模态框 -->
+    <div id="betConfigModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑玩法配置</h3>
+                <button class="modal-close" onclick="closeModal('betConfigModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>每注投注金额（元）</label>
+                <input type="number" id="editBetPrice" class="form-control" min="1" step="0.5">
+            </div>
+            <div class="form-group">
+                <label>中奖金额（元）</label>
+                <input type="number" id="editBetWin" class="form-control" min="1" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>最大投注数字数</label>
+                <input type="number" id="editBetMax" class="form-control" min="1" max="10">
+            </div>
+            <div class="form-group">
+                <label>最小投注数字数</label>
+                <input type="number" id="editBetMin" class="form-control" min="1" max="10">
+            </div>
+            <div style="display:flex;gap:10px">
+                <button class="btn btn-secondary" onclick="closeModal('betConfigModal')" style="flex:1">取消</button>
+                <button class="btn btn-primary" onclick="saveBetConfig()" style="flex:1">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提现配置编辑模态框 -->
+    <div id="withdrawConfigModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑提现配置</h3>
+                <button class="modal-close" onclick="closeModal('withdrawConfigModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>最小提现金额（元）</label>
+                <input type="number" id="editWithdrawMin" class="form-control" min="1">
+            </div>
+            <div class="form-group">
+                <label>最大提现金额（元）</label>
+                <input type="number" id="editWithdrawMax" class="form-control" min="100">
+            </div>
+            <div class="form-group">
+                <label>提现手续费率（%）</label>
+                <input type="number" id="editWithdrawFee" class="form-control" min="0" max="100" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>提现到账时间</label>
+                <input type="text" id="editWithdrawTime" class="form-control" placeholder="如：1-24小时">
+            </div>
+            <div style="display:flex;gap:10px">
+                <button class="btn btn-secondary" onclick="closeModal('withdrawConfigModal')" style="flex:1">取消</button>
+                <button class="btn btn-primary" onclick="saveWithdrawConfig()" style="flex:1">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 支付配置编辑模态框 -->
+    <div id="paymentConfigModal" class="modal">
+        <div class="modal-content" style="max-width:500px">
+            <div class="modal-header">
+                <h3 id="paymentConfigTitle">编辑支付配置</h3>
+                <button class="modal-close" onclick="closeModal('paymentConfigModal')">&times;</button>
+            </div>
+            <div id="paymentConfigForm"></div>
+            <div style="display:flex;gap:10px;margin-top:15px">
+                <button class="btn btn-secondary" onclick="closeModal('paymentConfigModal')" style="flex:1">取消</button>
+                <button class="btn btn-primary" onclick="savePaymentConfig()" style="flex:1">保存</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let token = localStorage.getItem('token');
         if (!token) location.href = 'login.html';
@@ -742,7 +822,7 @@
                 case 'draws': loadDraws(); break;
                 case 'bets': loadBets(); break;
                 case 'transactions': loadTransactions(); break;
-                case 'config': loadAdmins(); loadAllMappings(); break;
+                case 'config': loadAdmins(); loadAllMappings(); loadSystemConfigs(); break;
             }
         }
 
@@ -1866,6 +1946,241 @@
                 if (res.ok) alert('缓存已清理');
                 else alert(data.error || '清理失败');
             } catch (e) { alert('操作失败'); }
+        }
+
+        // ========== 系统配置管理 ==========
+        let systemConfigs = {};
+
+        // 加载系统配置
+        async function loadSystemConfigs() {
+            try {
+                const res = await fetch('/api/admin?action=config', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                if (res.ok && data.configs) {
+                    systemConfigs = data.configs;
+                    renderBetConfig();
+                    renderWithdrawConfig();
+                }
+            } catch (e) {
+                console.error('加载配置失败:', e);
+            }
+        }
+
+        // 渲染玩法配置
+        function renderBetConfig() {
+            const price = systemConfigs['bet.pricePerNumber']?.value || 2;
+            const win = systemConfigs['bet.winAmount']?.value || 19.5;
+            const max = systemConfigs['bet.maxNumbers']?.value || 5;
+            const min = systemConfigs['bet.minNumbers']?.value || 1;
+            
+            document.querySelector('#config-betPrice .config-value').textContent = price;
+            document.querySelector('#config-betWin .config-value').textContent = win;
+            document.querySelector('#config-betMax .config-value').textContent = max;
+            document.querySelector('#config-betMin .config-value').textContent = min;
+        }
+
+        // 渲染提现配置
+        function renderWithdrawConfig() {
+            const min = systemConfigs['withdraw.minAmount']?.value || 10;
+            const max = systemConfigs['withdraw.maxAmount']?.value || 50000;
+            const fee = systemConfigs['withdraw.feeRate']?.value || 0;
+            const time = systemConfigs['withdraw.processingTime']?.value || '1-24小时';
+            
+            document.querySelector('#config-withdrawMin .config-value').textContent = min.toLocaleString();
+            document.querySelector('#config-withdrawMax .config-value').textContent = max.toLocaleString();
+            document.querySelector('#config-withdrawFee .config-value').textContent = fee;
+            document.querySelector('#config-withdrawTime .config-value').textContent = time;
+        }
+
+        // 编辑玩法配置
+        function editBetConfig() {
+            document.getElementById('editBetPrice').value = systemConfigs['bet.pricePerNumber']?.value || 2;
+            document.getElementById('editBetWin').value = systemConfigs['bet.winAmount']?.value || 19.5;
+            document.getElementById('editBetMax').value = systemConfigs['bet.maxNumbers']?.value || 5;
+            document.getElementById('editBetMin').value = systemConfigs['bet.minNumbers']?.value || 1;
+            document.getElementById('betConfigModal').classList.add('active');
+        }
+
+        // 保存玩法配置
+        async function saveBetConfig() {
+            const configs = {
+                'bet.pricePerNumber': parseFloat(document.getElementById('editBetPrice').value) || 2,
+                'bet.winAmount': parseFloat(document.getElementById('editBetWin').value) || 19.5,
+                'bet.maxNumbers': parseInt(document.getElementById('editBetMax').value) || 5,
+                'bet.minNumbers': parseInt(document.getElementById('editBetMin').value) || 1
+            };
+            
+            try {
+                const res = await fetch('/api/admin?action=config', {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ configs })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert('玩法配置已保存');
+                    closeModal('betConfigModal');
+                    await loadSystemConfigs();
+                } else {
+                    alert(data.error || '保存失败');
+                }
+            } catch (e) {
+                alert('操作失败');
+            }
+        }
+
+        // 编辑提现配置
+        function editWithdrawConfig() {
+            document.getElementById('editWithdrawMin').value = systemConfigs['withdraw.minAmount']?.value || 10;
+            document.getElementById('editWithdrawMax').value = systemConfigs['withdraw.maxAmount']?.value || 50000;
+            document.getElementById('editWithdrawFee').value = systemConfigs['withdraw.feeRate']?.value || 0;
+            document.getElementById('editWithdrawTime').value = systemConfigs['withdraw.processingTime']?.value || '1-24小时';
+            document.getElementById('withdrawConfigModal').classList.add('active');
+        }
+
+        // 保存提现配置
+        async function saveWithdrawConfig() {
+            const configs = {
+                'withdraw.minAmount': parseFloat(document.getElementById('editWithdrawMin').value) || 10,
+                'withdraw.maxAmount': parseFloat(document.getElementById('editWithdrawMax').value) || 50000,
+                'withdraw.feeRate': parseFloat(document.getElementById('editWithdrawFee').value) || 0,
+                'withdraw.processingTime': document.getElementById('editWithdrawTime').value || '1-24小时'
+            };
+            
+            try {
+                const res = await fetch('/api/admin?action=config', {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ configs })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert('提现配置已保存');
+                    closeModal('withdrawConfigModal');
+                    await loadSystemConfigs();
+                } else {
+                    alert(data.error || '保存失败');
+                }
+            } catch (e) {
+                alert('操作失败');
+            }
+        }
+
+        // 编辑支付配置
+        function editPayment(type) {
+            const titles = { alipay: '支付宝', wechat: '微信', bank: '银行卡', usdt: 'USDT' };
+            document.getElementById('paymentConfigTitle').textContent = `编辑${titles[type]}收款配置`;
+            
+            const config = systemConfigs[`payment.${type}`]?.value || {};
+            let formHtml = '';
+            
+            if (type === 'alipay' || type === 'wechat') {
+                formHtml = `
+                    <div class="form-group">
+                        <label>收款人姓名</label>
+                        <input type="text" id="editPayName" class="form-control" value="${config.name || ''}" placeholder="收款人姓名">
+                    </div>
+                    <div class="form-group">
+                        <label>收款账号</label>
+                        <input type="text" id="editPayAccount" class="form-control" value="${config.account || ''}" placeholder="收款账号">
+                    </div>
+                    <div class="form-group">
+                        <label>收款二维码链接</label>
+                        <input type="text" id="editPayQrcode" class="form-control" value="${config.qrcode || ''}" placeholder="二维码图片URL">
+                    </div>
+                `;
+            } else if (type === 'bank') {
+                formHtml = `
+                    <div class="form-group">
+                        <label>银行名称</label>
+                        <input type="text" id="editPayBankName" class="form-control" value="${config.bankName || ''}" placeholder="如：中国工商银行">
+                    </div>
+                    <div class="form-group">
+                        <label>开户行</label>
+                        <input type="text" id="editPayBranch" class="form-control" value="${config.branch || ''}" placeholder="开户行支行名称">
+                    </div>
+                    <div class="form-group">
+                        <label>持卡人姓名</label>
+                        <input type="text" id="editPayAccountName" class="form-control" value="${config.accountName || ''}" placeholder="持卡人姓名">
+                    </div>
+                    <div class="form-group">
+                        <label>银行卡号</label>
+                        <input type="text" id="editPayAccountNumber" class="form-control" value="${config.accountNumber || ''}" placeholder="银行卡号">
+                    </div>
+                `;
+            } else if (type === 'usdt') {
+                formHtml = `
+                    <div class="form-group">
+                        <label>网络类型</label>
+                        <select id="editPayNetwork" class="form-control">
+                            <option value="TRC20" ${config.network === 'TRC20' ? 'selected' : ''}>TRC20</option>
+                            <option value="ERC20" ${config.network === 'ERC20' ? 'selected' : ''}>ERC20</option>
+                            <option value="BEP20" ${config.network === 'BEP20' ? 'selected' : ''}>BEP20</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>收款地址</label>
+                        <input type="text" id="editPayAddress" class="form-control" value="${config.address || ''}" placeholder="USDT收款地址">
+                    </div>
+                `;
+            }
+            
+            document.getElementById('paymentConfigForm').innerHTML = formHtml;
+            document.getElementById('paymentConfigModal').dataset.type = type;
+            document.getElementById('paymentConfigModal').classList.add('active');
+        }
+
+        // 保存支付配置
+        async function savePaymentConfig() {
+            const type = document.getElementById('paymentConfigModal').dataset.type;
+            let value = {};
+            
+            if (type === 'alipay' || type === 'wechat') {
+                value = {
+                    name: document.getElementById('editPayName').value.trim(),
+                    account: document.getElementById('editPayAccount').value.trim(),
+                    qrcode: document.getElementById('editPayQrcode').value.trim()
+                };
+            } else if (type === 'bank') {
+                value = {
+                    bankName: document.getElementById('editPayBankName').value.trim(),
+                    branch: document.getElementById('editPayBranch').value.trim(),
+                    accountName: document.getElementById('editPayAccountName').value.trim(),
+                    accountNumber: document.getElementById('editPayAccountNumber').value.trim()
+                };
+            } else if (type === 'usdt') {
+                value = {
+                    network: document.getElementById('editPayNetwork').value,
+                    address: document.getElementById('editPayAddress').value.trim()
+                };
+            }
+            
+            try {
+                const res = await fetch('/api/admin?action=config', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ key: `payment.${type}`, value })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert('支付配置已保存');
+                    closeModal('paymentConfigModal');
+                    await loadSystemConfigs();
+                } else {
+                    alert(data.error || '保存失败');
+                }
+            } catch (e) {
+                alert('操作失败');
+            }
         }
 
         // 工具函数
