@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "港华智慧能源投资平台 - 全栈式数字开奖管理系统",
   "private": true,
+  "packageManager": "npm@10.9.0",
   "scripts": {
     "dev": "next dev --port 5000 --webpack",
     "dev:turbo": "next dev --port 5000 --turbopack",
@@ -22,7 +23,6 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
-    "@next/eslint-plugin-next": "^16.2.0",
     "@tailwindcss/postcss": "^4.2.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
@@ -30,10 +30,8 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.27",
-    "eslint": "^9.0.0",
+    "eslint": "~9.0.0",
     "eslint-config-next": "^16.2.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^17.4.0",
     "lightningcss": "^1.32.0",
     "postcss": "^8.5.8",
