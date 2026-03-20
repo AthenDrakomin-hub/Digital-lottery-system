@@ -88,7 +88,7 @@
             <button class="nav-tab" data-tab="users">👥 用户管理</button>
             <button class="nav-tab" data-tab="draws">🎲 开奖记录</button>
             <button class="nav-tab" data-tab="bets">🎫 投注记录</button>
-            <button class="nav-tab" data-tab="transactions">💰 交易审核</button>
+            <button class="nav-tab" data-tab="transactions">💰 交易管理</button>
             <button class="nav-tab" data-tab="config">🔧 系统配置</button>
         </div>
 
@@ -250,9 +250,10 @@
                 </div>
             </div>
 
-            <!-- 交易审核 -->
+            <!-- 交易管理 -->
             <div id="transactions" class="tab-content">
                 <div class="card">
+                    <h3>交易记录</h3>
                     <div class="toolbar">
                         <select id="transType">
                             <option value="">全部类型</option>
@@ -264,7 +265,9 @@
                             <option value="">全部状态</option>
                             <option value="pending">待审核</option>
                             <option value="approved">已批准</option>
+                            <option value="completed">已完成</option>
                             <option value="rejected">已拒绝</option>
+                            <option value="cancelled">已取消</option>
                         </select>
                         <button class="btn btn-primary btn-sm" onclick="loadTransactions()">查询</button>
                     </div>
@@ -275,7 +278,7 @@
                                 <th>类型</th>
                                 <th>金额</th>
                                 <th>备注</th>
-                                <th>时间</th>
+                                <th>申请时间</th>
                                 <th>状态</th>
                                 <th>操作</th>
                             </tr>
@@ -326,6 +329,58 @@
                     <div class="config-item">
                         <div><div class="config-label">最大投注数字数</div></div>
                         <div>5 个</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>支付方式配置</h3>
+                    <div class="config-item">
+                        <div>
+                            <div class="config-label">支付宝收款</div>
+                            <div class="config-desc">用户充值时显示的支付宝收款信息</div>
+                        </div>
+                        <div><button class="btn btn-primary btn-sm" onclick="editPayment('alipay')">配置</button></div>
+                    </div>
+                    <div class="config-item">
+                        <div>
+                            <div class="config-label">微信收款</div>
+                            <div class="config-desc">用户充值时显示的微信收款信息</div>
+                        </div>
+                        <div><button class="btn btn-primary btn-sm" onclick="editPayment('wechat')">配置</button></div>
+                    </div>
+                    <div class="config-item">
+                        <div>
+                            <div class="config-label">银行卡收款</div>
+                            <div class="config-desc">用户充值时显示的银行卡收款信息</div>
+                        </div>
+                        <div><button class="btn btn-primary btn-sm" onclick="editPayment('bank')">配置</button></div>
+                    </div>
+                    <div class="config-item">
+                        <div>
+                            <div class="config-label">USDT收款</div>
+                            <div class="config-desc">用户充值时显示的USDT收款地址</div>
+                        </div>
+                        <div><button class="btn btn-primary btn-sm" onclick="editPayment('usdt')">配置</button></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>提现配置</h3>
+                    <div class="config-item">
+                        <div><div class="config-label">最小提现金额</div></div>
+                        <div>10 元</div>
+                    </div>
+                    <div class="config-item">
+                        <div><div class="config-label">最大提现金额</div></div>
+                        <div>50,000 元</div>
+                    </div>
+                    <div class="config-item">
+                        <div><div class="config-label">提现手续费</div></div>
+                        <div>0%</div>
+                    </div>
+                    <div class="config-item">
+                        <div><div class="config-label">提现到账时间</div></div>
+                        <div>1-24小时</div>
                     </div>
                 </div>
 
@@ -429,6 +484,58 @@
                 <input type="text" id="adjustNote" class="form-control" placeholder="调整原因">
             </div>
             <button class="btn btn-primary" onclick="submitAdjust()" style="width:100%">确认调账</button>
+        </div>
+    </div>
+
+    <!-- 支付方式配置模态框 -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="paymentModalTitle">支付方式配置</h3>
+                <button class="modal-close" onclick="closeModal('paymentModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>启用状态</label>
+                <select id="paymentEnabled" class="form-control">
+                    <option value="true">启用</option>
+                    <option value="false">禁用</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>收款账号/地址</label>
+                <input type="text" id="paymentAccount" class="form-control" placeholder="收款账号或钱包地址">
+            </div>
+            <div class="form-group">
+                <label>收款人/户名</label>
+                <input type="text" id="paymentName" class="form-control" placeholder="收款人姓名">
+            </div>
+            <div class="form-group">
+                <label>二维码图片URL</label>
+                <input type="text" id="paymentQrcode" class="form-control" placeholder="收款二维码图片链接">
+            </div>
+            <div class="form-group">
+                <label>备注说明</label>
+                <textarea id="paymentNote" class="form-control" rows="2" placeholder="附加说明，如开户行等"></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="savePayment()" style="width:100%">保存配置</button>
+        </div>
+    </div>
+
+    <!-- 拒绝交易模态框 -->
+    <div id="rejectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>拒绝交易</h3>
+                <button class="modal-close" onclick="closeModal('rejectModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>拒绝原因 <span style="color:#dc3545">*</span></label>
+                <textarea id="rejectReason" class="form-control" rows="3" placeholder="请输入拒绝原因，将通知用户"></textarea>
+            </div>
+            <div style="display:flex;gap:10px">
+                <button class="btn btn-secondary" onclick="closeModal('rejectModal')" style="flex:1">取消</button>
+                <button class="btn btn-danger" onclick="confirmReject()" style="flex:1">确认拒绝</button>
+            </div>
         </div>
     </div>
 
@@ -876,7 +983,7 @@
             } catch (e) { alert('操作失败'); }
         }
 
-        // 交易审核
+        // 交易管理
         async function loadTransactions() {
             const params = new URLSearchParams();
             const type = document.getElementById('transType').value;
@@ -890,40 +997,116 @@
                 const data = await res.json();
                 const tbody = document.getElementById('transBody');
                 const typeMap = { deposit: '充值', withdraw: '提现', adjust: '调账' };
+                const statusMap = {
+                    pending: '<span class="badge badge-warning">待审核</span>',
+                    approved: '<span class="badge badge-info">已批准</span>',
+                    completed: '<span class="badge badge-success">已完成</span>',
+                    rejected: '<span class="badge badge-danger">已拒绝</span>',
+                    cancelled: '<span class="badge badge-secondary">已取消</span>'
+                };
+                
                 tbody.innerHTML = (data.transactions || []).map(t => `
                     <tr>
-                        <td>${t.userId?.username || '-'}</td>
+                        <td><strong>${t.userId?.username || '-'}</strong></td>
                         <td><span class="badge ${t.type === 'deposit' ? 'badge-success' : t.type === 'withdraw' ? 'badge-warning' : 'badge-info'}">${typeMap[t.type] || t.type}</span></td>
                         <td style="font-weight:bold;color:${t.type === 'withdraw' ? '#dc3545' : '#28a745'}">${t.type === 'withdraw' ? '-' : '+'}¥${Math.abs(t.amount).toFixed(2)}</td>
-                        <td>${t.note || '-'}</td>
+                        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${t.note || ''}">${t.note || '-'}</td>
                         <td>${new Date(t.createdAt).toLocaleString('zh-CN')}</td>
-                        <td>${t.status === 'approved' ? '<span class="badge badge-success">已批准</span>' : 
-                             t.status === 'rejected' ? '<span class="badge badge-danger">已拒绝</span>' : 
-                             '<span class="badge badge-warning">待审核</span>'}</td>
+                        <td>${statusMap[t.status] || t.status}</td>
                         <td class="action-btns">
                             ${t.status === 'pending' ? 
-                                `<button class="btn btn-success btn-sm" onclick="processTrans('${t._id}','approved')">批准</button>
-                                 <button class="btn btn-danger btn-sm" onclick="processTrans('${t._id}','rejected')">拒绝</button>` : '-'}
+                                `<button class="btn btn-success btn-sm" onclick="approveTrans('${t._id}')">批准</button>
+                                 <button class="btn btn-danger btn-sm" onclick="showRejectModal('${t._id}')">拒绝</button>` : 
+                             t.status === 'approved' && t.type === 'withdraw' ?
+                                `<button class="btn btn-primary btn-sm" onclick="completeTrans('${t._id}')">确认打款</button>` : '-'}
                         </td>
                     </tr>
                 `).join('') || '<tr><td colspan="7">暂无数据</td></tr>';
+                
+                document.getElementById('transPage').innerHTML = `共 ${data.pagination?.total || 0} 条`;
             } catch (e) {
                 document.getElementById('transBody').innerHTML = '<tr><td colspan="7">加载失败</td></tr>';
             }
         }
 
-        async function processTrans(id, status) {
-            if (!confirm(`确定要${status === 'approved' ? '批准' : '拒绝'}该交易吗？`)) return;
+        async function approveTrans(id) {
+            if (!confirm('确定批准该交易吗？\n\n充值：金额将直接入账\n提现：将从用户余额扣除，等待打款')) return;
             try {
-                const res = await fetch('/api/transactions', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ transactionId: id, status })
+                const res = await fetch(`/api/transactions?id=${id}&action=approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
-                if (res.ok) { loadTransactions(); loadOverview(); }
+                if (res.ok) { alert(data.message); loadTransactions(); loadOverview(); }
                 else alert(data.error);
             } catch (e) { alert('操作失败'); }
+        }
+
+        let currentRejectId = null;
+        function showRejectModal(id) {
+            currentRejectId = id;
+            document.getElementById('rejectReason').value = '';
+            document.getElementById('rejectModal').classList.add('active');
+        }
+
+        async function confirmReject() {
+            const reason = document.getElementById('rejectReason').value.trim();
+            if (!reason) return alert('请输入拒绝原因');
+            
+            try {
+                const res = await fetch(`/api/transactions?id=${currentRejectId}&action=reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ reason })
+                });
+                const data = await res.json();
+                if (res.ok) { 
+                    closeModal('rejectModal');
+                    loadTransactions(); 
+                } else alert(data.error);
+            } catch (e) { alert('操作失败'); }
+        }
+
+        async function completeTrans(id) {
+            if (!confirm('确认已完成打款吗？此操作不可撤销。')) return;
+            try {
+                const res = await fetch(`/api/transactions?id=${id}&action=approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ note: '打款完成' })
+                });
+                const data = await res.json();
+                if (res.ok) { alert('已确认打款完成'); loadTransactions(); }
+                else alert(data.error);
+            } catch (e) { alert('操作失败'); }
+        }
+
+        // 支付方式配置
+        let currentPaymentType = null;
+        function editPayment(type) {
+            currentPaymentType = type;
+            const titles = { alipay: '支付宝', wechat: '微信', bank: '银行卡', usdt: 'USDT' };
+            document.getElementById('paymentModalTitle').textContent = titles[type] + '收款配置';
+            document.getElementById('paymentEnabled').value = 'true';
+            document.getElementById('paymentAccount').value = '';
+            document.getElementById('paymentName').value = '';
+            document.getElementById('paymentQrcode').value = '';
+            document.getElementById('paymentNote').value = '';
+            document.getElementById('paymentModal').classList.add('active');
+        }
+
+        async function savePayment() {
+            const config = {
+                enabled: document.getElementById('paymentEnabled').value === 'true',
+                account: document.getElementById('paymentAccount').value,
+                name: document.getElementById('paymentName').value,
+                qrcode: document.getElementById('paymentQrcode').value,
+                note: document.getElementById('paymentNote').value
+            };
+            
+            // TODO: 保存到数据库
+            alert('支付配置已保存（演示功能）');
+            closeModal('paymentModal');
         }
 
         // 管理员列表
