@@ -371,55 +371,97 @@
                 </div>
 
                 <div class="card">
-                    <h3>数字映射配置</h3>
-                    <p style="color:#666;font-size:12px;margin-bottom:15px">设置开奖数字0-9的显示映射，例如：0=大、1=小。留空则显示原始数字。</p>
-                    <div class="mapping-grid">
-                        <div class="mapping-item">
-                            <span class="mapping-num">0</span>
-                            <input type="text" id="map0" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
+                    <h3>映射配置</h3>
+                    <p style="color:#666;font-size:12px;margin-bottom:15px">自定义系统字段的显示文本，支持数字、状态、类型等映射。</p>
+                    
+                    <!-- Tab导航 -->
+                    <div class="mapping-tabs" style="display:flex;gap:5px;margin-bottom:15px;border-bottom:1px solid #e0e0e0;padding-bottom:10px">
+                        <button class="mapping-tab active" data-tab="numbers" onclick="switchMappingTab('numbers')">数字映射</button>
+                        <button class="mapping-tab" data-tab="drawStatus" onclick="switchMappingTab('drawStatus')">开奖状态</button>
+                        <button class="mapping-tab" data-tab="betStatus" onclick="switchMappingTab('betStatus')">投注状态</button>
+                        <button class="mapping-tab" data-tab="transType" onclick="switchMappingTab('transType')">交易类型</button>
+                        <button class="mapping-tab" data-tab="transStatus" onclick="switchMappingTab('transStatus')">交易状态</button>
+                    </div>
+                    
+                    <style>
+                        .mapping-tab { padding:8px 16px; border:1px solid #ddd; background:#f8f9fa; border-radius:4px 4px 0 0; cursor:pointer; transition:all 0.2s; }
+                        .mapping-tab:hover { background:#e9ecef; }
+                        .mapping-tab.active { background:#667eea; color:#fff; border-color:#667eea; }
+                        .mapping-panel { display:none; }
+                        .mapping-panel.active { display:block; }
+                        .mapping-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+                        .mapping-item { display: flex; align-items: center; gap: 8px; }
+                        .mapping-num { width: 30px; height: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+                        .mapping-input { width: 80px; padding: 5px 8px; font-size: 12px; }
+                        .mapping-label { min-width: 80px; font-weight: 500; color: #333; }
+                    </style>
+                    
+                    <!-- 数字映射面板 -->
+                    <div id="panel-numbers" class="mapping-panel active">
+                        <p style="color:#888;font-size:12px;margin-bottom:10px">设置开奖数字0-9的显示映射，例如：0=大、1=小。留空则显示原始数字。</p>
+                        <div class="mapping-grid">
+                            <div class="mapping-item"><span class="mapping-num">0</span><input type="text" id="map0" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-num">1</span><input type="text" id="map1" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-num">2</span><input type="text" id="map2" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-num">3</span><input type="text" id="map3" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-num">4</span><input type="text" id="map4" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-num">5</span><input type="text" id="map5" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-num">6</span><input type="text" id="map6" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-num">7</span><input type="text" id="map7" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-num">8</span><input type="text" id="map8" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-num">9</span><input type="text" id="map9" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()"></div>
                         </div>
-                        <div class="mapping-item">
-                            <span class="mapping-num">1</span>
-                            <input type="text" id="map1" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
-                        </div>
-                        <div class="mapping-item">
-                            <span class="mapping-num">2</span>
-                            <input type="text" id="map2" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
-                        </div>
-                        <div class="mapping-item">
-                            <span class="mapping-num">3</span>
-                            <input type="text" id="map3" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
-                        </div>
-                        <div class="mapping-item">
-                            <span class="mapping-num">4</span>
-                            <input type="text" id="map4" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
-                        </div>
-                        <div class="mapping-item">
-                            <span class="mapping-num">5</span>
-                            <input type="text" id="map5" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
-                        </div>
-                        <div class="mapping-item">
-                            <span class="mapping-num">6</span>
-                            <input type="text" id="map6" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
-                        </div>
-                        <div class="mapping-item">
-                            <span class="mapping-num">7</span>
-                            <input type="text" id="map7" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
-                        </div>
-                        <div class="mapping-item">
-                            <span class="mapping-num">8</span>
-                            <input type="text" id="map8" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
-                        </div>
-                        <div class="mapping-item">
-                            <span class="mapping-num">9</span>
-                            <input type="text" id="map9" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
+                        <div style="margin-top:10px;display:flex;gap:8px">
+                            <button class="btn btn-warning btn-sm" onclick="setPresetMapping('bigSmall')">预设：大小</button>
+                            <button class="btn btn-info btn-sm" onclick="setPresetMapping('oddEven')">预设：单双</button>
+                            <button class="btn btn-secondary btn-sm" onclick="resetNumberMapping()">重置数字</button>
                         </div>
                     </div>
-                    <div style="margin-top:15px;display:flex;gap:10px">
-                        <button class="btn btn-primary btn-sm" onclick="saveNumberMapping()">保存映射</button>
-                        <button class="btn btn-secondary btn-sm" onclick="resetNumberMapping()">重置默认</button>
-                        <button class="btn btn-warning btn-sm" onclick="setPresetMapping('bigSmall')">预设：大小</button>
-                        <button class="btn btn-info btn-sm" onclick="setPresetMapping('oddEven')">预设：单双</button>
+                    
+                    <!-- 开奖状态映射面板 -->
+                    <div id="panel-drawStatus" class="mapping-panel">
+                        <p style="color:#888;font-size:12px;margin-bottom:10px">设置开奖状态的显示文本。</p>
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px">
+                            <div class="mapping-item"><span class="mapping-label">pending</span><input type="text" id="mapDrawPending" class="form-control mapping-input" placeholder="待开奖" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-label">drawn</span><input type="text" id="mapDrawDrawn" class="form-control mapping-input" placeholder="待结算" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-label">settled</span><input type="text" id="mapDrawSettled" class="form-control mapping-input" placeholder="已结算" oninput="updateMappingPreview()"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 投注状态映射面板 -->
+                    <div id="panel-betStatus" class="mapping-panel">
+                        <p style="color:#888;font-size:12px;margin-bottom:10px">设置投注状态的显示文本。</p>
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px">
+                            <div class="mapping-item"><span class="mapping-label">pending</span><input type="text" id="mapBetPending" class="form-control mapping-input" placeholder="待开奖" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-label">won</span><input type="text" id="mapBetWon" class="form-control mapping-input" placeholder="中奖" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-label">lost</span><input type="text" id="mapBetLost" class="form-control mapping-input" placeholder="未中" oninput="updateMappingPreview()"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 交易类型映射面板 -->
+                    <div id="panel-transType" class="mapping-panel">
+                        <p style="color:#888;font-size:12px;margin-bottom:10px">设置交易类型的显示文本。</p>
+                        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px">
+                            <div class="mapping-item"><span class="mapping-label">deposit</span><input type="text" id="mapTransDeposit" class="form-control mapping-input" placeholder="充值" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-label">withdraw</span><input type="text" id="mapTransWithdraw" class="form-control mapping-input" placeholder="提现" oninput="updateMappingPreview()"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 交易状态映射面板 -->
+                    <div id="panel-transStatus" class="mapping-panel">
+                        <p style="color:#888;font-size:12px;margin-bottom:10px">设置交易状态的显示文本。</p>
+                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px">
+                            <div class="mapping-item"><span class="mapping-label">pending</span><input type="text" id="mapTransPending" class="form-control mapping-input" placeholder="待审核" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-label">approved</span><input type="text" id="mapTransApproved" class="form-control mapping-input" placeholder="已批准" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-label">rejected</span><input type="text" id="mapTransRejected" class="form-control mapping-input" placeholder="已拒绝" oninput="updateMappingPreview()"></div>
+                            <div class="mapping-item"><span class="mapping-label">completed</span><input type="text" id="mapTransCompleted" class="form-control mapping-input" placeholder="已完成" oninput="updateMappingPreview()"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 保存按钮 -->
+                    <div style="margin-top:15px;display:flex;gap:10px;align-items:center">
+                        <button class="btn btn-primary btn-sm" onclick="saveAllMappings()">保存所有映射</button>
+                        <button class="btn btn-secondary btn-sm" onclick="resetAllMappings()">重置所有</button>
                     </div>
                     <div style="margin-top:15px;padding:10px;background:#f8f9fa;border-radius:4px">
                         <div style="font-size:12px;color:#666;margin-bottom:5px">映射预览：</div>
@@ -659,6 +701,9 @@
             document.getElementById('drawDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('betDate').value = new Date().toISOString().split('T')[0];
             
+            // 加载映射配置
+            loadAllMappings();
+            
             document.querySelectorAll('.nav-tab').forEach(t => {
                 t.addEventListener('click', () => {
                     document.querySelectorAll('.nav-tab').forEach(x => x.classList.remove('active'));
@@ -697,7 +742,7 @@
                 case 'draws': loadDraws(); break;
                 case 'bets': loadBets(); break;
                 case 'transactions': loadTransactions(); break;
-                case 'config': loadAdmins(); loadNumberMapping(); break;
+                case 'config': loadAdmins(); loadAllMappings(); break;
             }
         }
 
@@ -978,14 +1023,15 @@
                 const isExpired = !isToday || periodEndMinutes <= currentMinutes;
                 
                 let statusBadge;
+                const statusText = getMappedDrawStatus(d.status || 'pending');
                 if (d.status === 'settled') {
-                    statusBadge = '<span class="badge badge-success">已结算</span>';
+                    statusBadge = `<span class="badge badge-success">${statusText}</span>`;
                 } else if (d.result) {
-                    statusBadge = '<span class="badge badge-info">已开奖</span>';
+                    statusBadge = `<span class="badge badge-info">${getMappedDrawStatus('drawn')}</span>`;
                 } else if (isExpired) {
-                    statusBadge = '<span class="badge badge-danger">待补录</span>';
+                    statusBadge = `<span class="badge badge-danger">待补录</span>`;
                 } else {
-                    statusBadge = '<span class="badge badge-warning">待开奖</span>';
+                    statusBadge = `<span class="badge badge-warning">${statusText}</span>`;
                 }
                 
                 return `
@@ -1181,9 +1227,9 @@
                         <td>¥${b.amount.toFixed(2)}</td>
                         <td style="font-family:monospace">${b.result || '-'}</td>
                         <td style="color:#28a745">${b.winAmount > 0 ? '¥' + b.winAmount.toFixed(2) : '-'}</td>
-                        <td>${b.status === 'won' ? '<span class="badge badge-success">中奖</span>' : 
-                             b.status === 'lost' ? '<span class="badge badge-danger">未中</span>' : 
-                             '<span class="badge badge-warning">待开奖</span>'}</td>
+                        <td>${b.status === 'won' ? `<span class="badge badge-success">${getMappedBetStatus('won')}</span>` : 
+                             b.status === 'lost' ? `<span class="badge badge-danger">${getMappedBetStatus('lost')}</span>` : 
+                             `<span class="badge badge-warning">${getMappedBetStatus('pending')}</span>`}</td>
                         <td class="action-btns">
                             ${b.status === 'pending' ? 
                                 `<button class="btn btn-success btn-sm" onclick="setBetWon('${b._id}')">设为中奖</button>
@@ -1337,23 +1383,15 @@
                 transPageState.total = data.pagination?.total || 0;
                 
                 const tbody = document.getElementById('transBody');
-                const typeMap = { deposit: '充值', withdraw: '提现', adjust: '调账' };
-                const statusMap = {
-                    pending: '<span class="badge badge-warning">待审核</span>',
-                    approved: '<span class="badge badge-info">已批准</span>',
-                    completed: '<span class="badge badge-success">已完成</span>',
-                    rejected: '<span class="badge badge-danger">已拒绝</span>',
-                    cancelled: '<span class="badge badge-secondary">已取消</span>'
-                };
                 
                 tbody.innerHTML = (data.transactions || []).map(t => `
                     <tr>
                         <td><strong>${t.userId?.username || '-'}</strong></td>
-                        <td><span class="badge ${t.type === 'deposit' ? 'badge-success' : t.type === 'withdraw' ? 'badge-warning' : 'badge-info'}">${typeMap[t.type] || t.type}</span></td>
+                        <td><span class="badge ${t.type === 'deposit' ? 'badge-success' : t.type === 'withdraw' ? 'badge-warning' : 'badge-info'}">${getMappedTransType(t.type)}</span></td>
                         <td style="font-weight:bold;color:${t.type === 'withdraw' ? '#dc3545' : '#28a745'}">${t.type === 'withdraw' ? '-' : '+'}¥${Math.abs(t.amount).toFixed(2)}</td>
                         <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${t.note || ''}">${t.note || '-'}</td>
                         <td>${new Date(t.createdAt).toLocaleString('zh-CN')}</td>
-                        <td>${statusMap[t.status] || t.status}</td>
+                        <td><span class="badge ${t.status === 'pending' ? 'badge-warning' : t.status === 'approved' ? 'badge-info' : t.status === 'completed' ? 'badge-success' : t.status === 'rejected' ? 'badge-danger' : 'badge-secondary'}">${getMappedTransStatus(t.status)}</span></td>
                         <td class="action-btns">
                             ${t.status === 'pending' ? 
                                 `<button class="btn btn-success btn-sm" onclick="approveTrans('${t._id}')">批准</button>
@@ -1551,36 +1589,128 @@
 
         // 数字映射配置
         const NUMBER_MAPPING_KEY = 'numberMapping';
+        const ALL_MAPPINGS_KEY = 'allMappings';
         
-        function loadNumberMapping() {
-            const saved = localStorage.getItem(NUMBER_MAPPING_KEY);
-            if (saved) {
-                try {
-                    const mapping = JSON.parse(saved);
-                    for (let i = 0; i <= 9; i++) {
-                        document.getElementById('map' + i).value = mapping[i] || '';
-                    }
-                } catch (e) {}
-            }
+        // 默认映射配置
+        const DEFAULT_MAPPINGS = {
+            numbers: {},
+            drawStatus: { pending: '待开奖', drawn: '待结算', settled: '已结算' },
+            betStatus: { pending: '待开奖', won: '中奖', lost: '未中' },
+            transType: { deposit: '充值', withdraw: '提现' },
+            transStatus: { pending: '待审核', approved: '已批准', rejected: '已拒绝', completed: '已完成' }
+        };
+        
+        // 切换映射Tab
+        function switchMappingTab(tabName) {
+            document.querySelectorAll('.mapping-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.mapping-panel').forEach(panel => panel.classList.remove('active'));
+            document.querySelector(`.mapping-tab[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`panel-${tabName}`).classList.add('active');
             updateMappingPreview();
+        }
+        
+        // 加载所有映射配置
+        function loadAllMappings() {
+            const saved = localStorage.getItem(ALL_MAPPINGS_KEY);
+            let mappings = saved ? JSON.parse(saved) : DEFAULT_MAPPINGS;
+            
+            // 加载数字映射
+            for (let i = 0; i <= 9; i++) {
+                document.getElementById('map' + i).value = mappings.numbers?.[i] || '';
+            }
+            
+            // 加载开奖状态映射
+            document.getElementById('mapDrawPending').value = mappings.drawStatus?.pending || '';
+            document.getElementById('mapDrawDrawn').value = mappings.drawStatus?.drawn || '';
+            document.getElementById('mapDrawSettled').value = mappings.drawStatus?.settled || '';
+            
+            // 加载投注状态映射
+            document.getElementById('mapBetPending').value = mappings.betStatus?.pending || '';
+            document.getElementById('mapBetWon').value = mappings.betStatus?.won || '';
+            document.getElementById('mapBetLost').value = mappings.betStatus?.lost || '';
+            
+            // 加载交易类型映射
+            document.getElementById('mapTransDeposit').value = mappings.transType?.deposit || '';
+            document.getElementById('mapTransWithdraw').value = mappings.transType?.withdraw || '';
+            
+            // 加载交易状态映射
+            document.getElementById('mapTransPending').value = mappings.transStatus?.pending || '';
+            document.getElementById('mapTransApproved').value = mappings.transStatus?.approved || '';
+            document.getElementById('mapTransRejected').value = mappings.transStatus?.rejected || '';
+            document.getElementById('mapTransCompleted').value = mappings.transStatus?.completed || '';
+            
+            updateMappingPreview();
+        }
+        
+        // 保存所有映射
+        function saveAllMappings() {
+            const mappings = {
+                numbers: {},
+                drawStatus: {},
+                betStatus: {},
+                transType: {},
+                transStatus: {}
+            };
+            
+            // 保存数字映射
+            for (let i = 0; i <= 9; i++) {
+                const val = document.getElementById('map' + i).value.trim();
+                if (val) mappings.numbers[i] = val;
+            }
+            
+            // 保存开奖状态映射
+            ['pending', 'drawn', 'settled'].forEach(key => {
+                const val = document.getElementById('mapDraw' + key.charAt(0).toUpperCase() + key.slice(1)).value.trim();
+                if (val) mappings.drawStatus[key] = val;
+            });
+            
+            // 保存投注状态映射
+            ['pending', 'won', 'lost'].forEach(key => {
+                const val = document.getElementById('mapBet' + key.charAt(0).toUpperCase() + key.slice(1)).value.trim();
+                if (val) mappings.betStatus[key] = val;
+            });
+            
+            // 保存交易类型映射
+            ['deposit', 'withdraw'].forEach(key => {
+                const val = document.getElementById('mapTrans' + key.charAt(0).toUpperCase() + key.slice(1)).value.trim();
+                if (val) mappings.transType[key] = val;
+            });
+            
+            // 保存交易状态映射
+            ['pending', 'approved', 'rejected', 'completed'].forEach(key => {
+                const val = document.getElementById('mapTrans' + key.charAt(0).toUpperCase() + key.slice(1)).value.trim();
+                if (val) mappings.transStatus[key] = val;
+            });
+            
+            localStorage.setItem(ALL_MAPPINGS_KEY, JSON.stringify(mappings));
+            localStorage.setItem(NUMBER_MAPPING_KEY, JSON.stringify(mappings.numbers)); // 兼容旧代码
+            updateMappingPreview();
+            alert('所有映射配置已保存！');
+        }
+        
+        // 重置所有映射
+        function resetAllMappings() {
+            if (!confirm('确定要重置所有映射吗？所有自定义配置将被清空。')) return;
+            localStorage.removeItem(ALL_MAPPINGS_KEY);
+            localStorage.removeItem(NUMBER_MAPPING_KEY);
+            loadAllMappings();
+            alert('已重置为默认配置！');
+        }
+        
+        // 兼容旧函数
+        function loadNumberMapping() {
+            loadAllMappings();
         }
 
         function saveNumberMapping() {
-            const mapping = {};
-            for (let i = 0; i <= 9; i++) {
-                mapping[i] = document.getElementById('map' + i).value.trim();
-            }
-            localStorage.setItem(NUMBER_MAPPING_KEY, JSON.stringify(mapping));
-            updateMappingPreview();
-            alert('数字映射已保存');
+            saveAllMappings();
         }
 
         function resetNumberMapping() {
-            if (!confirm('确定要重置为默认吗？所有映射将被清空。')) return;
+            // 只重置数字映射
             for (let i = 0; i <= 9; i++) {
                 document.getElementById('map' + i).value = '';
             }
-            localStorage.removeItem(NUMBER_MAPPING_KEY);
             updateMappingPreview();
         }
 
@@ -1599,23 +1729,117 @@
         }
 
         function updateMappingPreview() {
+            const currentTab = document.querySelector('.mapping-tab.active').dataset.tab;
             let preview = [];
-            for (let i = 0; i <= 9; i++) {
-                const val = document.getElementById('map' + i).value.trim();
-                preview.push(`${i} → ${val || i}`);
+            
+            if (currentTab === 'numbers') {
+                for (let i = 0; i <= 9; i++) {
+                    const val = document.getElementById('map' + i).value.trim();
+                    preview.push(`${i} → ${val || i}`);
+                }
+            } else if (currentTab === 'drawStatus') {
+                const items = [
+                    { id: 'mapDrawPending', key: 'pending' },
+                    { id: 'mapDrawDrawn', key: 'drawn' },
+                    { id: 'mapDrawSettled', key: 'settled' }
+                ];
+                items.forEach(item => {
+                    const val = document.getElementById(item.id).value.trim();
+                    preview.push(`${item.key} → ${val || DEFAULT_MAPPINGS.drawStatus[item.key]}`);
+                });
+            } else if (currentTab === 'betStatus') {
+                const items = [
+                    { id: 'mapBetPending', key: 'pending' },
+                    { id: 'mapBetWon', key: 'won' },
+                    { id: 'mapBetLost', key: 'lost' }
+                ];
+                items.forEach(item => {
+                    const val = document.getElementById(item.id).value.trim();
+                    preview.push(`${item.key} → ${val || DEFAULT_MAPPINGS.betStatus[item.key]}`);
+                });
+            } else if (currentTab === 'transType') {
+                const items = [
+                    { id: 'mapTransDeposit', key: 'deposit' },
+                    { id: 'mapTransWithdraw', key: 'withdraw' }
+                ];
+                items.forEach(item => {
+                    const val = document.getElementById(item.id).value.trim();
+                    preview.push(`${item.key} → ${val || DEFAULT_MAPPINGS.transType[item.key]}`);
+                });
+            } else if (currentTab === 'transStatus') {
+                const items = [
+                    { id: 'mapTransPending', key: 'pending' },
+                    { id: 'mapTransApproved', key: 'approved' },
+                    { id: 'mapTransRejected', key: 'rejected' },
+                    { id: 'mapTransCompleted', key: 'completed' }
+                ];
+                items.forEach(item => {
+                    const val = document.getElementById(item.id).value.trim();
+                    preview.push(`${item.key} → ${val || DEFAULT_MAPPINGS.transStatus[item.key]}`);
+                });
             }
+            
             document.getElementById('mappingPreview').textContent = preview.join('  |  ');
         }
 
+        // 获取映射后的数字
         function getMappedNumber(num) {
-            const saved = localStorage.getItem(NUMBER_MAPPING_KEY);
+            const saved = localStorage.getItem(ALL_MAPPINGS_KEY);
             if (saved) {
                 try {
-                    const mapping = JSON.parse(saved);
-                    return mapping[num] || num;
+                    const mappings = JSON.parse(saved);
+                    return mappings.numbers?.[num] || num;
                 } catch (e) {}
             }
             return num;
+        }
+        
+        // 获取映射后的开奖状态
+        function getMappedDrawStatus(status) {
+            const saved = localStorage.getItem(ALL_MAPPINGS_KEY);
+            if (saved) {
+                try {
+                    const mappings = JSON.parse(saved);
+                    return mappings.drawStatus?.[status] || DEFAULT_MAPPINGS.drawStatus[status] || status;
+                } catch (e) {}
+            }
+            return DEFAULT_MAPPINGS.drawStatus[status] || status;
+        }
+        
+        // 获取映射后的投注状态
+        function getMappedBetStatus(status) {
+            const saved = localStorage.getItem(ALL_MAPPINGS_KEY);
+            if (saved) {
+                try {
+                    const mappings = JSON.parse(saved);
+                    return mappings.betStatus?.[status] || DEFAULT_MAPPINGS.betStatus[status] || status;
+                } catch (e) {}
+            }
+            return DEFAULT_MAPPINGS.betStatus[status] || status;
+        }
+        
+        // 获取映射后的交易类型
+        function getMappedTransType(type) {
+            const saved = localStorage.getItem(ALL_MAPPINGS_KEY);
+            if (saved) {
+                try {
+                    const mappings = JSON.parse(saved);
+                    return mappings.transType?.[type] || DEFAULT_MAPPINGS.transType[type] || type;
+                } catch (e) {}
+            }
+            return DEFAULT_MAPPINGS.transType[type] || type;
+        }
+        
+        // 获取映射后的交易状态
+        function getMappedTransStatus(status) {
+            const saved = localStorage.getItem(ALL_MAPPINGS_KEY);
+            if (saved) {
+                try {
+                    const mappings = JSON.parse(saved);
+                    return mappings.transStatus?.[status] || DEFAULT_MAPPINGS.transStatus[status] || status;
+                } catch (e) {}
+            }
+            return DEFAULT_MAPPINGS.transStatus[status] || status;
         }
 
         async function archiveData() {
