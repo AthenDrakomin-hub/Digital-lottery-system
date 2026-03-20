@@ -1,22 +1,38 @@
 {
-  "name": "number-draw-system",
+  "name": "towngas-smart-energy",
   "version": "1.0.0",
-  "description": "数字开奖管理系统 - 多周期开奖管理平台",
+  "description": "港华智慧能源投资平台 - 全栈式数字开奖管理系统",
+  "private": true,
   "scripts": {
-    "dev": "node server.local.js",
-    "build": "echo 'Build complete'",
-    "start": "node server.local.js",
-    "vercel-build": "echo 'Vercel build complete'"
+    "dev": "next dev --port 5000",
+    "build": "next build",
+    "start": "next start --port 5000",
+    "lint": "next lint"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "dotenv": "^16.4.0",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.0.0",
-    "redis": "^4.6.0"
+    "dotenv": "^16.6.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.23.0",
+    "next": "^16.2.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "redis": "^4.7.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.4.27",
+    "eslint": "^10.0.3",
+    "eslint-config-next": "^16.2.0",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.9.3"
+  },
   "engines": {
     "node": "24.x"
   }
