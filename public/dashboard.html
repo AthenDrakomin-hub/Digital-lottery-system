@@ -9,10 +9,56 @@
         .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
         .server-time { font-family: monospace; color: #00ff88; margin-right: 20px; }
         
-        /* 导航 */
-        .nav-tabs { background: #f8f9fa; border-bottom: 2px solid #e9ecef; }
-        .nav-tab { padding: 12px 20px; font-weight: 500; font-size: 14px; }
-        .nav-tab.active { background: #fff; border-bottom: 3px solid #dc3545; color: #dc3545; }
+        /* 导航侧边栏 */
+        .sidebar { 
+            width: 200px; 
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); 
+            min-height: calc(100vh - 60px);
+            position: fixed;
+            left: 0;
+            top: 60px;
+            padding: 15px 0;
+            overflow-y: auto;
+        }
+        .nav-group { margin-bottom: 10px; }
+        .nav-group-title { 
+            color: #6c757d; 
+            font-size: 11px; 
+            font-weight: 600; 
+            padding: 10px 20px 5px; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .nav-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px 20px; 
+            color: #adb5bd; 
+            cursor: pointer; 
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        .nav-item:hover { 
+            background: rgba(255,255,255,0.05); 
+            color: #fff;
+        }
+        .nav-item.active { 
+            background: rgba(220, 53, 69, 0.1); 
+            color: #dc3545; 
+            border-left-color: #dc3545;
+        }
+        .nav-item i { margin-right: 10px; font-size: 16px; width: 20px; text-align: center; }
+        .nav-item span { font-size: 14px; }
+        
+        /* 主内容区 */
+        .main-content { 
+            margin-left: 200px; 
+            padding: 20px; 
+            min-height: calc(100vh - 60px);
+        }
+        
+        /* 兼容旧样式 */
+        .nav-tabs { display: none; }
         
         /* 统计卡片 */
         .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
@@ -110,18 +156,52 @@
             </div>
         </div>
 
-        <!-- 导航 -->
-        <div class="nav-tabs">
-            <button class="nav-tab active" data-tab="overview">📊 概览</button>
-            <button class="nav-tab" data-tab="users">👥 用户管理</button>
-            <button class="nav-tab" data-tab="draws">🎲 开奖记录</button>
-            <button class="nav-tab" data-tab="bets">🎫 投注记录</button>
-            <button class="nav-tab" data-tab="transactions">💰 交易管理</button>
-            <button class="nav-tab" data-tab="config">🔧 系统配置</button>
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <!-- 数据概览 -->
+            <div class="nav-group">
+                <div class="nav-group-title">数据概览</div>
+                <div class="nav-item active" data-tab="overview">
+                    <i>📊</i>
+                    <span>概览</span>
+                </div>
+            </div>
+            
+            <!-- 业务管理 -->
+            <div class="nav-group">
+                <div class="nav-group-title">业务管理</div>
+                <div class="nav-item" data-tab="users">
+                    <i>👥</i>
+                    <span>用户管理</span>
+                </div>
+                <div class="nav-item" data-tab="draws">
+                    <i>🎲</i>
+                    <span>开奖记录</span>
+                </div>
+                <div class="nav-item" data-tab="bets">
+                    <i>🎫</i>
+                    <span>投注记录</span>
+                </div>
+                <div class="nav-item" data-tab="transactions">
+                    <i>💰</i>
+                    <span>交易管理</span>
+                </div>
+            </div>
+            
+            <!-- 系统设置 -->
+            <div class="nav-group">
+                <div class="nav-group-title">系统设置</div>
+                <div class="nav-item" data-tab="config">
+                    <i>⚙️</i>
+                    <span>系统配置</span>
+                </div>
+            </div>
         </div>
 
-        <!-- 内容 -->
-        <div class="content">
+        <!-- 主内容 -->
+        <div class="main-content">
+            <!-- 内容 -->
+            <div class="content">
             <!-- 概览 -->
             <div id="overview" class="tab-content active">
                 <div class="stats-grid">
@@ -592,26 +672,26 @@
                         <!-- 用户统计 -->
                         <div class="stat-box" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:15px;border-radius:8px">
                             <div style="font-size:12px;opacity:0.9">用户总数</div>
-                            <div id="statUsers" style="font-size:28px;font-weight:bold">--</div>
-                            <div style="font-size:11px;opacity:0.8">活跃: <span id="statUsersActive">--</span></div>
+                            <div id="dataStatUsers" style="font-size:28px;font-weight:bold">--</div>
+                            <div style="font-size:11px;opacity:0.8">活跃: <span id="dataStatUsersActive">--</span></div>
                         </div>
                         <!-- 开奖统计 -->
                         <div class="stat-box" style="background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:#fff;padding:15px;border-radius:8px">
                             <div style="font-size:12px;opacity:0.9">开奖记录</div>
-                            <div id="statDraws" style="font-size:28px;font-weight:bold">--</div>
-                            <div style="font-size:11px;opacity:0.8">今日: <span id="statDrawsToday">--</span></div>
+                            <div id="dataStatDraws" style="font-size:28px;font-weight:bold">--</div>
+                            <div style="font-size:11px;opacity:0.8">今日: <span id="dataStatDrawsToday">--</span></div>
                         </div>
                         <!-- 投注统计 -->
                         <div class="stat-box" style="background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);color:#fff;padding:15px;border-radius:8px">
                             <div style="font-size:12px;opacity:0.9">投注记录</div>
-                            <div id="statBets" style="font-size:28px;font-weight:bold">--</div>
-                            <div style="font-size:11px;opacity:0.8">今日: <span id="statBetsToday">--</span></div>
+                            <div id="dataStatBets" style="font-size:28px;font-weight:bold">--</div>
+                            <div style="font-size:11px;opacity:0.8">今日: <span id="dataStatBetsToday">--</span></div>
                         </div>
                         <!-- 交易统计 -->
                         <div class="stat-box" style="background:linear-gradient(135deg,#43e97b 0%,#38f9d7 100%);color:#fff;padding:15px;border-radius:8px">
                             <div style="font-size:12px;opacity:0.9">交易记录</div>
-                            <div id="statTrans" style="font-size:28px;font-weight:bold">--</div>
-                            <div style="font-size:11px;opacity:0.8">待处理: <span id="statTransPending">--</span></div>
+                            <div id="dataStatTrans" style="font-size:28px;font-weight:bold">--</div>
+                            <div style="font-size:11px;opacity:0.8">待处理: <span id="dataStatTransPending">--</span></div>
                         </div>
                     </div>
                     
@@ -1068,13 +1148,14 @@
             // 加载映射配置
             loadAllMappings();
             
-            document.querySelectorAll('.nav-tab').forEach(t => {
-                t.addEventListener('click', () => {
-                    document.querySelectorAll('.nav-tab').forEach(x => x.classList.remove('active'));
+            // 侧边栏导航点击事件
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
                     document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
-                    t.classList.add('active');
-                    document.getElementById(t.dataset.tab).classList.add('active');
-                    loadTab(t.dataset.tab);
+                    item.classList.add('active');
+                    document.getElementById(item.dataset.tab).classList.add('active');
+                    loadTab(item.dataset.tab);
                 });
             });
             
@@ -2454,14 +2535,14 @@
         // 渲染数据统计
         function renderDataStats() {
             // 顶部统计卡片
-            document.getElementById('statUsers').textContent = dataStats.users?.total || 0;
-            document.getElementById('statUsersActive').textContent = dataStats.users?.active || 0;
-            document.getElementById('statDraws').textContent = dataStats.draws?.total || 0;
-            document.getElementById('statDrawsToday').textContent = dataStats.draws?.today || 0;
-            document.getElementById('statBets').textContent = dataStats.bets?.total || 0;
-            document.getElementById('statBetsToday').textContent = dataStats.bets?.today || 0;
-            document.getElementById('statTrans').textContent = dataStats.transactions?.total || 0;
-            document.getElementById('statTransPending').textContent = dataStats.transactions?.pending || 0;
+            document.getElementById('dataStatUsers').textContent = dataStats.users?.total || 0;
+            document.getElementById('dataStatUsersActive').textContent = dataStats.users?.active || 0;
+            document.getElementById('dataStatDraws').textContent = dataStats.draws?.total || 0;
+            document.getElementById('dataStatDrawsToday').textContent = dataStats.draws?.today || 0;
+            document.getElementById('dataStatBets').textContent = dataStats.bets?.total || 0;
+            document.getElementById('dataStatBetsToday').textContent = dataStats.bets?.today || 0;
+            document.getElementById('dataStatTrans').textContent = dataStats.transactions?.total || 0;
+            document.getElementById('dataStatTransPending').textContent = dataStats.transactions?.pending || 0;
             
             // 详细统计表格
             document.getElementById('detailUsersTotal').textContent = dataStats.users?.total || 0;
