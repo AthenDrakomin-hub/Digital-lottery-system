@@ -334,6 +334,31 @@ async function handlePatch(req, res) {
 }
 
 /**
+ * 重置所有用户余额缓存
+ */
+async function handleResetBalanceCache(req, res) {
+    const admin = await verifyAdmin(req);
+    if (!admin) {
+        return res.status(401).json({ error: '需要管理员权限' });
+    }
+
+    // 获取所有用户
+    const users = await User.find({}, '_id balance');
+    let count = 0;
+    
+    for (const user of users) {
+        await cache.setUserBalance(user._id.toString(), user.balance);
+        count++;
+    }
+
+    res.json({
+        success: true,
+        message: `已重置 ${count} 个用户的余额缓存`,
+        count
+    });
+}
+
+/**
  * 删除用户
  */
 async function handleDelete(req, res) {
@@ -413,13 +438,19 @@ const handleUsers = async (req, res) => {
                 }
                 return await handleBalance(req, res);
 
+            case 'reset-balance-cache':
+                if (req.method !== 'POST') {
+                    return res.status(405).json({ error: '方法不允许' });
+                }
+                return await handleResetBalanceCache(req, res);
+
             default:
                 if (req.method === 'GET') {
                     return await handleList(req, res);
                 }
                 return res.status(400).json({ 
                     error: '无效的action参数',
-                    availableActions: ['create', 'balance']
+                    availableActions: ['create', 'balance', 'reset-balance-cache']
                 });
         }
     } catch (error) {

@@ -543,20 +543,128 @@
                 </div>
 
                 <div class="card">
-                    <h3>数据管理</h3>
+                    <h3>数据统计 <button class="btn btn-secondary btn-sm" style="float:right" onclick="loadDataStats()">刷新</button></h3>
+                    <div id="dataStatsContainer" style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px">
+                        <!-- 用户统计 -->
+                        <div class="stat-box" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:15px;border-radius:8px">
+                            <div style="font-size:12px;opacity:0.9">用户总数</div>
+                            <div id="statUsers" style="font-size:28px;font-weight:bold">--</div>
+                            <div style="font-size:11px;opacity:0.8">活跃: <span id="statUsersActive">--</span></div>
+                        </div>
+                        <!-- 开奖统计 -->
+                        <div class="stat-box" style="background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:#fff;padding:15px;border-radius:8px">
+                            <div style="font-size:12px;opacity:0.9">开奖记录</div>
+                            <div id="statDraws" style="font-size:28px;font-weight:bold">--</div>
+                            <div style="font-size:11px;opacity:0.8">今日: <span id="statDrawsToday">--</span></div>
+                        </div>
+                        <!-- 投注统计 -->
+                        <div class="stat-box" style="background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);color:#fff;padding:15px;border-radius:8px">
+                            <div style="font-size:12px;opacity:0.9">投注记录</div>
+                            <div id="statBets" style="font-size:28px;font-weight:bold">--</div>
+                            <div style="font-size:11px;opacity:0.8">今日: <span id="statBetsToday">--</span></div>
+                        </div>
+                        <!-- 交易统计 -->
+                        <div class="stat-box" style="background:linear-gradient(135deg,#43e97b 0%,#38f9d7 100%);color:#fff;padding:15px;border-radius:8px">
+                            <div style="font-size:12px;opacity:0.9">交易记录</div>
+                            <div id="statTrans" style="font-size:28px;font-weight:bold">--</div>
+                            <div style="font-size:11px;opacity:0.8">待处理: <span id="statTransPending">--</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 详细统计表格 -->
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px">
+                        <div>
+                            <h4 style="margin:0 0 10px 0;color:#333">📊 数据分布</h4>
+                            <table class="data-table" style="font-size:13px">
+                                <tr><td>用户 - 总数</td><td id="detailUsersTotal">--</td></tr>
+                                <tr><td>用户 - 活跃/停用</td><td><span id="detailUsersActive">--</span> / <span id="detailUsersInactive">--</span></td></tr>
+                                <tr><td>用户 - 今日新增</td><td id="detailUsersNew">--</td></tr>
+                                <tr><td>用户 - 管理员</td><td id="detailUsersAdmin">--</td></tr>
+                                <tr><td colspan="2" style="height:10px;background:#f0f0f0"></td></tr>
+                                <tr><td>开奖 - 总数</td><td id="detailDrawsTotal">--</td></tr>
+                                <tr><td>开奖 - 待开奖/已结算</td><td><span id="detailDrawsPending">--</span> / <span id="detailDrawsSettled">--</span></td></tr>
+                                <tr><td>开奖 - 日期范围</td><td id="detailDrawsRange">--</td></tr>
+                                <tr><td colspan="2" style="height:10px;background:#f0f0f0"></td></tr>
+                                <tr><td>投注 - 总数</td><td id="detailBetsTotal">--</td></tr>
+                                <tr><td>投注 - 待开奖/中奖/未中</td><td><span id="detailBetsPending">--</span> / <span id="detailBetsWon">--</span> / <span id="detailBetsLost">--</span></td></tr>
+                                <tr><td>投注 - 总金额</td><td id="detailBetsAmount">--</td></tr>
+                            </table>
+                        </div>
+                        <div>
+                            <h4 style="margin:0 0 10px 0;color:#333">💾 存储估算</h4>
+                            <table class="data-table" style="font-size:13px">
+                                <tr><td>用户数据</td><td id="storageUsers">--</td></tr>
+                                <tr><td>开奖数据</td><td id="storageDraws">--</td></tr>
+                                <tr><td>投注数据</td><td id="storageBets">--</td></tr>
+                                <tr><td>交易数据</td><td id="storageTrans">--</td></tr>
+                                <tr style="font-weight:bold;background:#f8f9fa"><td>总计</td><td id="storageTotal">--</td></tr>
+                            </table>
+                            
+                            <h4 style="margin:20px 0 10px 0;color:#333">💰 交易统计</h4>
+                            <table class="data-table" style="font-size:13px">
+                                <tr><td>充值 - 笔数/金额</td><td><span id="detailDepositCount">--</span>笔 / ¥<span id="detailDepositAmount">--</span></td></tr>
+                                <tr><td>提现 - 笔数/金额</td><td><span id="detailWithdrawCount">--</span>笔 / ¥<span id="detailWithdrawAmount">--</span></td></tr>
+                                <tr><td>净流入</td><td id="detailNetFlow">--</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>数据归档</h3>
+                    <div style="background:#fff3cd;padding:10px 15px;border-radius:4px;margin-bottom:15px;font-size:13px">
+                        <strong>⚠️ 重要提示：</strong>归档将删除指定天数前的历史数据，此操作不可逆。建议先执行"试运行"查看影响范围。
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px">
+                        <div>
+                            <h4 style="margin:0 0 10px 0;color:#333">归档设置</h4>
+                            <div class="form-group">
+                                <label>归档多少天前的数据</label>
+                                <select id="archiveDays" class="form-control" style="width:150px" onchange="updateArchivePreview()">
+                                    <option value="30">30天前</option>
+                                    <option value="60">60天前</option>
+                                    <option value="90" selected>90天前</option>
+                                    <option value="180">180天前</option>
+                                    <option value="365">365天前</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>归档数据类型</label>
+                                <div style="display:flex;gap:15px;margin-top:5px">
+                                    <label><input type="checkbox" id="archiveDraws" checked> 开奖记录</label>
+                                    <label><input type="checkbox" id="archiveBets" checked> 投注记录</label>
+                                    <label><input type="checkbox" id="archiveTrans" checked> 交易记录</label>
+                                </div>
+                            </div>
+                            <div style="margin-top:15px">
+                                <button class="btn btn-secondary btn-sm" onclick="previewArchive()">🔍 试运行</button>
+                                <button class="btn btn-danger btn-sm" onclick="executeArchive()" style="margin-left:10px">🗑️ 执行归档</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="margin:0 0 10px 0;color:#333">可归档数据</h4>
+                            <div id="archivePreview" style="background:#f8f9fa;padding:15px;border-radius:4px;min-height:100px">
+                                <div style="color:#888;font-size:13px">点击"试运行"查看可归档数据统计</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>系统维护</h3>
                     <div class="config-item">
                         <div>
-                            <div class="config-label">开奖记录归档</div>
-                            <div class="config-desc">归档30天前的开奖数据，释放存储空间</div>
+                            <div class="config-label">清理Redis缓存</div>
+                            <div class="config-desc">清除系统缓存数据，用户余额等将重新从数据库读取</div>
                         </div>
-                        <div><button class="btn btn-warning btn-sm" onclick="archiveData()">执行归档</button></div>
+                        <div><button class="btn btn-secondary btn-sm" onclick="clearCache()">清理缓存</button></div>
                     </div>
                     <div class="config-item">
                         <div>
-                            <div class="config-label">清理缓存</div>
-                            <div class="config-desc">清除Redis缓存数据</div>
+                            <div class="config-label">重置用户余额缓存</div>
+                            <div class="config-desc">强制从数据库重新同步所有用户余额到缓存</div>
                         </div>
-                        <div><button class="btn btn-secondary btn-sm" onclick="clearCache()">清理缓存</button></div>
+                        <div><button class="btn btn-warning btn-sm" onclick="resetBalanceCache()">重置余额缓存</button></div>
                     </div>
                 </div>
 
@@ -822,7 +930,7 @@
                 case 'draws': loadDraws(); break;
                 case 'bets': loadBets(); break;
                 case 'transactions': loadTransactions(); break;
-                case 'config': loadAdmins(); loadAllMappings(); loadSystemConfigs(); break;
+                case 'config': loadAdmins(); loadAllMappings(); loadSystemConfigs(); loadDataStats(); break;
             }
         }
 
@@ -1922,17 +2030,189 @@
             return DEFAULT_MAPPINGS.transStatus[status] || status;
         }
 
-        async function archiveData() {
-            if (!confirm('确定要归档30天前的开奖数据吗？此操作不可逆。')) return;
+        // ========== 数据管理 ==========
+        let dataStats = {};
+
+        // 加载数据统计
+        async function loadDataStats() {
             try {
-                const res = await fetch('/api/system?action=archive', {
+                const res = await fetch('/api/admin?action=archive', { headers: { 'Authorization': `Bearer ${token}` } });
+                dataStats = await res.json();
+                if (res.ok) {
+                    renderDataStats();
+                }
+            } catch (e) {
+                console.error('加载数据统计失败:', e);
+            }
+        }
+
+        // 渲染数据统计
+        function renderDataStats() {
+            // 顶部统计卡片
+            document.getElementById('statUsers').textContent = dataStats.users?.total || 0;
+            document.getElementById('statUsersActive').textContent = dataStats.users?.active || 0;
+            document.getElementById('statDraws').textContent = dataStats.draws?.total || 0;
+            document.getElementById('statDrawsToday').textContent = dataStats.draws?.today || 0;
+            document.getElementById('statBets').textContent = dataStats.bets?.total || 0;
+            document.getElementById('statBetsToday').textContent = dataStats.bets?.today || 0;
+            document.getElementById('statTrans').textContent = dataStats.transactions?.total || 0;
+            document.getElementById('statTransPending').textContent = dataStats.transactions?.pending || 0;
+            
+            // 详细统计表格
+            document.getElementById('detailUsersTotal').textContent = dataStats.users?.total || 0;
+            document.getElementById('detailUsersActive').textContent = dataStats.users?.active || 0;
+            document.getElementById('detailUsersInactive').textContent = dataStats.users?.inactive || 0;
+            document.getElementById('detailUsersNew').textContent = `今日+${dataStats.users?.newToday || 0} 本周+${dataStats.users?.newWeek || 0}`;
+            document.getElementById('detailUsersAdmin').textContent = dataStats.users?.admins || 0;
+            
+            document.getElementById('detailDrawsTotal').textContent = dataStats.draws?.total || 0;
+            document.getElementById('detailDrawsPending').textContent = dataStats.draws?.pending || 0;
+            document.getElementById('detailDrawsSettled').textContent = dataStats.draws?.settled || 0;
+            const range = dataStats.draws?.dateRange;
+            document.getElementById('detailDrawsRange').textContent = range?.minDate ? `${range.minDate} ~ ${range.maxDate}` : '无数据';
+            
+            document.getElementById('detailBetsTotal').textContent = dataStats.bets?.total || 0;
+            document.getElementById('detailBetsPending').textContent = dataStats.bets?.pending || 0;
+            document.getElementById('detailBetsWon').textContent = dataStats.bets?.won || 0;
+            document.getElementById('detailBetsLost').textContent = dataStats.bets?.lost || 0;
+            document.getElementById('detailBetsAmount').textContent = `¥${(dataStats.bets?.totalAmount || 0).toLocaleString()}`;
+            
+            // 存储估算
+            const storage = dataStats.storage || {};
+            document.getElementById('storageUsers').textContent = `${storage.users || 0} KB`;
+            document.getElementById('storageDraws').textContent = `${storage.draws || 0} KB`;
+            document.getElementById('storageBets').textContent = `${storage.bets || 0} KB`;
+            document.getElementById('storageTrans').textContent = `${storage.transactions || 0} KB`;
+            document.getElementById('storageTotal').textContent = `${(storage.total || 0) / 1024} MB`;
+            
+            // 交易统计
+            document.getElementById('detailDepositCount').textContent = dataStats.transactions?.deposits?.count || 0;
+            document.getElementById('detailDepositAmount').textContent = (dataStats.transactions?.deposits?.amount || 0).toLocaleString();
+            document.getElementById('detailWithdrawCount').textContent = dataStats.transactions?.withdraws?.count || 0;
+            document.getElementById('detailWithdrawAmount').textContent = (dataStats.transactions?.withdraws?.amount || 0).toLocaleString();
+            const netFlow = (dataStats.transactions?.deposits?.amount || 0) - (dataStats.transactions?.withdraws?.amount || 0);
+            document.getElementById('detailNetFlow').innerHTML = `<span style="color:${netFlow >= 0 ? '#28a745' : '#dc3545'}">${netFlow >= 0 ? '+' : ''}¥${netFlow.toLocaleString()}</span>`;
+            
+            // 更新归档预览
+            updateArchivePreview();
+        }
+
+        // 更新归档预览
+        function updateArchivePreview() {
+            const archiveDays = parseInt(document.getElementById('archiveDays').value) || 90;
+            const archivable = dataStats.archive?.archivable || {};
+            
+            let html = `<div style="font-size:13px">`;
+            html += `<p><strong>归档时间点：</strong>${dataStats.archive?.cutoffDate || '--'} 之前的数据</p>`;
+            html += `<table style="width:100%;margin-top:10px" class="data-table">`;
+            html += `<tr><td>开奖记录</td><td>${archivable.draws || 0} 条</td></tr>`;
+            html += `<tr><td>投注记录</td><td>${archivable.bets || 0} 条</td></tr>`;
+            html += `<tr><td>交易记录</td><td>${archivable.transactions || 0} 条</td></tr>`;
+            html += `<tr style="font-weight:bold;background:#fff3cd"><td>合计</td><td>${archivable.total || 0} 条</td></tr>`;
+            html += `</table>`;
+            html += `</div>`;
+            
+            document.getElementById('archivePreview').innerHTML = html;
+        }
+
+        // 试运行归档
+        async function previewArchive() {
+            const archiveDays = parseInt(document.getElementById('archiveDays').value) || 90;
+            const models = [];
+            if (document.getElementById('archiveDraws').checked) models.push('Draw');
+            if (document.getElementById('archiveBets').checked) models.push('Bet');
+            if (document.getElementById('archiveTrans').checked) models.push('Transaction');
+            
+            if (models.length === 0) {
+                alert('请至少选择一种数据类型');
+                return;
+            }
+            
+            const jwtSecret = prompt('请输入JWT_SECRET进行验证：');
+            if (!jwtSecret) return;
+            
+            try {
+                const res = await fetch('/api/admin?action=archive', {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({
+                        secret: jwtSecret,
+                        archiveDays,
+                        dryRun: true,
+                        models
+                    })
                 });
                 const data = await res.json();
-                if (res.ok) alert(`归档成功，已归档 ${data.archived || 0} 条记录`);
-                else alert(data.error || '归档失败');
-            } catch (e) { alert('操作失败'); }
+                if (res.ok) {
+                    let html = `<div style="font-size:13px">`;
+                    html += `<p style="color:#856404;background:#fff3cd;padding:8px;border-radius:4px">⚠️ 试运行结果（未实际删除）</p>`;
+                    html += `<table style="width:100%;margin-top:10px" class="data-table">`;
+                    if (data.details.draws) {
+                        html += `<tr><td>开奖记录</td><td>找到 ${data.details.draws.found} 条</td></tr>`;
+                    }
+                    if (data.details.bets) {
+                        html += `<tr><td>投注记录</td><td>找到 ${data.details.bets.found} 条</td></tr>`;
+                    }
+                    if (data.details.transactions) {
+                        html += `<tr><td>交易记录</td><td>找到 ${data.details.transactions.found} 条</td></tr>`;
+                    }
+                    html += `<tr style="font-weight:bold"><td>合计</td><td>${data.total?.found || 0} 条可归档</td></tr>`;
+                    html += `</table>`;
+                    html += `</div>`;
+                    document.getElementById('archivePreview').innerHTML = html;
+                } else {
+                    alert(data.error || '操作失败');
+                }
+            } catch (e) {
+                alert('操作失败: ' + e.message);
+            }
+        }
+
+        // 执行归档
+        async function executeArchive() {
+            const archiveDays = parseInt(document.getElementById('archiveDays').value) || 90;
+            const models = [];
+            if (document.getElementById('archiveDraws').checked) models.push('Draw');
+            if (document.getElementById('archiveBets').checked) models.push('Bet');
+            if (document.getElementById('archiveTrans').checked) models.push('Transaction');
+            
+            if (models.length === 0) {
+                alert('请至少选择一种数据类型');
+                return;
+            }
+            
+            if (!confirm(`确定要归档 ${archiveDays} 天前的数据吗？此操作不可逆！\n\n建议先执行"试运行"确认影响范围。`)) return;
+            
+            const jwtSecret = prompt('请输入JWT_SECRET进行确认：');
+            if (!jwtSecret) return;
+            
+            try {
+                const res = await fetch('/api/admin?action=archive', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({
+                        secret: jwtSecret,
+                        archiveDays,
+                        dryRun: false,
+                        models
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(`归档完成！\n\n${data.message}\n\n开奖: ${data.details?.draws?.deleted || 0} 条\n投注: ${data.details?.bets?.deleted || 0} 条\n交易: ${data.details?.transactions?.deleted || 0} 条`);
+                    await loadDataStats();
+                } else {
+                    alert(data.error || '归档失败');
+                }
+            } catch (e) {
+                alert('操作失败: ' + e.message);
+            }
         }
 
         async function clearCache() {
@@ -1945,6 +2225,19 @@
                 const data = await res.json();
                 if (res.ok) alert('缓存已清理');
                 else alert(data.error || '清理失败');
+            } catch (e) { alert('操作失败'); }
+        }
+
+        async function resetBalanceCache() {
+            if (!confirm('确定要重置所有用户的余额缓存吗？')) return;
+            try {
+                const res = await fetch('/api/users?action=reset-balance-cache', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (res.ok) alert(`已重置 ${data.count || 0} 个用户的余额缓存`);
+                else alert(data.error || '操作失败');
             } catch (e) { alert('操作失败'); }
         }
 
