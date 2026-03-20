@@ -4,23 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { useUser } from '@/hooks/useUser'
 import { useRouter } from 'next/navigation'
 
-// 能源类型
-const ENERGY_TYPES = [
-  { id: 'nuclear', name: '核能', color: 'bg-purple-500' },
-  { id: 'hydrogen', name: '氫能', color: 'bg-blue-300' },
-  { id: 'electric', name: '電能', color: 'bg-gray-400' },
-  { id: 'wind', name: '風能', color: 'bg-green-600' },
-  { id: 'water', name: '水能', color: 'bg-orange-500' },
-  { id: 'solar', name: '太陽能', color: 'bg-blue-500' },
-  { id: 'geothermal', name: '地熱能', color: 'bg-yellow-600' },
-  { id: 'ocean', name: '洋流能', color: 'bg-cyan-500' },
-  { id: 'wave', name: '波浪能', color: 'bg-pink-600' },
-  { id: 'tidal', name: '潮汐能', color: 'bg-red-600' }
-]
-
-// 省份
-const PROVINCES = ['浙江', '河北', '廣東', '安徽', '山東', '江蘇', '蒙古', '河南', '新疆', '四川']
-
 // 投注记录接口
 interface BetRecord {
   _id: string
@@ -32,6 +15,16 @@ interface BetRecord {
   status: 'pending' | 'won' | 'lost' | 'cancelled'
   winAmount: number
   createdAt: string
+}
+
+// 期号状态
+interface PeriodStatus {
+  currentPeriod: string
+  nextPeriod: string
+  remainingSeconds: number
+  isSealed: boolean
+  sealSeconds: number
+  cycleMinutes: number
 }
 
 // 能源名称映射
@@ -51,7 +44,20 @@ const ENERGY_NAMES: Record<string, string> = {
 export default function InvestPage() {
   const { isLoggedIn, loading, user } = useUser()
   const router = useRouter()
-  const [timeLeft, setTimeLeft] = useState(30)
+  
+  // 配置状态
+  const [energyTypes, setEnergyTypes] = useState<Array<{id: string; name: string; color: string}>>([])
+  const [provinces, setProvinces] = useState<string[]>([])
+  const [unitPrice, setUnitPrice] = useState(2)
+  const [minQuantity, setMinQuantity] = useState(1)
+  const [maxQuantity, setMaxQuantity] = useState(1000)
+  
+  // 期号状态
+  const [periodStatus, setPeriodStatus] = useState<PeriodStatus | null>(null)
+  const [timeLeft, setTimeLeft] = useState(0)
+  const [showSealWarning, setShowSealWarning] = useState(false)
+  
+  // 投注状态
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null)
   const [selectedEnergy, setSelectedEnergy] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
@@ -59,22 +65,46 @@ export default function InvestPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [bets, setBets] = useState<BetRecord[]>([])
   const [loadingBets, setLoadingBets] = useState(false)
+  
+  // 开奖动画状态
+  const [showAnimation, setShowAnimation] = useState(false)
+  const [animationCountdown, setAnimationCountdown] = useState(10)
+  const [animationResult, setAnimationResult] = useState<{
+    energyType: string
+    province: string
+    amount: number
+  } | null>(null)
 
-  // 倒计时
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev > 0 ? prev - 1 : 30)
-    }, 1000)
-    return () => clearInterval(timer)
+  // 获取配置
+  const fetchConfig = useCallback(async () => {
+    try {
+      const res = await fetch('/api/config', { credentials: 'include' })
+      const data = await res.json()
+      if (data.success && data.config) {
+        setEnergyTypes(data.config.energyTypes?.filter((e: { enabled: boolean }) => e.enabled) || [])
+        setProvinces(data.config.provinces?.filter((p: { enabled: boolean }) => p.enabled).map((p: { name: string }) => p.name) || [])
+        setUnitPrice(data.config.unitPrice || 2)
+        setMinQuantity(data.config.minQuantity || 1)
+        setMaxQuantity(data.config.maxQuantity || 1000)
+      }
+    } catch (error) {
+      console.error('获取配置失败:', error)
+    }
   }, [])
 
-  // 未登录重定向
-  useEffect(() => {
-    if (!loading && !isLoggedIn) {
-      router.push('/client/login')
+  // 获取期号状态
+  const fetchPeriodStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/period/status?cycle=5', { credentials: 'include' })
+      const data = await res.json()
+      if (data.success) {
+        setPeriodStatus(data.data)
+        setTimeLeft(data.data.remainingSeconds)
+      }
+    } catch (error) {
+      console.error('获取期号状态失败:', error)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, isLoggedIn])
+  }, [])
 
   // 获取投注记录
   const fetchBets = useCallback(async () => {
@@ -94,12 +124,78 @@ export default function InvestPage() {
     }
   }, [isLoggedIn])
 
-  // 初始加载投注记录
+  // 未登录重定向
+  useEffect(() => {
+    if (!loading && !isLoggedIn) {
+      router.push('/client/login')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, isLoggedIn])
+
+  // 初始加载
   useEffect(() => {
     if (isLoggedIn) {
+      fetchConfig()
+      fetchPeriodStatus()
       fetchBets()
     }
-  }, [isLoggedIn, fetchBets])
+  }, [isLoggedIn, fetchConfig, fetchPeriodStatus, fetchBets])
+
+  // 倒计时
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          // 期号结束，触发开奖动画
+          if (!showAnimation && periodStatus?.isSealed) {
+            startLotteryAnimation()
+          }
+          fetchPeriodStatus()
+          return periodStatus?.cycleMinutes ? periodStatus.cycleMinutes * 60 : 300
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [showAnimation, periodStatus, fetchPeriodStatus])
+
+  // 封盘警告
+  useEffect(() => {
+    if (periodStatus?.sealSeconds && timeLeft <= periodStatus.sealSeconds && timeLeft > 0) {
+      setShowSealWarning(true)
+    } else {
+      setShowSealWarning(false)
+    }
+  }, [timeLeft, periodStatus])
+
+  // 开奖动画
+  const startLotteryAnimation = () => {
+    setShowAnimation(true)
+    setAnimationCountdown(10)
+    
+    // 模拟开奖结果（实际应从后端获取）
+    const randomEnergy = energyTypes[Math.floor(Math.random() * energyTypes.length)]
+    const randomProvince = provinces[Math.floor(Math.random() * provinces.length)]
+    
+    setAnimationResult({
+      energyType: randomEnergy?.name || '風能',
+      province: randomProvince || '浙江',
+      amount: Math.floor(Math.random() * 10000) + 1000,
+    })
+    
+    // 动画倒计时
+    const animTimer = setInterval(() => {
+      setAnimationCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(animTimer)
+          setShowAnimation(false)
+          fetchBets()
+          return 10
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }
 
   // 投注提交
   const handleSubmit = async () => {
@@ -108,8 +204,13 @@ export default function InvestPage() {
       return
     }
 
-    if (quantity < 1) {
-      setMessage({ type: 'error', text: '請輸入有效股數' })
+    if (periodStatus?.isSealed) {
+      setMessage({ type: 'error', text: '當前期已封盤，請等待下一期開盤' })
+      return
+    }
+
+    if (quantity < minQuantity || quantity > maxQuantity) {
+      setMessage({ type: 'error', text: `購買股數需在 ${minQuantity} - ${maxQuantity} 之間` })
       return
     }
 
@@ -133,14 +234,15 @@ export default function InvestPage() {
 
       if (data.success) {
         setMessage({ type: 'success', text: `投注成功！期號: ${data.data.period}` })
-        // 重置选择
         setSelectedProvince(null)
         setSelectedEnergy(null)
         setQuantity(1)
-        // 刷新投注记录
         fetchBets()
       } else {
         setMessage({ type: 'error', text: data.error || '投注失敗' })
+        if (data.data?.isSealed) {
+          setPeriodStatus(prev => prev ? { ...prev, isSealed: true } : null)
+        }
       }
     } catch {
       setMessage({ type: 'error', text: '網絡錯誤，請稍後重試' })
@@ -179,22 +281,100 @@ export default function InvestPage() {
     )
   }
 
-  const totalAmount = quantity * 2
+  const totalAmount = quantity * unitPrice
 
   return (
     <div className="bg-gray-100 min-h-screen py-10 px-4">
+      {/* 开奖动画弹窗 */}
+      {showAnimation && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-2xl p-10 max-w-lg w-full mx-4 text-center border border-green-500/30 shadow-2xl shadow-green-500/20">
+            {/* 粒子效果 */}
+            <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+              {Array.from({ length: 30 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-2 h-2 bg-green-400 rounded-full animate-pulse"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    animationDelay: `${Math.random() * 2}s`,
+                    animationDuration: `${1 + Math.random()}s`,
+                  }}
+                />
+              ))}
+            </div>
+            
+            {/* 标题 */}
+            <div className="relative z-10">
+              <div className="text-6xl mb-4 animate-bounce">🎰</div>
+              <h2 className="text-3xl font-black text-white mb-2 animate-pulse">
+                開獎中...
+              </h2>
+              <p className="text-gray-400 mb-6">期號: {periodStatus?.currentPeriod}</p>
+              
+              {/* 倒计时 */}
+              <div className="text-8xl font-black text-green-400 mb-8 animate-pulse">
+                {animationCountdown}
+              </div>
+              
+              {/* 滚动效果 */}
+              <div className="bg-gray-800/50 rounded-xl p-6 mb-6 border border-gray-700">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm mb-2">能源類型</p>
+                    <div className="text-2xl font-bold text-yellow-400 animate-pulse">
+                      {animationResult?.energyType || '---'}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm mb-2">省份</p>
+                    <div className="text-2xl font-bold text-cyan-400 animate-pulse">
+                      {animationResult?.province || '---'}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm mb-2">金額</p>
+                    <div className="text-2xl font-bold text-green-400 animate-pulse">
+                      ¥{animationResult?.amount?.toLocaleString() || '---'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* 进度条 */}
+              <div className="w-full bg-gray-700 rounded-full h-3 mb-4">
+                <div 
+                  className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-1000"
+                  style={{ width: `${((10 - animationCountdown) / 10) * 100}%` }}
+                />
+              </div>
+              
+              <p className="text-gray-500 text-sm">開獎結果即將揭曉...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-[1200px] mx-auto bg-white rounded-lg shadow-xl overflow-hidden border border-gray-200">
         {/* Header */}
-        <div className="bg-[#32b24a] p-6 flex items-center justify-between text-white">
+        <div className={`p-6 flex items-center justify-between text-white transition-colors ${
+          periodStatus?.isSealed ? 'bg-red-600' : 'bg-[#32b24a]'
+        }`}>
           <div>
-            <h1 className="text-3xl font-black italic tracking-widest">競價結果</h1>
-            <p className="text-xs opacity-80 mt-1">本輪交易: 20250320001輪 | 競價截止時間</p>
+            <h1 className="text-3xl font-black italic tracking-widest">
+              {periodStatus?.isSealed ? '封盤中' : '競價結果'}
+            </h1>
+            <p className="text-xs opacity-80 mt-1">
+              當前期號: {periodStatus?.currentPeriod || '---'} | 
+              {periodStatus?.isSealed ? '等待開獎' : '競價進行中'}
+            </p>
           </div>
           
           {/* 倒计时 */}
           <div className="flex space-x-1">
             {formatTime(timeLeft).split('').map((char, i) => (
-              <div key={i} className={`w-10 h-14 ${char === ':' ? 'flex items-center text-4xl' : 'bg-gray-800 rounded flex items-center justify-center text-3xl font-bold animate-countdown'}`}>
+              <div key={i} className={`w-10 h-14 ${char === ':' ? 'flex items-center text-4xl' : 'bg-gray-800 rounded flex items-center justify-center text-3xl font-bold'} ${showSealWarning ? 'animate-pulse text-red-300' : ''}`}>
                 {char}
               </div>
             ))}
@@ -202,19 +382,39 @@ export default function InvestPage() {
 
           {/* 能源类型标签 */}
           <div className="flex space-x-1">
-            {ENERGY_TYPES.map(t => (
-              <div key={t.id} className={`${t.color} w-8 h-8 rounded text-[10px] flex items-center justify-center font-bold text-white text-center leading-tight p-0.5`}>
+            {energyTypes.slice(0, 10).map(t => (
+              <div 
+                key={t.id} 
+                style={{ backgroundColor: t.color }}
+                className="w-8 h-8 rounded text-[10px] flex items-center justify-center font-bold text-white text-center leading-tight p-0.5"
+              >
                 {t.name}
               </div>
             ))}
           </div>
         </div>
 
+        {/* 封盘警告 */}
+        {periodStatus?.isSealed && (
+          <div className="bg-red-50 border-b border-red-100 px-6 py-3">
+            <div className="flex items-center text-red-600">
+              <span className="text-xl mr-2">🔒</span>
+              <span className="font-bold">當前期已封盤，暫停投注，請等待開獎結果</span>
+            </div>
+          </div>
+        )}
+
         {/* 用户余额显示 */}
         <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">當前餘額：</span>
-            <span className="text-xl font-bold text-green-600">¥{user?.balance?.toFixed(2) || '0.00'}</span>
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-600">當前期號：</span>
+              <span className="font-bold text-green-600">{periodStatus?.currentPeriod || '---'}</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-600">當前餘額：</span>
+              <span className="text-xl font-bold text-green-600">¥{user?.balance?.toFixed(2) || '0.00'}</span>
+            </div>
           </div>
         </div>
 
@@ -235,14 +435,17 @@ export default function InvestPage() {
           <div className="mb-6">
             <h3 className="text-sm font-bold text-gray-700 mb-3">選擇省份</h3>
             <div className="grid grid-cols-5 gap-2">
-              {PROVINCES.map(p => (
+              {provinces.map(p => (
                 <button
                   key={p}
-                  onClick={() => setSelectedProvince(p)}
+                  onClick={() => !periodStatus?.isSealed && setSelectedProvince(p)}
+                  disabled={periodStatus?.isSealed}
                   className={`py-2 rounded text-sm font-medium transition-colors ${
                     selectedProvince === p 
                       ? 'bg-[#32b24a] text-white' 
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      : periodStatus?.isSealed
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
                   {p}
@@ -255,13 +458,15 @@ export default function InvestPage() {
           <div className="mb-6">
             <h3 className="text-sm font-bold text-gray-700 mb-3">選擇能源類型</h3>
             <div className="grid grid-cols-5 gap-2">
-              {ENERGY_TYPES.map(t => (
+              {energyTypes.map(t => (
                 <button
                   key={t.id}
-                  onClick={() => setSelectedEnergy(t.id)}
-                  className={`${t.color} py-3 rounded text-white text-sm font-bold hover:opacity-80 transition-opacity ${
-                    selectedEnergy === t.id ? 'ring-2 ring-offset-2 ring-gray-400' : ''
-                  }`}
+                  onClick={() => !periodStatus?.isSealed && setSelectedEnergy(t.id)}
+                  disabled={periodStatus?.isSealed}
+                  style={{ backgroundColor: t.color }}
+                  className={`py-3 rounded text-white text-sm font-bold transition-opacity ${
+                    periodStatus?.isSealed ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'
+                  } ${selectedEnergy === t.id ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
                 >
                   {t.name}
                 </button>
@@ -275,29 +480,33 @@ export default function InvestPage() {
             <div className="flex items-center border border-gray-300 rounded overflow-hidden">
               <button 
                 type="button"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200"
+                onClick={() => setQuantity(Math.max(minQuantity, quantity - 1))}
+                disabled={periodStatus?.isSealed}
+                className={`px-4 py-2 ${periodStatus?.isSealed ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 -
               </button>
               <input 
                 type="number" 
                 value={quantity} 
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                min="1"
-                className="w-16 text-center py-2 outline-none"
+                onChange={(e) => setQuantity(Math.max(minQuantity, Math.min(maxQuantity, parseInt(e.target.value) || minQuantity)))}
+                disabled={periodStatus?.isSealed}
+                min={minQuantity}
+                max={maxQuantity}
+                className={`w-16 text-center py-2 outline-none ${periodStatus?.isSealed ? 'bg-gray-100 text-gray-400' : ''}`}
               />
               <button 
                 type="button"
-                onClick={() => setQuantity(quantity + 1)}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200"
+                onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
+                disabled={periodStatus?.isSealed}
+                className={`px-4 py-2 ${periodStatus?.isSealed ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 +
               </button>
             </div>
-            <span className="text-sm text-gray-500">股</span>
+            <span className="text-sm text-gray-500">股 ({minQuantity}-{maxQuantity})</span>
             <span className="text-sm">
-              單價：<span className="text-[#32b24a] font-bold">2元</span>
+              單價：<span className="text-[#32b24a] font-bold">¥{unitPrice}</span>
             </span>
           </div>
 
@@ -314,14 +523,18 @@ export default function InvestPage() {
           {/* 提交按钮 */}
           <button 
             onClick={handleSubmit}
-            disabled={!selectedProvince || !selectedEnergy || submitting}
+            disabled={!selectedProvince || !selectedEnergy || submitting || periodStatus?.isSealed}
             className={`w-full py-4 rounded-lg font-bold text-lg transition-colors ${
-              selectedProvince && selectedEnergy && !submitting
+              selectedProvince && selectedEnergy && !submitting && !periodStatus?.isSealed
                 ? 'bg-[#32b24a] text-white hover:bg-[#1a8b33]'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            {submitting ? '提交中...' : '一鍵交易'}
+            {periodStatus?.isSealed 
+              ? '🔒 封盤中，暫停投注' 
+              : submitting 
+                ? '提交中...' 
+                : '一鍵交易'}
           </button>
         </div>
 

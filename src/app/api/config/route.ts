@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import Config from '@/models/Config'
 import dbConnect from '@/lib/db'
 
-// 获取配置
+// 获取配置（公开接口）
 export async function GET() {
   try {
     await dbConnect()
@@ -11,21 +11,25 @@ export async function GET() {
     
     if (!config) {
       // 创建默认配置
-      config = await Config.create({
-        energyTypes: ['核能', '氫能', '電能', '風能', '水能', '太陽能', '地熱能', '洋流能', '波浪能', '潮汐能'],
-        provinces: ['北京', '上海', '廣東', '江蘇', '浙江', '山東', '四川', '湖北', '河南', '福建'],
-        betAmounts: [100, 500, 1000, 5000, 10000],
-        odds: { energyType: 1.8, province: 2.5, amount: 3.0 },
-      })
+      config = await Config.create({})
     }
     
     return NextResponse.json({
       success: true,
       config: {
-        energyTypes: config.energyTypes,
-        provinces: config.provinces,
-        betAmounts: config.betAmounts,
-        odds: config.odds,
+        energyTypes: config.energyTypes || [],
+        provinces: config.provinces || [],
+        betAmounts: config.betAmounts || [],
+        odds: config.odds || { energyType: 1.8, province: 2.5, amount: 3.0 },
+        cycles: config.cycles || [
+          { minutes: 5, enabled: true, sealSeconds: 30 },
+          { minutes: 10, enabled: true, sealSeconds: 30 },
+          { minutes: 15, enabled: true, sealSeconds: 30 },
+        ],
+        animation: config.animation || { duration: 10, showParticles: true, showCountdown: true },
+        unitPrice: config.unitPrice || 2,
+        minQuantity: config.minQuantity || 1,
+        maxQuantity: config.maxQuantity || 1000,
       },
     })
   } catch (error) {

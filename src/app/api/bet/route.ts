@@ -5,6 +5,7 @@ import dbConnect from '@/lib/db'
 import User from '@/models/User'
 import Bet from '@/models/Bet'
 import Transaction from '@/models/Transaction'
+import Config from '@/models/Config'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
@@ -28,6 +29,34 @@ async function verifyUser(request: NextRequest) {
     return decoded
   } catch {
     return null
+  }
+}
+
+// 计算当前期号状态
+function calculatePeriodStatus(cycleMinutes: number, sealSeconds: number) {
+  const now = new Date()
+  const totalSecondsInCycle = cycleMinutes * 60
+  const secondsSinceMidnight = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()
+  const secondsInCurrentCycle = secondsSinceMidnight % totalSecondsInCycle
+  const remainingSeconds = totalSecondsInCycle - secondsInCurrentCycle
+  
+  // 判断是否封盘
+  const isSealed = remainingSeconds <= sealSeconds
+  
+  // 计算期号
+  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '')
+  const periodNum = Math.floor(secondsSinceMidnight / totalSecondsInCycle) + 1
+  const currentPeriod = `${dateStr}${periodNum.toString().padStart(4, '0')}`
+  const nextPeriod = `${dateStr}${(periodNum + 1).toString().padStart(4, '0')}`
+  
+  return {
+    currentPeriod,
+    nextPeriod,
+    remainingSeconds,
+    isSealed,
+    sealSeconds,
+    cycleMinutes,
+    nextPeriodStartsIn: isSealed ? remainingSeconds : 0,
   }
 }
 
@@ -61,6 +90,35 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // 获取配置
+    let config = await Config.findOne()
+    const sealSeconds = config?.cycles?.find((c: { minutes: number }) => c.minutes === cycle)?.sealSeconds || 30
+    const unitPrice = config?.unitPrice || 2
+    const minQuantity = config?.minQuantity || 1
+    const maxQuantity = config?.maxQuantity || 1000
+
+    // 验证数量范围
+    if (quantity < minQuantity || quantity > maxQuantity) {
+      return NextResponse.json({ 
+        success: false, 
+        error: `購買股數需在 ${minQuantity} - ${maxQuantity} 之間` 
+      }, { status: 400 })
+    }
+
+    // 检查封盘状态
+    const periodStatus = calculatePeriodStatus(cycle, sealSeconds)
+    if (periodStatus.isSealed) {
+      return NextResponse.json({ 
+        success: false, 
+        error: '當前期已封盤，請等待下一期開盤',
+        data: {
+          isSealed: true,
+          remainingSeconds: periodStatus.remainingSeconds,
+          nextPeriod: periodStatus.nextPeriod,
+        }
+      }, { status: 400 })
+    }
+
     // 获取用户信息
     const userDoc = await User.findById(user.id)
     if (!userDoc) {
@@ -71,7 +129,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '賬戶已被禁用' }, { status: 403 })
     }
 
-    const unitPrice = 2 // 单价固定为2元
     const totalAmount = quantity * unitPrice
 
     // 验证余额
@@ -82,7 +139,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const period = generatePeriod(cycle)
+    const period = periodStatus.currentPeriod
 
     // 使用事务处理
     const session = await mongoose.startSession()
@@ -138,6 +195,7 @@ export async function POST(request: NextRequest) {
           quantity,
           totalAmount,
           newBalance,
+          remainingSeconds: periodStatus.remainingSeconds,
         },
         message: '投注成功'
       })

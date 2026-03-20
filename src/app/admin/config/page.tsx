@@ -2,16 +2,57 @@
 
 import { useEffect, useState } from 'react'
 
+// 类型定义
+interface EnergyTypeConfig {
+  id: string
+  name: string
+  color: string
+  enabled: boolean
+  sortOrder: number
+}
+
+interface ProvinceConfig {
+  id: string
+  name: string
+  enabled: boolean
+  sortOrder: number
+}
+
+interface BetAmountConfig {
+  amount: number
+  enabled: boolean
+  sortOrder: number
+}
+
+interface CycleConfig {
+  minutes: number
+  enabled: boolean
+  sealSeconds: number
+}
+
+interface AnimationConfig {
+  duration: number
+  showParticles: boolean
+  showCountdown: boolean
+}
+
 interface SystemConfig {
-  energyTypes: string[]
-  provinces: string[]
-  betAmounts: number[]
+  energyTypes: EnergyTypeConfig[]
+  provinces: ProvinceConfig[]
+  betAmounts: BetAmountConfig[]
   odds: {
     energyType: number
     province: number
     amount: number
   }
+  cycles: CycleConfig[]
+  animation: AnimationConfig
+  unitPrice: number
+  minQuantity: number
+  maxQuantity: number
 }
+
+type ConfigTab = 'energy' | 'province' | 'betAmount' | 'cycle' | 'odds' | 'animation' | 'basic'
 
 export default function ConfigPage() {
   const [config, setConfig] = useState<SystemConfig>({
@@ -19,13 +60,19 @@ export default function ConfigPage() {
     provinces: [],
     betAmounts: [],
     odds: { energyType: 1.8, province: 2.5, amount: 3.0 },
+    cycles: [],
+    animation: { duration: 10, showParticles: true, showCountdown: true },
+    unitPrice: 2,
+    minQuantity: 1,
+    maxQuantity: 1000,
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+  const [activeTab, setActiveTab] = useState<ConfigTab>('basic')
 
-  // New item inputs
-  const [newEnergyType, setNewEnergyType] = useState('')
+  // 新增项输入
+  const [newEnergyType, setNewEnergyType] = useState({ name: '', color: '#32b24a' })
   const [newProvince, setNewProvince] = useState('')
   const [newBetAmount, setNewBetAmount] = useState('')
 
@@ -35,7 +82,7 @@ export default function ConfigPage() {
 
   const fetchConfig = async () => {
     try {
-      const res = await fetch('/api/config', { credentials: 'include' })
+      const res = await fetch('/api/admin/config', { credentials: 'include' })
       const data = await res.json()
       if (data.success && data.config) {
         setConfig({
@@ -43,6 +90,11 @@ export default function ConfigPage() {
           provinces: data.config.provinces || [],
           betAmounts: data.config.betAmounts || [],
           odds: data.config.odds || { energyType: 1.8, province: 2.5, amount: 3.0 },
+          cycles: data.config.cycles || [],
+          animation: data.config.animation || { duration: 10, showParticles: true, showCountdown: true },
+          unitPrice: data.config.unitPrice || 2,
+          minQuantity: data.config.minQuantity || 1,
+          maxQuantity: data.config.maxQuantity || 1000,
         })
       }
     } catch {
@@ -52,23 +104,35 @@ export default function ConfigPage() {
     }
   }
 
-  const handleSave = async () => {
+  // 通用 PATCH 请求
+  const patchConfig = async (type: string, action: string, data?: unknown, id?: string) => {
     setSaving(true)
     setMessage({ type: '', text: '' })
 
     try {
       const res = await fetch('/api/admin/config', {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
+        body: JSON.stringify({ type, action, data, id }),
         credentials: 'include',
       })
 
-      const data = await res.json()
-      if (data.success) {
-        setMessage({ type: 'success', text: '配置保存成功' })
+      const result = await res.json()
+      if (result.success) {
+        setConfig({
+          energyTypes: result.config.energyTypes || [],
+          provinces: result.config.provinces || [],
+          betAmounts: result.config.betAmounts || [],
+          odds: result.config.odds || { energyType: 1.8, province: 2.5, amount: 3.0 },
+          cycles: result.config.cycles || [],
+          animation: result.config.animation || { duration: 10, showParticles: true, showCountdown: true },
+          unitPrice: result.config.unitPrice || 2,
+          minQuantity: result.config.minQuantity || 1,
+          maxQuantity: result.config.maxQuantity || 1000,
+        })
+        setMessage({ type: 'success', text: '操作成功' })
       } else {
-        setMessage({ type: 'error', text: data.error || '保存失敗' })
+        setMessage({ type: 'error', text: result.error || '操作失敗' })
       }
     } catch {
       setMessage({ type: 'error', text: '網絡錯誤' })
@@ -77,38 +141,77 @@ export default function ConfigPage() {
     }
   }
 
+  // 能源类型操作
   const addEnergyType = () => {
-    if (newEnergyType && !config.energyTypes.includes(newEnergyType)) {
-      setConfig({ ...config, energyTypes: [...config.energyTypes, newEnergyType] })
-      setNewEnergyType('')
+    if (newEnergyType.name.trim()) {
+      patchConfig('energyType', 'add', { name: newEnergyType.name.trim(), color: newEnergyType.color })
+      setNewEnergyType({ name: '', color: '#32b24a' })
     }
   }
 
-  const removeEnergyType = (type: string) => {
-    setConfig({ ...config, energyTypes: config.energyTypes.filter(t => t !== type) })
+  const updateEnergyType = (id: string, data: Partial<EnergyTypeConfig>) => {
+    patchConfig('energyType', 'update', data, id)
   }
 
+  const deleteEnergyType = (id: string) => {
+    patchConfig('energyType', 'delete', null, id)
+  }
+
+  const toggleEnergyType = (id: string) => {
+    patchConfig('energyType', 'toggle', null, id)
+  }
+
+  // 省份操作
   const addProvince = () => {
-    if (newProvince && !config.provinces.includes(newProvince)) {
-      setConfig({ ...config, provinces: [...config.provinces, newProvince] })
+    if (newProvince.trim()) {
+      patchConfig('province', 'add', { name: newProvince.trim() })
       setNewProvince('')
     }
   }
 
-  const removeProvince = (province: string) => {
-    setConfig({ ...config, provinces: config.provinces.filter(p => p !== province) })
+  const deleteProvince = (id: string) => {
+    patchConfig('province', 'delete', null, id)
   }
 
+  const toggleProvince = (id: string) => {
+    patchConfig('province', 'toggle', null, id)
+  }
+
+  // 投注档位操作
   const addBetAmount = () => {
     const amount = Number(newBetAmount)
-    if (amount > 0 && !config.betAmounts.includes(amount)) {
-      setConfig({ ...config, betAmounts: [...config.betAmounts, amount].sort((a, b) => a - b) })
+    if (amount > 0) {
+      patchConfig('betAmount', 'add', { amount })
       setNewBetAmount('')
     }
   }
 
-  const removeBetAmount = (amount: number) => {
-    setConfig({ ...config, betAmounts: config.betAmounts.filter(a => a !== amount) })
+  const deleteBetAmount = (amount: number) => {
+    patchConfig('betAmount', 'delete', null, String(amount))
+  }
+
+  const toggleBetAmount = (amount: number) => {
+    patchConfig('betAmount', 'toggle', null, String(amount))
+  }
+
+  // 周期配置
+  const updateCycle = (minutes: number, data: Partial<CycleConfig>) => {
+    patchConfig('cycle', 'update', data, String(minutes))
+  }
+
+  // 动画配置
+  const updateAnimation = (data: Partial<AnimationConfig>) => {
+    patchConfig('animation', 'update', data)
+  }
+
+  // 赔率配置
+  const updateOdds = (data: Partial<typeof config.odds>) => {
+    patchConfig('odds', 'update', data)
+  }
+
+  // 基础配置
+  const updateBasic = (data: Partial<Pick<SystemConfig, 'unitPrice' | 'minQuantity' | 'maxQuantity'>>) => {
+    patchConfig('basic', 'update', data)
   }
 
   if (loading) {
@@ -119,8 +222,18 @@ export default function ConfigPage() {
     )
   }
 
+  const tabs: { id: ConfigTab; label: string; icon: string }[] = [
+    { id: 'basic', label: '基礎設置', icon: '⚙️' },
+    { id: 'energy', label: '能源類型', icon: '⚡' },
+    { id: 'province', label: '省份管理', icon: '🗺️' },
+    { id: 'betAmount', label: '投注檔位', icon: '💰' },
+    { id: 'cycle', label: '投資週期', icon: '⏱️' },
+    { id: 'odds', label: '賠率設置', icon: '📊' },
+    { id: 'animation', label: '開獎動畫', icon: '🎬' },
+  ]
+
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold text-white mb-6">系統配置</h1>
 
       {message.text && (
@@ -133,64 +246,170 @@ export default function ConfigPage() {
         </div>
       )}
 
-      <div className="space-y-6">
-        {/* Energy Types */}
+      {/* 标签导航 */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === tab.id
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+          >
+            <span className="mr-2">{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 基础设置 */}
+      {activeTab === 'basic' && (
         <div className="bg-gray-800 rounded-xl p-6">
-          <h2 className="text-lg font-medium text-white mb-4">能源類型</h2>
+          <h2 className="text-lg font-medium text-white mb-6">基礎設置</h2>
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <label className="block text-gray-300 mb-2">單價（元/股）</label>
+              <input
+                type="number"
+                value={config.unitPrice}
+                onChange={(e) => updateBasic({ unitPrice: Number(e.target.value) })}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                min="1"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <label className="block text-gray-300 mb-2">最小購買股數</label>
+              <input
+                type="number"
+                value={config.minQuantity}
+                onChange={(e) => updateBasic({ minQuantity: Number(e.target.value) })}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                min="1"
+              />
+            </div>
+            <div>
+              <label className="block text-gray-300 mb-2">最大購買股數</label>
+              <input
+                type="number"
+                value={config.maxQuantity}
+                onChange={(e) => updateBasic({ maxQuantity: Number(e.target.value) })}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                min="1"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 能源类型管理 */}
+      {activeTab === 'energy' && (
+        <div className="bg-gray-800 rounded-xl p-6">
+          <h2 className="text-lg font-medium text-white mb-4">能源類型管理</h2>
           
-          <div className="flex flex-wrap gap-2 mb-4">
-            {config.energyTypes.map((type) => (
-              <span
-                key={type}
-                className="bg-gray-700 text-white px-3 py-1 rounded-lg flex items-center gap-2"
-              >
-                {type}
-                <button
-                  onClick={() => removeEnergyType(type)}
-                  className="text-gray-400 hover:text-red-400"
-                >
-                  ×
-                </button>
-              </span>
+          {/* 列表 */}
+          <div className="space-y-3 mb-6">
+            {config.energyTypes.sort((a, b) => a.sortOrder - b.sortOrder).map((item) => (
+              <div key={item.id} className="flex items-center justify-between bg-gray-700 rounded-lg p-4">
+                <div className="flex items-center space-x-4">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: item.color }}
+                  >
+                    {item.name.slice(0, 2)}
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{item.name}</p>
+                    <p className="text-gray-400 text-sm">ID: {item.id} | 排序: {item.sortOrder}</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="color"
+                    value={item.color}
+                    onChange={(e) => updateEnergyType(item.id, { color: e.target.value })}
+                    className="w-8 h-8 rounded cursor-pointer"
+                  />
+                  <button
+                    onClick={() => toggleEnergyType(item.id)}
+                    className={`px-3 py-1 rounded text-sm ${
+                      item.enabled 
+                        ? 'bg-green-600 text-white' 
+                        : 'bg-red-600 text-white'
+                    }`}
+                  >
+                    {item.enabled ? '啟用' : '禁用'}
+                  </button>
+                  <button
+                    onClick={() => deleteEnergyType(item.id)}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
+                  >
+                    刪除
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
 
-          <div className="flex gap-2">
+          {/* 新增 */}
+          <div className="flex gap-4">
             <input
               type="text"
-              value={newEnergyType}
-              onChange={(e) => setNewEnergyType(e.target.value)}
-              placeholder="新增能源類型"
-              className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-              onKeyDown={(e) => e.key === 'Enter' && addEnergyType()}
+              value={newEnergyType.name}
+              onChange={(e) => setNewEnergyType({ ...newEnergyType, name: e.target.value })}
+              placeholder="能源類型名稱"
+              className="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+            />
+            <input
+              type="color"
+              value={newEnergyType.color}
+              onChange={(e) => setNewEnergyType({ ...newEnergyType, color: e.target.value })}
+              className="w-14 h-12 rounded cursor-pointer"
             />
             <button
               onClick={addEnergyType}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              disabled={saving}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
             >
               添加
             </button>
           </div>
         </div>
+      )}
 
-        {/* Provinces */}
+      {/* 省份管理 */}
+      {activeTab === 'province' && (
         <div className="bg-gray-800 rounded-xl p-6">
-          <h2 className="text-lg font-medium text-white mb-4">省份列表</h2>
+          <h2 className="text-lg font-medium text-white mb-4">省份管理</h2>
           
-          <div className="flex flex-wrap gap-2 mb-4">
-            {config.provinces.map((province) => (
-              <span
-                key={province}
-                className="bg-gray-700 text-white px-3 py-1 rounded-lg flex items-center gap-2"
+          <div className="flex flex-wrap gap-2 mb-6">
+            {config.provinces.sort((a, b) => a.sortOrder - b.sortOrder).map((item) => (
+              <div
+                key={item.id}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+                  item.enabled ? 'bg-gray-700' : 'bg-gray-700/50'
+                }`}
               >
-                {province}
+                <span className={`${item.enabled ? 'text-white' : 'text-gray-500'}`}>
+                  {item.name}
+                </span>
                 <button
-                  onClick={() => removeProvince(province)}
-                  className="text-gray-400 hover:text-red-400"
+                  onClick={() => toggleProvince(item.id)}
+                  className={`text-xs px-2 py-0.5 rounded ${
+                    item.enabled ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                  }`}
+                >
+                  {item.enabled ? '啟' : '禁'}
+                </button>
+                <button
+                  onClick={() => deleteProvince(item.id)}
+                  className="text-gray-400 hover:text-red-400 text-lg"
                 >
                   ×
                 </button>
-              </span>
+              </div>
             ))}
           </div>
 
@@ -200,36 +419,51 @@ export default function ConfigPage() {
               value={newProvince}
               onChange={(e) => setNewProvince(e.target.value)}
               placeholder="新增省份"
-              className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+              className="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
               onKeyDown={(e) => e.key === 'Enter' && addProvince()}
             />
             <button
               onClick={addProvince}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              disabled={saving}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
             >
               添加
             </button>
           </div>
         </div>
+      )}
 
-        {/* Bet Amounts */}
+      {/* 投注档位管理 */}
+      {activeTab === 'betAmount' && (
         <div className="bg-gray-800 rounded-xl p-6">
-          <h2 className="text-lg font-medium text-white mb-4">投注金額檔位</h2>
+          <h2 className="text-lg font-medium text-white mb-4">投注檔位管理</h2>
           
-          <div className="flex flex-wrap gap-2 mb-4">
-            {config.betAmounts.map((amount) => (
-              <span
-                key={amount}
-                className="bg-gray-700 text-white px-3 py-1 rounded-lg flex items-center gap-2"
+          <div className="flex flex-wrap gap-3 mb-6">
+            {config.betAmounts.sort((a, b) => a.sortOrder - b.sortOrder).map((item) => (
+              <div
+                key={item.amount}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg ${
+                  item.enabled ? 'bg-gray-700' : 'bg-gray-700/50'
+                }`}
               >
-                ¥{amount}
+                <span className={`font-bold ${item.enabled ? 'text-white' : 'text-gray-500'}`}>
+                  ¥{item.amount.toLocaleString()}
+                </span>
                 <button
-                  onClick={() => removeBetAmount(amount)}
-                  className="text-gray-400 hover:text-red-400"
+                  onClick={() => toggleBetAmount(item.amount)}
+                  className={`text-xs px-2 py-0.5 rounded ${
+                    item.enabled ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                  }`}
+                >
+                  {item.enabled ? '啟' : '禁'}
+                </button>
+                <button
+                  onClick={() => deleteBetAmount(item.amount)}
+                  className="text-gray-400 hover:text-red-400 text-lg"
                 >
                   ×
                 </button>
-              </span>
+              </div>
             ))}
           </div>
 
@@ -239,80 +473,198 @@ export default function ConfigPage() {
               value={newBetAmount}
               onChange={(e) => setNewBetAmount(e.target.value)}
               placeholder="新增投注金額"
-              className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-              onKeyDown={(e) => e.key === 'Enter' && addBetAmount()}
+              className="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
               min="0"
             />
             <button
               onClick={addBetAmount}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              disabled={saving}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
             >
               添加
             </button>
           </div>
         </div>
+      )}
 
-        {/* Odds */}
+      {/* 周期配置 */}
+      {activeTab === 'cycle' && (
         <div className="bg-gray-800 rounded-xl p-6">
-          <h2 className="text-lg font-medium text-white mb-4">賠率設置</h2>
+          <h2 className="text-lg font-medium text-white mb-6">投資週期配置</h2>
           
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-gray-300 mb-2">能源類型賠率</label>
+          <div className="space-y-4">
+            {config.cycles.map((item) => (
+              <div key={item.minutes} className="bg-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-2xl">⏱️</span>
+                    <div>
+                      <p className="text-white font-bold text-lg">{item.minutes} 分鐘週期</p>
+                      <p className="text-gray-400 text-sm">每 {item.minutes} 分鐘開獎一次</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => updateCycle(item.minutes, { enabled: !item.enabled })}
+                    className={`px-4 py-2 rounded-lg font-medium ${
+                      item.enabled 
+                        ? 'bg-green-600 text-white' 
+                        : 'bg-red-600 text-white'
+                    }`}
+                  >
+                    {item.enabled ? '啟用中' : '已禁用'}
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-400 text-sm mb-2">封盤時間（秒）</label>
+                    <input
+                      type="number"
+                      value={item.sealSeconds}
+                      onChange={(e) => updateCycle(item.minutes, { sealSeconds: Number(e.target.value) })}
+                      className="w-full px-4 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:border-green-500"
+                      min="10"
+                      max={item.minutes * 60}
+                    />
+                    <p className="text-gray-500 text-xs mt-1">開獎前多少秒封盤</p>
+                  </div>
+                  <div className="flex items-end">
+                    <div className="bg-gray-600 rounded-lg p-3 w-full">
+                      <p className="text-gray-300 text-sm">
+                        投注時間：<span className="text-green-400 font-bold">{item.minutes * 60 - item.sealSeconds}</span> 秒
+                      </p>
+                      <p className="text-gray-300 text-sm">
+                        封盤時間：<span className="text-red-400 font-bold">{item.sealSeconds}</span> 秒
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 赔率配置 */}
+      {activeTab === 'odds' && (
+        <div className="bg-gray-800 rounded-xl p-6">
+          <h2 className="text-lg font-medium text-white mb-6">賠率設置</h2>
+          
+          <div className="grid grid-cols-3 gap-6">
+            <div className="bg-gray-700 rounded-lg p-4">
+              <div className="text-center mb-4">
+                <span className="text-3xl">⚡</span>
+                <h3 className="text-white font-bold mt-2">能源類型賠率</h3>
+                <p className="text-gray-400 text-sm">猜中能源類型</p>
+              </div>
               <input
                 type="number"
                 value={config.odds.energyType}
-                onChange={(e) => setConfig({
-                  ...config,
-                  odds: { ...config.odds, energyType: Number(e.target.value) }
-                })}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                onChange={(e) => updateOdds({ energyType: Number(e.target.value) })}
+                className="w-full text-center text-3xl font-bold px-4 py-3 bg-gray-600 border border-gray-500 rounded-lg text-yellow-400 focus:outline-none focus:border-green-500"
                 step="0.1"
                 min="1"
               />
+              <p className="text-center text-gray-400 text-sm mt-2">倍</p>
             </div>
-            <div>
-              <label className="block text-gray-300 mb-2">省份賠率</label>
+            
+            <div className="bg-gray-700 rounded-lg p-4">
+              <div className="text-center mb-4">
+                <span className="text-3xl">🗺️</span>
+                <h3 className="text-white font-bold mt-2">省份賠率</h3>
+                <p className="text-gray-400 text-sm">猜中省份</p>
+              </div>
               <input
                 type="number"
                 value={config.odds.province}
-                onChange={(e) => setConfig({
-                  ...config,
-                  odds: { ...config.odds, province: Number(e.target.value) }
-                })}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                onChange={(e) => updateOdds({ province: Number(e.target.value) })}
+                className="w-full text-center text-3xl font-bold px-4 py-3 bg-gray-600 border border-gray-500 rounded-lg text-yellow-400 focus:outline-none focus:border-green-500"
                 step="0.1"
                 min="1"
               />
+              <p className="text-center text-gray-400 text-sm mt-2">倍</p>
             </div>
-            <div>
-              <label className="block text-gray-300 mb-2">金額賠率</label>
+            
+            <div className="bg-gray-700 rounded-lg p-4">
+              <div className="text-center mb-4">
+                <span className="text-3xl">💰</span>
+                <h3 className="text-white font-bold mt-2">金額賠率</h3>
+                <p className="text-gray-400 text-sm">猜中金額區間</p>
+              </div>
               <input
                 type="number"
                 value={config.odds.amount}
-                onChange={(e) => setConfig({
-                  ...config,
-                  odds: { ...config.odds, amount: Number(e.target.value) }
-                })}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                onChange={(e) => updateOdds({ amount: Number(e.target.value) })}
+                className="w-full text-center text-3xl font-bold px-4 py-3 bg-gray-600 border border-gray-500 rounded-lg text-yellow-400 focus:outline-none focus:border-green-500"
                 step="0.1"
                 min="1"
               />
+              <p className="text-center text-gray-400 text-sm mt-2">倍</p>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-8 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
-          >
-            {saving ? '保存中...' : '保存配置'}
-          </button>
+      {/* 开奖动画配置 */}
+      {activeTab === 'animation' && (
+        <div className="bg-gray-800 rounded-xl p-6">
+          <h2 className="text-lg font-medium text-white mb-6">開獎動畫設置</h2>
+          
+          <div className="grid grid-cols-2 gap-6">
+            <div className="bg-gray-700 rounded-lg p-6">
+              <h3 className="text-white font-medium mb-4">動畫時長</h3>
+              <div className="flex items-center space-x-4">
+                <input
+                  type="range"
+                  value={config.animation.duration}
+                  onChange={(e) => updateAnimation({ duration: Number(e.target.value) })}
+                  min="5"
+                  max="30"
+                  className="flex-1"
+                />
+                <span className="text-3xl font-bold text-green-400">{config.animation.duration}</span>
+                <span className="text-gray-400">秒</span>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700 rounded-lg p-6">
+              <h3 className="text-white font-medium mb-4">視覺效果</h3>
+              <div className="space-y-4">
+                <label className="flex items-center justify-between">
+                  <span className="text-gray-300">粒子效果</span>
+                  <input
+                    type="checkbox"
+                    checked={config.animation.showParticles}
+                    onChange={(e) => updateAnimation({ showParticles: e.target.checked })}
+                    className="w-6 h-6 rounded"
+                  />
+                </label>
+                <label className="flex items-center justify-between">
+                  <span className="text-gray-300">倒計時顯示</span>
+                  <input
+                    type="checkbox"
+                    checked={config.animation.showCountdown}
+                    onChange={(e) => updateAnimation({ showCountdown: e.target.checked })}
+                    className="w-6 h-6 rounded"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          {/* 动画预览 */}
+          <div className="mt-6 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-xl p-8 text-center border border-green-500/30">
+            <div className="text-4xl mb-4 animate-bounce">🎰</div>
+            <h3 className="text-2xl font-bold text-white mb-2 animate-pulse">開獎中...</h3>
+            <div className="text-6xl font-black text-green-400 mb-4 animate-pulse">
+              {config.animation.duration}
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full w-1/2" />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
