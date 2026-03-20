@@ -1,8 +1,12 @@
 import type { NextConfig } from 'next'
+import path from 'path'
 
 const nextConfig: NextConfig = {
   // 输出为独立模式，适合部署
   output: 'standalone',
+  
+  // 显式设置根目录，避免多锁文件警告
+  outputFileTracingRoot: path.join(__dirname),
   
   // 服务端Actions
   experimental: {
