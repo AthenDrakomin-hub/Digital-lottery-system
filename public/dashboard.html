@@ -90,6 +90,11 @@
             flex-shrink: 0;
         }
         .mapping-input { flex: 1; padding: 6px 10px; font-size: 13px; }
+        
+        /* 分页按钮 */
+        .pagination button { margin: 0 2px; }
+        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination button.btn-primary { background: #dc3545; border-color: #dc3545; color: white; }
     </style>
 </head>
 <body>
@@ -869,6 +874,14 @@
         }
 
         // 开奖记录
+        // 开奖记录分页状态
+        let drawsPageState = {
+            data: [],
+            page: 1,
+            pageSize: 50,
+            total: 0
+        };
+
         async function loadDraws() {
             const date = document.getElementById('drawDate').value;
             const interval = document.getElementById('drawInterval').value;
@@ -878,61 +891,131 @@
                 // 使用 daily 接口并自动补全历史数据
                 const res = await fetch(`/api/system?type=draws&action=daily&date=${date}&interval=${interval}&fill=1&nocache=1`, { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
-                const tbody = document.getElementById('drawsBody');
                 
-                // 获取当前时间判断哪些期号已过期
-                const now = new Date();
-                const currentMinutes = now.getHours() * 60 + now.getMinutes();
-                const isToday = date === now.toISOString().split('T')[0];
+                // 保存数据到分页状态
+                drawsPageState.data = data.draws || [];
+                drawsPageState.total = drawsPageState.data.length;
+                drawsPageState.page = 1;
                 
-                // 显示所有期号
-                const draws = data.draws || [];
-                tbody.innerHTML = draws.map(d => {
-                    const periodNum = d.period + 1;
-                    // 期号格式：20260320001
-                    const periodId = `${date.replace(/-/g, '')}${String(periodNum).padStart(3, '0')}`;
-                    const time = calcTime(parseInt(interval), d.period);
-                    
-                    // 判断是否已过期
-                    const periodEndMinutes = (d.period + 1) * parseInt(interval);
-                    const isExpired = !isToday || periodEndMinutes <= currentMinutes;
-                    
-                    // 状态显示
-                    let statusBadge;
-                    if (d.status === 'settled') {
-                        statusBadge = '<span class="badge badge-success">已结算</span>';
-                    } else if (d.result) {
-                        statusBadge = '<span class="badge badge-info">已开奖</span>';
-                    } else if (isExpired) {
-                        statusBadge = '<span class="badge badge-danger">待补录</span>';
-                    } else {
-                        statusBadge = '<span class="badge badge-warning">待开奖</span>';
-                    }
-                    
-                    return `
-                    <tr>
-                        <td style="font-family:monospace;font-weight:bold">${periodId}</td>
-                        <td>${date}</td>
-                        <td>${time}</td>
-                        <td style="font-family:monospace;letter-spacing:2px;font-size:16px">${d.result || '-'}</td>
-                        <td><strong style="color:#d4af37;font-size:18px">${d.result ? d.result[0] : '-'}</strong></td>
-                        <td>${d.settlementStats?.totalBets || 0}</td>
-                        <td style="color:#28a745">¥${(d.settlementStats?.totalWinAmount || 0).toFixed(2)}</td>
-                        <td>${statusBadge}</td>
-                        <td class="action-btns">
-                            ${d._id ? `
-                                <button class="btn btn-primary btn-sm" onclick="manualDraw('${d._id}')">开奖</button>
-                                <button class="btn btn-danger btn-sm" onclick="deleteDraw('${d._id}')">删除</button>
-                            ` : '-'}
-                        </td>
-                    </tr>`;
-                }).join('') || '<tr><td colspan="9">暂无数据</td></tr>';
-                
-                // 分页信息
-                document.getElementById('drawsPage').innerHTML = `共 ${draws.length} 期`;
+                // 渲染当前页
+                renderDrawsPage(date, parseInt(interval));
             } catch (e) {
                 document.getElementById('drawsBody').innerHTML = '<tr><td colspan="9">加载失败</td></tr>';
             }
+        }
+
+        function renderDrawsPage(date, interval) {
+            const { data, page, pageSize, total } = drawsPageState;
+            const tbody = document.getElementById('drawsBody');
+            
+            // 计算分页
+            const totalPages = Math.ceil(total / pageSize);
+            const startIdx = (page - 1) * pageSize;
+            const endIdx = Math.min(startIdx + pageSize, total);
+            const pageData = data.slice(startIdx, endIdx);
+            
+            // 获取当前时间判断哪些期号已过期
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const isToday = date === now.toISOString().split('T')[0];
+            
+            tbody.innerHTML = pageData.map(d => {
+                const periodNum = d.period + 1;
+                const periodId = `${date.replace(/-/g, '')}${String(periodNum).padStart(3, '0')}`;
+                const time = calcTime(interval, d.period);
+                const periodEndMinutes = (d.period + 1) * interval;
+                const isExpired = !isToday || periodEndMinutes <= currentMinutes;
+                
+                let statusBadge;
+                if (d.status === 'settled') {
+                    statusBadge = '<span class="badge badge-success">已结算</span>';
+                } else if (d.result) {
+                    statusBadge = '<span class="badge badge-info">已开奖</span>';
+                } else if (isExpired) {
+                    statusBadge = '<span class="badge badge-danger">待补录</span>';
+                } else {
+                    statusBadge = '<span class="badge badge-warning">待开奖</span>';
+                }
+                
+                return `
+                <tr>
+                    <td style="font-family:monospace;font-weight:bold">${periodId}</td>
+                    <td>${date}</td>
+                    <td>${time}</td>
+                    <td style="font-family:monospace;letter-spacing:2px;font-size:16px">${d.result || '-'}</td>
+                    <td><strong style="color:#d4af37;font-size:18px">${d.result ? d.result[0] : '-'}</strong></td>
+                    <td>${d.settlementStats?.totalBets || 0}</td>
+                    <td style="color:#28a745">¥${(d.settlementStats?.totalWinAmount || 0).toFixed(2)}</td>
+                    <td>${statusBadge}</td>
+                    <td class="action-btns">
+                        ${d._id ? `
+                            <button class="btn btn-primary btn-sm" onclick="manualDraw('${d._id}')">开奖</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteDraw('${d._id}')">删除</button>
+                        ` : '-'}
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="9">暂无数据</td></tr>';
+            
+            // 渲染分页控件
+            renderDrawsPagination(totalPages);
+        }
+
+        function renderDrawsPagination(totalPages) {
+            const { page, total, pageSize } = drawsPageState;
+            const container = document.getElementById('drawsPage');
+            
+            if (totalPages <= 1) {
+                container.innerHTML = `共 ${total} 期`;
+                return;
+            }
+            
+            let html = `<span style="margin-right:15px">共 ${total} 期，第 ${page}/${totalPages} 页</span>`;
+            
+            // 首页和上一页
+            html += `<button class="btn btn-sm" ${page === 1 ? 'disabled' : ''} onclick="goDrawsPage(1)">首页</button>`;
+            html += `<button class="btn btn-sm" ${page === 1 ? 'disabled' : ''} onclick="goDrawsPage(${page - 1})">上一页</button>`;
+            
+            // 页码
+            const maxVisible = 5;
+            let start = Math.max(1, page - Math.floor(maxVisible / 2));
+            let end = Math.min(totalPages, start + maxVisible - 1);
+            start = Math.max(1, end - maxVisible + 1);
+            
+            for (let i = start; i <= end; i++) {
+                html += `<button class="btn btn-sm ${i === page ? 'btn-primary' : ''}" onclick="goDrawsPage(${i})">${i}</button>`;
+            }
+            
+            // 下一页和尾页
+            html += `<button class="btn btn-sm" ${page === totalPages ? 'disabled' : ''} onclick="goDrawsPage(${page + 1})">下一页</button>`;
+            html += `<button class="btn btn-sm" ${page === totalPages ? 'disabled' : ''} onclick="goDrawsPage(${totalPages})">尾页</button>`;
+            
+            // 每页条数选择
+            html += `<select class="btn btn-sm" style="margin-left:10px" onchange="changeDrawsPageSize(this.value)">
+                <option value="30" ${pageSize === 30 ? 'selected' : ''}>30条/页</option>
+                <option value="50" ${pageSize === 50 ? 'selected' : ''}>50条/页</option>
+                <option value="100" ${pageSize === 100 ? 'selected' : ''}>100条/页</option>
+            </select>`;
+            
+            container.innerHTML = html;
+        }
+
+        function goDrawsPage(page) {
+            const totalPages = Math.ceil(drawsPageState.total / drawsPageState.pageSize);
+            if (page < 1 || page > totalPages) return;
+            drawsPageState.page = page;
+            
+            const date = document.getElementById('drawDate').value;
+            const interval = document.getElementById('drawInterval').value;
+            renderDrawsPage(date, parseInt(interval));
+        }
+
+        function changeDrawsPageSize(size) {
+            drawsPageState.pageSize = parseInt(size);
+            drawsPageState.page = 1;
+            
+            const date = document.getElementById('drawDate').value;
+            const interval = document.getElementById('drawInterval').value;
+            renderDrawsPage(date, parseInt(interval));
         }
 
         function calcTime(interval, period) {
