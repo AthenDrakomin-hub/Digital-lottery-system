@@ -214,7 +214,7 @@ async function handleChangePassword(req, res) {
 /**
  * 主入口 - 路由分发
  */
-module.exports = async (req, res) => {
+const handler = async (req, res) => {
     // 设置CORS头
     setCorsHeaders(req, res);
 
@@ -262,3 +262,5 @@ module.exports = async (req, res) => {
         res.status(500).json({ error: '服务器错误' });
     }
 };
+
+module.exports = { handler, handleAuth: handler };

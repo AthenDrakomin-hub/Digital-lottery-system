@@ -355,7 +355,7 @@ async function handleStats(req, res) {
 /**
  * 主入口 - 路由分发
  */
-module.exports = async (req, res) => {
+const handleAdmin = async (req, res) => {
     setCorsHeaders(req, res);
     if (handlePreflightRequest(req, res)) return;
 
@@ -405,5 +405,4 @@ module.exports = async (req, res) => {
     }
 };
 
-// 导出验证函数供其他模块使用
-module.exports.verifyAdmin = verifyAdmin;
+module.exports = { handleAdmin, handler: handleAdmin, verifyAdmin };

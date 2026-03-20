@@ -429,7 +429,7 @@ async function handleReject(req, res) {
 /**
  * 主入口 - 路由分发
  */
-module.exports = async (req, res) => {
+const handleTransactions = async (req, res) => {
     setCorsHeaders(req, res);
     if (handlePreflightRequest(req, res)) return;
 
@@ -485,3 +485,5 @@ module.exports = async (req, res) => {
         res.status(500).json({ error: '服务器错误' });
     }
 };
+
+module.exports = { handleTransactions, handler: handleTransactions };
