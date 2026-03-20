@@ -7,23 +7,24 @@ import { useRouter } from 'next/navigation'
 type Tab = 'management' | 'wallet' | 'recharge' | 'withdraw' | 'records' | 'cards'
 
 export default function DashboardPage() {
-  const { user, isLoggedIn } = useUser()
+  const { user, isLoggedIn, loading } = useUser()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<Tab>('management')
 
-  // 未登录重定向
+  // 未登录重定向 - 等待加载完成后再判断
   useEffect(() => {
-    if (!isLoggedIn) {
+    if (!loading && !isLoggedIn) {
       router.push('/login')
     }
-  }, [isLoggedIn, router])
+  }, [loading, isLoggedIn, router])
 
-  if (!isLoggedIn || !user) {
+  // 加载中或未登录时显示
+  if (loading || !isLoggedIn || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p className="text-gray-500">請先登錄...</p>
+          <p className="text-gray-500">{loading ? '載入中...' : '請先登錄...'}</p>
         </div>
       </div>
     )

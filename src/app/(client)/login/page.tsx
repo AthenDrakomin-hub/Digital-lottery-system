@@ -1,17 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useUser } from '@/hooks/useUser'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { setUser } = useUser()
+  const { setUser, isLoggedIn, loading: authLoading } = useUser()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // 已登录用户重定向
+  useEffect(() => {
+    if (!authLoading && isLoggedIn) {
+      router.push('/invest')
+    }
+  }, [authLoading, isLoggedIn, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
