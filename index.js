@@ -38,13 +38,18 @@ app.use((req, res, next) => {
     next();
 });
 
-// API路由处理器
+// API路由处理器 - 使用通配符匹配所有子路径
 const apiRoutes = {
-    '/api/auth': './api/auth',
-    '/api/users': './api/users',
-    '/api/transactions': './api/transactions',
-    '/api/admin': './api/admin',
-    '/api/system': './api/system'
+    '/api/auth': './api_handlers/auth',
+    '/api/auth/*': './api_handlers/auth',
+    '/api/users': './api_handlers/users',
+    '/api/users/*': './api_handlers/users',
+    '/api/transactions': './api_handlers/transactions',
+    '/api/transactions/*': './api_handlers/transactions',
+    '/api/admin': './api_handlers/admin',
+    '/api/admin/*': './api_handlers/admin',
+    '/api/system': './api_handlers/system',
+    '/api/system/*': './api_handlers/system'
 };
 
 // 注册API路由
