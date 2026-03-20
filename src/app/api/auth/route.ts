@@ -4,6 +4,16 @@ import jwt from 'jsonwebtoken'
 import dbConnect from '@/lib/db'
 import User from '@/models/User'
 
+// JWT payload 类型
+interface JwtPayload {
+  id: string
+  userId?: string
+  username: string
+  role: string
+  iat: number
+  exp: number
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 // 获取当前用户信息
@@ -15,11 +25,11 @@ export async function GET(req: NextRequest) {
     }
 
     const token = authHeader.split(' ')[1]
-    let decoded: any
+    let decoded: JwtPayload
     
     try {
-      decoded = jwt.verify(token, JWT_SECRET)
-    } catch (error) {
+      decoded = jwt.verify(token, JWT_SECRET) as JwtPayload
+    } catch {
       return NextResponse.json({ success: false, error: 'Token无效或已过期' }, { status: 401 })
     }
 
@@ -42,7 +52,7 @@ export async function GET(req: NextRequest) {
         email: user.email,
       }
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Auth check error:', error)
     return NextResponse.json({ success: false, error: '服务器错误' }, { status: 500 })
   }
@@ -98,7 +108,7 @@ export async function POST(req: NextRequest) {
         email: user.email,
       }
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json({ success: false, error: '服务器错误' }, { status: 500 })
   }

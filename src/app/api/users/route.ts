@@ -6,6 +6,16 @@ import { maskUserInfo } from '@/lib/mask'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
+// JWT payload 类型
+interface JwtPayload {
+  id: string
+  userId?: string
+  username: string
+  role: string
+  iat: number
+  exp: number
+}
+
 // 验证管理员权限
 async function verifyAdmin(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -15,7 +25,7 @@ async function verifyAdmin(req: NextRequest) {
 
   const token = authHeader.split(' ')[1]
   try {
-    const decoded: any = jwt.verify(token, JWT_SECRET)
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload
     await dbConnect()
     const user = await User.findById(decoded.id || decoded.userId)
     return user && user.role === 'admin' && user.isActive ? user : null
@@ -33,10 +43,10 @@ export async function GET(req: NextRequest) {
     }
 
     const token = authHeader.split(' ')[1]
-    let decoded: any
+    let decoded: JwtPayload
     
     try {
-      decoded = jwt.verify(token, JWT_SECRET)
+      decoded = jwt.verify(token, JWT_SECRET) as JwtPayload
     } catch {
       return NextResponse.json({ error: 'Token无效或已过期' }, { status: 401 })
     }
@@ -57,7 +67,13 @@ export async function GET(req: NextRequest) {
       const limit = parseInt(searchParams.get('limit') || '20')
       const search = searchParams.get('search') || ''
 
-      const query: any = {}
+      interface UserQuery {
+        $or?: Array<{
+          username?: { $regex: string; $options: string }
+          realName?: { $regex: string; $options: string }
+        }>
+      }
+      const query: UserQuery = {}
       if (search) {
         query.$or = [
           { username: { $regex: search, $options: 'i' } },
@@ -92,7 +108,7 @@ export async function GET(req: NextRequest) {
       success: true,
       user: maskUserInfo(user.toObject())
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Get user error:', error)
     return NextResponse.json({ error: '服务器错误' }, { status: 500 })
   }

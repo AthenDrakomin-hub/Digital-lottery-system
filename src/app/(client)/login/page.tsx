@@ -47,7 +47,7 @@ export default function LoginPage() {
       } else {
         setError(data.error || '登錄失敗，請稍後重試')
       }
-    } catch (err) {
+    } catch {
       setError('網絡錯誤，請稍後重試')
     } finally {
       setLoading(false)

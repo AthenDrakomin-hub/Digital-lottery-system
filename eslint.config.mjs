@@ -29,6 +29,7 @@ export default [
       "react-hooks/exhaustive-deps": "warn",
       "@next/next/no-html-link-for-pages": "off",
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-explicit-any": "warn",
     },
     settings: {
       react: {

@@ -33,6 +33,13 @@ export const DEFAULT_FIELD_MAPPING = {
   }
 }
 
+// 定义静态方法接口
+interface IConfigModel extends mongoose.Model<mongoose.Document> {
+  get: (key: string, defaultValue?: unknown) => Promise<unknown>
+  set: (key: string, value: unknown) => Promise<mongoose.Document>
+  initDefaults: () => Promise<void>
+}
+
 const configSchema = new mongoose.Schema({
   key: { 
     type: String, 
@@ -55,12 +62,12 @@ const configSchema = new mongoose.Schema({
 })
 
 // 静态方法
-configSchema.statics.get = async function(key: string, defaultValue: any = null) {
+configSchema.statics.get = async function(key: string, defaultValue: unknown = null) {
   const config = await this.findOne({ key })
   return config ? config.value : defaultValue
 }
 
-configSchema.statics.set = async function(key: string, value: any) {
+configSchema.statics.set = async function(key: string, value: unknown) {
   return this.findOneAndUpdate(
     { key },
     { value, updatedAt: new Date() },
@@ -81,6 +88,6 @@ configSchema.statics.initDefaults = async function() {
 }
 
 // 防止模型重复编译
-const Config = mongoose.models.Config || mongoose.model('Config', configSchema)
+const Config = (mongoose.models.Config as IConfigModel) || mongoose.model<mongoose.Document, IConfigModel>('Config', configSchema)
 
 export default Config

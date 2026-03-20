@@ -5,6 +5,16 @@ import Config, { DEFAULT_FIELD_MAPPING } from '@/models/Config'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
+// JWT payload 类型
+interface JwtPayload {
+  id: string
+  userId?: string
+  username: string
+  role: string
+  iat: number
+  exp: number
+}
+
 // 验证管理员权限
 async function verifyAdmin(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -14,7 +24,7 @@ async function verifyAdmin(req: NextRequest) {
 
   const token = authHeader.split(' ')[1]
   try {
-    const decoded: any = jwt.verify(token, JWT_SECRET)
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload
     const User = (await import('@/models/User')).default
     await dbConnect()
     const user = await User.findById(decoded.id || decoded.userId)
@@ -33,15 +43,16 @@ export async function GET(req: NextRequest) {
     const key = searchParams.get('key') || 'fieldMapping'
 
     // 初始化默认配置
-    await (Config as any).initDefaults()
+    await Config.initDefaults()
 
-    const config = await Config.findOne({ key })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config = await Config.findOne({ key }) as any
     
     return NextResponse.json({
       success: true,
       data: config ? config.value : DEFAULT_FIELD_MAPPING
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Get config error:', error)
     return NextResponse.json({ error: '服务器错误' }, { status: 500 })
   }
@@ -64,18 +75,19 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: '缺少配置值' }, { status: 400 })
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config = await Config.findOneAndUpdate(
       { key },
       { value, updatedAt: new Date() },
       { upsert: true, new: true }
-    )
+    ) as any
 
     return NextResponse.json({
       success: true,
       message: '配置已更新',
       data: config.value
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Update config error:', error)
     return NextResponse.json({ error: '服务器错误' }, { status: 500 })
   }
