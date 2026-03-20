@@ -25,6 +25,7 @@ export default function RechargePage() {
 
   useEffect(() => {
     fetchUser()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
   const fetchUser = async () => {
@@ -124,7 +125,12 @@ export default function RechargePage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form 
+          onSubmit={handleSubmit} 
+          className="space-y-6"
+          action={`/api/admin/users/${userId}/recharge`}
+          method="post"
+        >
           <div>
             <label className="block text-gray-300 mb-2">操作類型</label>
             <div className="grid grid-cols-2 gap-4">
@@ -154,15 +160,18 @@ export default function RechargePage() {
           </div>
 
           <div>
-            <label className="block text-gray-300 mb-2">金額</label>
+            <label htmlFor="amount" className="block text-gray-300 mb-2">金額</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">¥</span>
               <input
+                id="amount"
+                name="amount"
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full pl-8 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
                 placeholder="請輸入金額"
+                autoComplete="off"
                 required
                 min="0"
                 step="0.01"
@@ -171,8 +180,10 @@ export default function RechargePage() {
           </div>
 
           <div>
-            <label className="block text-gray-300 mb-2">備註</label>
+            <label htmlFor="remark" className="block text-gray-300 mb-2">備註</label>
             <textarea
+              id="remark"
+              name="remark"
               value={remark}
               onChange={(e) => setRemark(e.target.value)}
               className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"

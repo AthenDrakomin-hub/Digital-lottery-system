@@ -56,25 +56,36 @@ export default function CreateUserPage() {
 
       {/* Form */}
       <div className="bg-gray-800 rounded-xl p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form 
+          onSubmit={handleSubmit} 
+          className="space-y-6"
+          action="/api/admin/users"
+          method="post"
+        >
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-gray-300 mb-2">用戶名 *</label>
+              <label htmlFor="username" className="block text-gray-300 mb-2">用戶名 *</label>
               <input
+                id="username"
+                name="username"
                 type="text"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                autoComplete="username"
                 required
               />
             </div>
             <div>
-              <label className="block text-gray-300 mb-2">初始密碼 *</label>
+              <label htmlFor="password" className="block text-gray-300 mb-2">初始密碼 *</label>
               <input
+                id="password"
+                name="password"
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                autoComplete="new-password"
                 required
               />
             </div>
@@ -82,43 +93,58 @@ export default function CreateUserPage() {
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-gray-300 mb-2">真實姓名</label>
+              <label htmlFor="realName" className="block text-gray-300 mb-2">真實姓名</label>
               <input
+                id="realName"
+                name="realName"
                 type="text"
                 value={formData.realName}
                 onChange={(e) => setFormData({ ...formData, realName: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                autoComplete="name"
               />
             </div>
             <div>
-              <label className="block text-gray-300 mb-2">初始餘額</label>
+              <label htmlFor="balance" className="block text-gray-300 mb-2">初始餘額</label>
               <input
+                id="balance"
+                name="balance"
                 type="number"
                 value={formData.balance}
                 onChange={(e) => setFormData({ ...formData, balance: Number(e.target.value) })}
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                autoComplete="off"
                 min="0"
+                step="0.01"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-gray-300 mb-2">手機號碼</label>
+              <label htmlFor="phone" className="block text-gray-300 mb-2">手機號碼</label>
               <input
+                id="phone"
+                name="phone"
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                autoComplete="tel"
+                placeholder="請輸入手機號碼"
               />
             </div>
             <div>
-              <label className="block text-gray-300 mb-2">郵箱地址</label>
+              <label htmlFor="email" className="block text-gray-300 mb-2">郵箱地址</label>
               <input
+                id="email"
+                name="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                autoComplete="email"
+                placeholder="請輸入郵箱地址"
               />
             </div>
           </div>

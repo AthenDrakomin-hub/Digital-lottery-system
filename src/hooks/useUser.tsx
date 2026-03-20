@@ -1,73 +1,96 @@
 'use client'
 
-import { createContext, useContext, ReactNode, useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react'
 
-// 用户上下文
 interface User {
-  id: string
+  _id: string
   username: string
-  role: string
+  role: 'admin' | 'user'
   balance: number
   realName?: string
   phone?: string
   email?: string
+  isActive: boolean
 }
 
-interface UserContextType {
+interface UseUserReturn {
   user: User | null
-  setUser: (user: User | null) => void
   isLoggedIn: boolean
   loading: boolean
-  logout: () => void
+  setUser: (user: User | null) => void
+  refreshUser: () => Promise<void>
+  logout: () => Promise<void>
 }
 
-const UserContext = createContext<UserContextType>({
-  user: null,
-  setUser: () => {},
-  isLoggedIn: false,
-  loading: true,
-  logout: () => {},
-})
-
-export const useUser = () => useContext(UserContext)
+const UserContext = createContext<UseUserReturn | null>(null)
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // 检查登录状态
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/auth', {
-          method: 'GET',
-          credentials: 'include',
-        })
-        const data = await res.json()
-        if (data.success && data.user) {
-          setUser(data.user)
-        }
-      } catch {
-        console.error('Auth check failed')
-      } finally {
-        setLoading(false)
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await fetch('/api/users/me', {
+        method: 'GET',
+        credentials: 'include',
+      })
+
+      const data = await res.json()
+      
+      if (data.success && data.user) {
+        setUser(data.user)
+      } else {
+        setUser(null)
       }
+    } catch {
+      setUser(null)
+    } finally {
+      setLoading(false)
     }
-    checkAuth()
   }, [])
 
-  const logout = async () => {
+  const refreshUser = useCallback(async () => {
+    setLoading(true)
+    await fetchUser()
+  }, [fetchUser])
+
+  const logout = useCallback(async () => {
     try {
-      await fetch('/api/auth', { method: 'DELETE' })
+      await fetch('/api/auth', {
+        method: 'DELETE',
+        credentials: 'include',
+      })
     } catch {
-      console.error('Logout failed')
+      // ignore
+    } finally {
+      setUser(null)
     }
-    setUser(null)
+  }, [])
+
+  useEffect(() => {
+    fetchUser()
+  }, [fetchUser])
+
+  const value: UseUserReturn = {
+    user,
+    isLoggedIn: !!user,
+    loading,
+    setUser,
+    refreshUser,
+    logout,
   }
 
   return (
-    <UserContext.Provider value={{ user, setUser, isLoggedIn: !!user, loading, logout }}>
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   )
+}
+
+export function useUser(): UseUserReturn {
+  const context = useContext(UserContext)
+  if (!context) {
+    throw new Error('useUser must be used within a UserProvider')
+  }
+  return context
 }
