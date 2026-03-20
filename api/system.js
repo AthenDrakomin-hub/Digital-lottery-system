@@ -5,7 +5,8 @@
  * 开奖管理 (type=draws):
  *   GET    /api/system?type=draws                    - 获取开奖列表
  *   POST   /api/system?type=draws                    - 批量保存开奖预设
- *   GET    /api/system?type=draws&action=daily       - 获取每日开奖
+ *   GET    /api/system?type=draws&action=daily       - 获取每日开奖（支持30天历史查询）
+ *         参数: date(必填), interval(必填), nocache=1(跳过缓存), fill=1(补全当天), history=1(强制历史模式)
  *   GET    /api/system?type=draws&id=xxx             - 获取开奖详情
  *   PUT    /api/system?type=draws&id=xxx             - 更新开奖结果
  *   DELETE /api/system?type=draws&id=xxx             - 删除开奖记录
@@ -13,8 +14,10 @@
  * 投注管理 (type=bets):
  *   GET    /api/system?type=bets                     - 获取投注配置
  *   POST   /api/system?type=bets                     - 提交投注
- *   GET    /api/system?type=bets&action=period       - 获取期号信息
- *   GET    /api/system?type=bets&action=history      - 获取投注历史
+ *   GET    /api/system?type=bets&action=period       - 获取期号信息（当期同步）
+ *         参数: interval(周期), sync=1(返回更多同步信息)
+ *   GET    /api/system?type=bets&action=history      - 获取投注历史（支持30天范围查询）
+ *         参数: page, limit, status, startDate, endDate(30天限制)
  *   GET    /api/system?type=bets&action=admin        - 获取所有投注（管理员）
  *   GET    /api/system?type=bets&id=xxx              - 获取投注详情
  *   DELETE /api/system?type=bets&id=xxx              - 取消投注
@@ -33,6 +36,11 @@
  *   POST   /api/system?type=payment&action=wechat    - 微信回调
  *   POST   /api/system?type=payment&action=payout    - 代付处理
  *   POST   /api/system?type=payment&action=callback  - 代付回调
+ * 
+ * 数据同步策略:
+ *   - 当期数据: 实时查询，无缓存（action=period）
+ *   - 当天数据: 缓存1小时，支持自动补全（action=daily, fill=1）
+ *   - 历史数据: 缓存1天，限制30天查询范围（action=daily, history=1）
  */
 
 // 加载环境变量（必须在最前面）
@@ -163,24 +171,48 @@ async function handleDrawsCreate(req, res) {
 }
 
 async function handleDrawsDaily(req, res) {
-    const { date, interval, nocache, fill } = req.query;
+    const { date, interval, nocache, fill, history } = req.query;
     if (!date || !interval) return res.status(400).json({ error: '缺少date或interval参数' });
 
     const intervalNum = parseInt(interval);
     if (!CONFIG.INTERVALS.includes(intervalNum)) return res.status(400).json({ error: 'interval参数必须是5、10或15' });
 
-    const totalPeriods = getTotalPeriods(intervalNum);
+    // 历史查询限制：只能查询30天以内的数据
+    const today = new Date().toISOString().slice(0, 10);
+    const minDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    
+    if (date < minDate) {
+        return res.status(400).json({ 
+            error: '只能查询30天以内的历史数据',
+            minDate,
+            requestedDate: date 
+        });
+    }
 
-    // 如果fill=1，自动补全已过期的期号
-    if (fill === '1') {
+    const totalPeriods = getTotalPeriods(intervalNum);
+    const isToday = date === today;
+
+    // 如果fill=1，自动补全已过期的期号（仅当天有效）
+    if (fill === '1' && isToday) {
         await fillExpiredDraws(date, intervalNum);
-        // 补全后清除缓存
         await cache.delDailyDraws(date, intervalNum);
     }
 
-    if (nocache !== '1') {
+    // 历史数据使用缓存（非当天或history=1）
+    const useHistoryCache = !isToday || history === '1';
+    
+    if (nocache !== '1' && useHistoryCache) {
         const cached = await cache.getDailyDraws(date, intervalNum);
-        if (cached) return res.json({ date, interval: intervalNum, totalPeriods, draws: cached, cached: true });
+        if (cached) {
+            return res.json({ 
+                date, 
+                interval: intervalNum, 
+                totalPeriods, 
+                draws: cached, 
+                cached: true,
+                isHistory: !isToday 
+            });
+        }
     }
 
     const draws = await Draw.find({ date, interval: intervalNum }).sort('period');
@@ -206,8 +238,20 @@ async function handleDrawsDaily(req, res) {
         };
     });
 
-    await cache.setDailyDraws(date, intervalNum, fullDay);
-    res.json({ date, interval: intervalNum, totalPeriods, draws: fullDay, cached: false });
+    // 缓存历史数据（过期时间更长）
+    if (useHistoryCache) {
+        const ttl = isToday ? 3600 : 86400; // 当天1小时，历史数据1天
+        await cache.setDailyDraws(date, intervalNum, fullDay, ttl);
+    }
+
+    res.json({ 
+        date, 
+        interval: intervalNum, 
+        totalPeriods, 
+        draws: fullDay, 
+        cached: false,
+        isHistory: !isToday 
+    });
 }
 
 /**
@@ -367,7 +411,7 @@ async function handleBetsPlace(req, res) {
 }
 
 async function handleBetsPeriod(req, res) {
-    const { interval = 5 } = req.query;
+    const { interval = 5, sync } = req.query;
     const intervalNum = parseInt(interval);
     
     const now = new Date();
@@ -377,33 +421,146 @@ async function handleBetsPeriod(req, res) {
     const totalPeriods = getTotalPeriods(intervalNum);
     const secondsUntilDraw = ((currentPeriod + 1) * intervalNum - currentMinutes) * 60 - now.getSeconds();
 
+    // 获取当前期号的开奖结果（如果已开奖）
+    let currentDraw = null;
+    const draw = await Draw.findOne({ date: dateStr, interval: intervalNum, period: currentPeriod });
+    if (draw) {
+        currentDraw = {
+            period: draw.period,
+            result: draw.result,
+            status: draw.status,
+            updatedAt: draw.updatedAt
+        };
+    }
+
+    // 获取用户当前期号的投注
     const userData = extractUserFromRequest(req);
     let userBet = null;
     if (userData) {
-        const bet = await Bet.findOne({ userId: userData.id, date: dateStr, interval: intervalNum, period: currentPeriod, status: { $ne: 'cancelled' } });
-        if (bet) userBet = { id: bet._id, championNumbers: bet.championNumbers, amount: bet.amount, status: bet.status };
+        const bet = await Bet.findOne({ 
+            userId: userData.id, 
+            date: dateStr, 
+            interval: intervalNum, 
+            period: currentPeriod, 
+            status: { $ne: 'cancelled' } 
+        });
+        if (bet) {
+            userBet = { 
+                id: bet._id, 
+                championNumbers: bet.championNumbers, 
+                amount: bet.amount, 
+                status: bet.status,
+                result: bet.result,
+                winAmount: bet.winAmount
+            };
+        }
     }
 
-    res.json({
-        now: now.toISOString(), date: dateStr, interval: intervalNum, totalPeriods,
-        currentPeriod: { period: currentPeriod + 1, canBet: secondsUntilDraw > 60, secondsUntilDraw },
-        userBet
-    });
+    // sync=1 时返回更多同步信息
+    if (sync === '1') {
+        // 获取当天所有已开奖的期号
+        const todayDraws = await Draw.find({ 
+            date: dateStr, 
+            interval: intervalNum,
+            status: { $ne: 'pending' }
+        }).sort('period').select('period result status');
+        
+        res.json({
+            now: now.toISOString(),
+            date: dateStr,
+            interval: intervalNum,
+            totalPeriods,
+            currentPeriod: {
+                period: currentPeriod + 1,
+                canBet: secondsUntilDraw > 60,
+                secondsUntilDraw,
+                draw: currentDraw
+            },
+            userBet,
+            sync: {
+                todayDraws: todayDraws.slice(-20), // 最近20期已开奖结果
+                lastSync: now.toISOString()
+            }
+        });
+    } else {
+        res.json({
+            now: now.toISOString(),
+            date: dateStr,
+            interval: intervalNum,
+            totalPeriods,
+            currentPeriod: {
+                period: currentPeriod + 1,
+                canBet: secondsUntilDraw > 60,
+                secondsUntilDraw,
+                draw: currentDraw
+            },
+            userBet
+        });
+    }
 }
 
 async function handleBetsHistory(req, res) {
     const userData = extractUserFromRequest(req);
     if (!userData) return res.status(401).json({ error: '未授权，请先登录' });
 
-    const { page = 1, limit = 20, status } = req.query;
+    const { page = 1, limit = 20, status, startDate, endDate } = req.query;
     let query = { userId: userData.id };
     if (status) query.status = status;
+
+    // 日期范围查询（限制30天）
+    const today = new Date();
+    const minDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    
+    if (startDate || endDate) {
+        query.date = {};
+        
+        if (startDate) {
+            // 验证起始日期不早于30天前
+            if (startDate < minDate.toISOString().slice(0, 10)) {
+                return res.status(400).json({ 
+                    error: '只能查询30天以内的历史数据',
+                    minDate: minDate.toISOString().slice(0, 10)
+                });
+            }
+            query.date.$gte = startDate;
+        }
+        
+        if (endDate) {
+            if (endDate > today.toISOString().slice(0, 10)) {
+                return res.status(400).json({ error: '结束日期不能大于今天' });
+            }
+            query.date.$lte = endDate;
+        }
+        
+        // 验证日期范围不超过30天
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const daysDiff = Math.ceil((end - start) / (24 * 60 * 60 * 1000));
+            if (daysDiff > 30) {
+                return res.status(400).json({ error: '日期范围不能超过30天' });
+            }
+        }
+    }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const bets = await Bet.find(query).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
     const total = await Bet.countDocuments(query);
 
-    res.json({ bets, pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) } });
+    res.json({ 
+        bets, 
+        pagination: { 
+            page: parseInt(page), 
+            limit: parseInt(limit), 
+            total, 
+            pages: Math.ceil(total / parseInt(limit)) 
+        },
+        dateRange: {
+            startDate: startDate || minDate.toISOString().slice(0, 10),
+            endDate: endDate || today.toISOString().slice(0, 10),
+            minDate: minDate.toISOString().slice(0, 10)
+        }
+    });
 }
 
 async function handleBetsAdmin(req, res) {
