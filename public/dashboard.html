@@ -346,7 +346,7 @@
                 // 管理员额外数据
                 if (currentUser.role === 'admin') {
                     const [usersRes, transRes] = await Promise.all([
-                        fetch('/api/users?action=list', { headers: { 'Authorization': `Bearer ${token}` } }),
+                        fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } }),
                         fetch('/api/transactions?status=pending', { headers: { 'Authorization': `Bearer ${token}` } })
                     ]);
 
@@ -375,7 +375,7 @@
             tbody.innerHTML = '<tr><td colspan="4" class="loading"><div class="spinner"></div>加载中...</td></tr>';
 
             try {
-                const res = await fetch(`/api/draws/daily?date=${date}&interval=${interval}`, {
+                const res = await fetch(`/api/system?type=draws&action=daily&date=${date}&interval=${interval}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
@@ -559,7 +559,7 @@
         // 切换用户状态
         async function toggleUserStatus(userId, isActive) {
             try {
-                const res = await fetch(`/api/users/${userId}`, {
+                const res = await fetch(`/api/users?id=${userId}`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
