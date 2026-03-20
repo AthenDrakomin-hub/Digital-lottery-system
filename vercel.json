@@ -13,11 +13,5 @@
         { "key": "Cache-Control", "value": "no-store, must-revalidate" }
       ]
     }
-  ],
-  "functions": {
-    "api/*.js": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  }
+  ]
 }
