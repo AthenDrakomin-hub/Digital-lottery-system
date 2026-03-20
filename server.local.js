@@ -379,6 +379,15 @@ class DailyDataInitializer {
 
         console.log(`[每日初始化] 开始初始化 ${date} 的数据...`);
 
+        // 清理昨天及之前的过期pending数据
+        const expiredResult = await this.Draw.deleteMany({
+            date: { $lt: date },
+            status: 'pending'
+        });
+        if (expiredResult.deletedCount > 0) {
+            console.log(`[每日初始化] 已清理过期pending数据: ${expiredResult.deletedCount} 条`);
+        }
+
         for (const interval of intervals) {
             const totalPeriods = totalPeriodsMap[interval];
             
