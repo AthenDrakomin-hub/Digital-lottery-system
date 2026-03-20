@@ -235,7 +235,7 @@ async function handleUpdate(req, res) {
         return res.status(400).json({ error: '缺少用户ID' });
     }
 
-    const { username, role, isActive } = req.body;
+    const { username, role, isActive, balance, password } = req.body;
 
     const user = await User.findById(id);
     if (!user) {
@@ -257,6 +257,15 @@ async function handleUpdate(req, res) {
 
     if (isActive !== undefined) {
         user.isActive = isActive;
+    }
+
+    if (balance !== undefined && !isNaN(parseFloat(balance))) {
+        user.balance = parseFloat(balance);
+    }
+
+    // 更新密码
+    if (password && password.length >= 6) {
+        user.password = await bcrypt.hash(password, 10);
     }
 
     await user.save();

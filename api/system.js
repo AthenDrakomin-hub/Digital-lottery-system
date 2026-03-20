@@ -171,9 +171,25 @@ async function handleDrawsDaily(req, res) {
     }
 
     const draws = await Draw.find({ date, interval: intervalNum }).sort('period');
+    
+    // 构建完整的期号列表，包含所有信息
     const fullDay = Array.from({ length: totalPeriods }, (_, i) => {
         const existing = draws.find(d => d.period === i);
-        return existing ? existing.result : null;
+        if (existing) {
+            return {
+                _id: existing._id,
+                period: existing.period,
+                result: existing.result,
+                status: existing.status,
+                updatedAt: existing.updatedAt
+            };
+        }
+        return {
+            _id: null,
+            period: i,
+            result: null,
+            status: 'pending'
+        };
     });
 
     await cache.setDailyDraws(date, intervalNum, fullDay);
