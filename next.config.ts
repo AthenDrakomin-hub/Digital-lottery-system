@@ -25,6 +25,11 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_TELEMETRY_DISABLED: '1',
   },
+  
+  // 允许开发环境跨域访问
+  allowedDevOrigins: [
+    '5a1adc88-4828-4cda-9591-83583da169bf.dev.coze.site',
+  ],
 }
 
 export default nextConfig

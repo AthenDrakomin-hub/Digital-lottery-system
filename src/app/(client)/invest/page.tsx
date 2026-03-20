@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useUser } from '../layout'
+import { useUser } from '@/hooks/useUser'
 import { useRouter } from 'next/navigation'
 
 // 能源类型

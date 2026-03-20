@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useUser } from '../layout'
+import { useUser } from '@/hooks/useUser'
 
 export default function HomePage() {
   const { isLoggedIn } = useUser()
