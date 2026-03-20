@@ -300,20 +300,26 @@ class AutoDrawScheduler {
 
     /**
      * 启动定时器
+     * 
+     * 策略说明：
+     * - 最短开奖周期是5分钟
+     * - 我们只需要在每分钟开始时检查是否有需要开奖的期次
+     * - 使用60秒间隔 + 内部分钟级缓存 = 精确的每分钟检查一次
      */
     start() {
         if (this.isRunning) return;
         this.isRunning = true;
         
         console.log('[开奖检查器] 启动自动开奖定时器...');
+        console.log('[开奖检查器] 开奖周期: 5分钟(288期/天), 10分钟(144期/天), 15分钟(96期/天)');
         
         // 立即执行一次
         this.checkAndDraw();
         
-        // 每10秒检查一次
+        // 每分钟检查一次
         this.timer = setInterval(() => {
             this.checkAndDraw();
-        }, 10000);
+        }, 60000); // 60秒 = 1分钟
     }
 
     /**
