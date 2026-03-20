@@ -41,10 +41,18 @@ interface Draw {
   settledAt?: string
 }
 
+interface Pagination {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
 export default function DrawsPage() {
   const [draws, setDraws] = useState<Draw[]>([])
   const [config, setConfig] = useState<Config>({ energyTypes: [], provinces: [] })
   const [loading, setLoading] = useState(true)
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 50, total: 0, totalPages: 0 })
   const [filter, setFilter] = useState({
     date: new Date().toISOString().split('T')[0],
     interval: 'all',
@@ -56,7 +64,7 @@ export default function DrawsPage() {
   }, [])
 
   useEffect(() => {
-    fetchDraws()
+    fetchDraws(1)
   }, [filter])
 
   const fetchConfig = async () => {
@@ -74,10 +82,12 @@ export default function DrawsPage() {
     }
   }
 
-  const fetchDraws = async () => {
+  const fetchDraws = async (page: number) => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
+      params.append('page', page.toString())
+      params.append('limit', pagination.limit.toString())
       if (filter.date) params.append('date', filter.date)
       if (filter.interval !== 'all') params.append('interval', filter.interval)
       if (filter.status !== 'all') params.append('status', filter.status)
@@ -88,6 +98,7 @@ export default function DrawsPage() {
       const data = await res.json()
       if (data.success) {
         setDraws(data.draws)
+        setPagination(data.pagination)
       }
     } catch {
       console.error('Failed to fetch draws')
@@ -106,6 +117,15 @@ export default function DrawsPage() {
   const getProvince = (index: number): Province | null => {
     if (index < 0 || index >= config.provinces.length) return null
     return config.provinces[index]
+  }
+
+  // 根据期号计算开奖时间
+  const getDrawTime = (date: string, interval: number, period: number): string => {
+    // period 是当天第几期，从0开始
+    const totalMinutes = period * interval
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
   }
 
   // 渲染开奖结果 - 使用字段映射
@@ -157,24 +177,6 @@ export default function DrawsPage() {
     )
   }
 
-  // 渲染纯数字球
-  const renderDigits = (result: string) => {
-    if (!result) return <span className="text-gray-500">-</span>
-    const digits = result.split('')
-    return (
-      <div className="flex gap-0.5">
-        {digits.map((digit, index) => (
-          <span
-            key={index}
-            className="w-5 h-5 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold"
-          >
-            {digit}
-          </span>
-        ))}
-      </div>
-    )
-  }
-
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       pending: 'bg-yellow-900/50 text-yellow-400',
@@ -193,22 +195,83 @@ export default function DrawsPage() {
     return labels[status] || status
   }
 
-  // 按周期分组
-  const groupedDraws = draws.reduce((acc, draw) => {
-    const key = `${draw.interval}min`
-    if (!acc[key]) acc[key] = []
-    acc[key].push(draw)
-    return acc
-  }, {} as Record<string, Draw[]>)
-
   // 统计
   const stats = {
-    total: draws.length,
+    total: pagination.total,
     pending: draws.filter(d => d.status === 'pending').length,
     settled: draws.filter(d => d.status === 'settled').length,
   }
 
-  if (loading) {
+  // 分页
+  const handlePageChange = (newPage: number) => {
+    fetchDraws(newPage)
+  }
+
+  const renderPagination = () => {
+    if (pagination.totalPages <= 1) return null
+
+    const pages: (number | string)[] = []
+    const current = pagination.page
+    const total = pagination.totalPages
+
+    // 始终显示第一页
+    pages.push(1)
+
+    // 中间页码
+    let start = Math.max(2, current - 2)
+    let end = Math.min(total - 1, current + 2)
+
+    if (start > 2) pages.push('...')
+    for (let i = start; i <= end; i++) pages.push(i)
+    if (end < total - 1) pages.push('...')
+
+    // 始终显示最后一页
+    if (total > 1) pages.push(total)
+
+    return (
+      <div className="flex items-center justify-center gap-2 mt-6">
+        <button
+          onClick={() => handlePageChange(current - 1)}
+          disabled={current === 1}
+          className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
+        >
+          上一頁
+        </button>
+        
+        {pages.map((p, i) => (
+          typeof p === 'number' ? (
+            <button
+              key={i}
+              onClick={() => handlePageChange(p)}
+              className={`px-3 py-1 rounded ${
+                p === current 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-gray-700 text-white hover:bg-gray-600'
+              }`}
+            >
+              {p}
+            </button>
+          ) : (
+            <span key={i} className="px-2 text-gray-400">{p}</span>
+          )
+        ))}
+
+        <button
+          onClick={() => handlePageChange(current + 1)}
+          disabled={current === total}
+          className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
+        >
+          下一頁
+        </button>
+
+        <span className="text-gray-400 text-sm ml-4">
+          共 {pagination.total} 條記錄
+        </span>
+      </div>
+    )
+  }
+
+  if (loading && draws.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
@@ -283,64 +346,60 @@ export default function DrawsPage() {
         </div>
       </div>
 
-      {/* Results by Cycle */}
-      {Object.keys(groupedDraws).length > 0 ? (
-        <div className="space-y-6">
-          {['5min', '10min', '15min'].map((cycleKey) => {
-            const cycleDraws = groupedDraws[cycleKey]
-            if (!cycleDraws) return null
-            
-            return (
-              <div key={cycleKey} className="bg-gray-800 rounded-xl overflow-hidden">
-                <div className="px-6 py-4 bg-gray-700 flex items-center justify-between">
-                  <h3 className="text-white font-medium">{cycleKey} 週期</h3>
-                  <span className="text-gray-400 text-sm">{cycleDraws.length} 期</span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="text-gray-400 text-left border-b border-gray-700 text-sm">
-                        <th className="px-6 py-3">期號</th>
-                        <th className="px-6 py-3">開獎結果</th>
-                        <th className="px-6 py-3">投注/中獎</th>
-                        <th className="px-6 py-3">派彩</th>
-                        <th className="px-6 py-3">狀態</th>
-                        <th className="px-6 py-3">時間</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cycleDraws.map((draw) => (
-                        <tr key={draw._id} className="text-gray-300 border-b border-gray-700/50 hover:bg-gray-700/30">
-                          <td className="px-6 py-3 font-medium text-sm">
-                            #{String(draw.date.replace(/-/g, '')).padStart(8, '0')}{String(draw.interval).padStart(2, '0')}{String(draw.period).padStart(3, '0')}
-                          </td>
-                          <td className="px-6 py-3">
-                            {renderResult(draw.result)}
-                          </td>
-                          <td className="px-6 py-3 text-sm">
-                            <span className="text-blue-400">{draw.settlementStats?.totalBets || 0}</span>
-                            <span className="text-gray-500">/</span>
-                            <span className="text-green-400">{draw.settlementStats?.wonBets || 0}</span>
-                          </td>
-                          <td className="px-6 py-3 text-sm text-yellow-400">
-                            ¥{(draw.settlementStats?.totalWinAmount || 0).toLocaleString()}
-                          </td>
-                          <td className="px-6 py-3">
-                            <span className={`px-2 py-1 rounded text-xs ${getStatusColor(draw.status)}`}>
-                              {getStatusLabel(draw.status)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3 text-xs text-gray-400">
-                            {draw.settledAt ? new Date(draw.settledAt).toLocaleString('zh-CN') : '-'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )
-          })}
+      {/* Results Table */}
+      {draws.length > 0 ? (
+        <div className="bg-gray-800 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-gray-400 text-left border-b border-gray-700 text-sm bg-gray-700">
+                  <th className="px-6 py-3">期號</th>
+                  <th className="px-6 py-3">開獎時間</th>
+                  <th className="px-6 py-3">週期</th>
+                  <th className="px-6 py-3">開獎結果</th>
+                  <th className="px-6 py-3">投注/中獎</th>
+                  <th className="px-6 py-3">派彩</th>
+                  <th className="px-6 py-3">狀態</th>
+                </tr>
+              </thead>
+              <tbody>
+                {draws.map((draw) => (
+                  <tr key={draw._id} className="text-gray-300 border-b border-gray-700/50 hover:bg-gray-700/30">
+                    <td className="px-6 py-3 font-medium text-sm">
+                      #{String(draw.date.replace(/-/g, '')).padStart(8, '0')}{String(draw.interval).padStart(2, '0')}{String(draw.period).padStart(3, '0')}
+                    </td>
+                    <td className="px-6 py-3 text-sm text-gray-400">
+                      {getDrawTime(draw.date, draw.interval, draw.period)}
+                    </td>
+                    <td className="px-6 py-3 text-sm">
+                      <span className="px-2 py-1 bg-gray-700 rounded text-gray-300">
+                        {draw.interval}分鐘
+                      </span>
+                    </td>
+                    <td className="px-6 py-3">
+                      {renderResult(draw.result)}
+                    </td>
+                    <td className="px-6 py-3 text-sm">
+                      <span className="text-blue-400">{draw.settlementStats?.totalBets || 0}</span>
+                      <span className="text-gray-500">/</span>
+                      <span className="text-green-400">{draw.settlementStats?.wonBets || 0}</span>
+                    </td>
+                    <td className="px-6 py-3 text-sm text-yellow-400">
+                      ¥{(draw.settlementStats?.totalWinAmount || 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-3">
+                      <span className={`px-2 py-1 rounded text-xs ${getStatusColor(draw.status)}`}>
+                        {getStatusLabel(draw.status)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Pagination */}
+          {renderPagination()}
         </div>
       ) : (
         <div className="bg-gray-800 rounded-xl p-12 text-center text-gray-400">
