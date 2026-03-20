@@ -27,17 +27,12 @@ app.use((req, res, next) => {
     next();
 });
 
-// API 路由
-app.all('/api/auth', handleAuth);
-app.all('/api/auth/*', handleAuth);
-app.all('/api/users', handleUsers);
-app.all('/api/users/*', handleUsers);
-app.all('/api/transactions', handleTransactions);
-app.all('/api/transactions/*', handleTransactions);
-app.all('/api/admin', handleAdmin);
-app.all('/api/admin/*', handleAdmin);
-app.all('/api/system', handleSystem);
-app.all('/api/system/*', handleSystem);
+// API 路由 - 使用正则匹配所有子路径
+app.all(/^\/api\/auth(\/.*)?$/, handleAuth);
+app.all(/^\/api\/users(\/.*)?$/, handleUsers);
+app.all(/^\/api\/transactions(\/.*)?$/, handleTransactions);
+app.all(/^\/api\/admin(\/.*)?$/, handleAdmin);
+app.all(/^\/api\/system(\/.*)?$/, handleSystem);
 
 // 首页
 app.get('/', (req, res) => {
