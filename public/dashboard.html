@@ -354,22 +354,24 @@
             </div>
         </div>
 
-        <!-- 头部 -->
-        <div class="header">
-            <div style="display:flex;align-items:center;gap:16px">
-                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-                <h1>📊 数据概览</h1>
+        <!-- 主区域 -->
+        <div class="main-area">
+            <!-- 头部 -->
+            <div class="header">
+                <div style="display:flex;align-items:center;gap:16px">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1>📊 数据概览</h1>
+                </div>
+                <div class="header-right">
+                    <span class="server-time" id="serverTime">--</span>
+                    <span class="user-info" id="userInfo"></span>
+                    <button class="btn btn-danger btn-sm" onclick="logout()">退出登录</button>
+                </div>
             </div>
-            <div class="header-right">
-                <span class="server-time" id="serverTime">--</span>
-                <span class="user-info" id="userInfo"></span>
-                <button class="btn btn-danger btn-sm" onclick="logout()">退出登录</button>
-            </div>
-        </div>
 
-        <!-- 主内容 -->
-        <div class="main-content">
-            <div class="content">
+            <!-- 主内容 -->
+            <div class="main-content">
+                <div class="content">
             <!-- 概览 -->
             <div id="overview" class="tab-content active">
                 <div class="stats-grid">
@@ -1121,6 +1123,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- 用户编辑模态框 -->

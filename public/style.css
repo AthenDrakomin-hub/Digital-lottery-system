@@ -102,10 +102,6 @@ body {
    头部样式
    ======================================== */
 .header {
-    position: fixed;
-    top: 0;
-    left: 260px;
-    right: 0;
     height: 64px;
     background: var(--bg-card);
     border-bottom: 1px solid var(--border);
@@ -113,8 +109,9 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 0 24px;
+    position: sticky;
+    top: 0;
     z-index: 100;
-    transition: var(--transition);
 }
 
 .header h1 {
@@ -161,16 +158,15 @@ body {
    侧边栏样式
    ======================================== */
 .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
     width: 260px;
+    min-height: 100vh;
     background: var(--sidebar-bg);
     padding: 20px 0;
     overflow-y: auto;
-    z-index: 200;
-    transition: var(--transition-slow);
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
 }
 
 .sidebar-header {
@@ -264,12 +260,16 @@ body {
 /* ========================================
    主内容区
    ======================================== */
+.main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
 .main-content {
-    margin-left: 260px;
-    margin-top: 64px;
+    flex: 1;
     padding: 24px;
-    min-height: calc(100vh - 64px);
-    transition: var(--transition);
 }
 
 .content {
@@ -1223,19 +1223,17 @@ input:disabled + .slider {
 
 @media (max-width: 768px) {
     .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 200;
         transform: translateX(-100%);
+        transition: transform 0.3s ease;
     }
     
     .sidebar.open {
         transform: translateX(0);
-    }
-    
-    .header {
-        left: 0;
-    }
-    
-    .main-content {
-        margin-left: 0;
     }
     
     .stats-grid {
