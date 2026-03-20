@@ -4,10 +4,15 @@
  *   GET    /api/users                    - 获取用户列表（管理员）
  *   POST   /api/users?action=create      - 创建用户（管理员）
  *   POST   /api/users?action=balance     - 调整用户余额（管理员）
+ *   POST   /api/users?action=bankcard    - 添加银行卡（管理员/用户自己）
+ *   DELETE /api/users?action=bankcard&id=xxx - 删除银行卡
  *   GET    /api/users?id=xxx             - 获取用户详情（管理员）
  *   PUT    /api/users?id=xxx             - 更新用户信息（管理员）
  *   PATCH  /api/users?id=xxx             - 更新用户状态（管理员）
  *   DELETE /api/users?id=xxx             - 删除用户（管理员）
+ * 
+ * 密码存储：使用bcrypt加密，非明文存储
+ * 敏感信息：手机号、身份证、银行卡号等返回时自动脱敏
  */
 
 // 加载环境变量（必须在最前面）
@@ -20,6 +25,7 @@ const bcrypt = require('bcryptjs');
 const { extractUserFromRequest } = require('../lib/auth');
 const { setCorsHeaders, handlePreflightRequest } = require('../lib/cors');
 const cache = require('../lib/cache');
+const { maskUserInfo, maskPhone, maskIdCard, maskBankCard } = require('../lib/mask');
 
 /**
  * 验证管理员权限
@@ -34,7 +40,8 @@ async function verifyAdmin(req) {
 }
 
 /**
- * 获取用户列表
+ * 获取用户列表（管理员）
+ * 返回脱敏后的用户信息
  */
 async function handleList(req, res) {
     const admin = await verifyAdmin(req);
@@ -47,7 +54,11 @@ async function handleList(req, res) {
     // 构建查询条件
     let query = {};
     if (search) {
-        query.username = { $regex: search, $options: 'i' };
+        query.$or = [
+            { username: { $regex: search, $options: 'i' } },
+            { realName: { $regex: search, $options: 'i' } },
+            { phone: { $regex: search, $options: 'i' } }
+        ];
     }
     if (role) {
         query.role = role;
@@ -58,14 +69,14 @@ async function handleList(req, res) {
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const users = await User.find(query)
-        .select('-password')
+        .select('-password -idCard') // 不返回密码和完整身份证
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit));
 
     const total = await User.countDocuments(query);
 
-    // 计算在线状态
+    // 计算在线状态并脱敏
     const now = Date.now();
     const onlineThreshold = 5 * 60 * 1000; // 5分钟
     
@@ -73,7 +84,8 @@ async function handleList(req, res) {
         const userObj = user.toObject();
         // 在线判定：最后活动时间在5分钟内
         userObj.isOnline = user.lastActiveAt && (now - new Date(user.lastActiveAt).getTime()) < onlineThreshold;
-        return userObj;
+        // 脱敏处理
+        return maskUserInfo(userObj, { maskName: false });
     });
 
     // 如果有在线过滤参数
@@ -102,7 +114,8 @@ async function handleList(req, res) {
 }
 
 /**
- * 创建用户
+ * 创建用户（管理员）
+ * 密码使用bcrypt加密存储
  */
 async function handleCreate(req, res) {
     const admin = await verifyAdmin(req);
@@ -110,7 +123,10 @@ async function handleCreate(req, res) {
         return res.status(401).json({ error: '需要管理员权限' });
     }
 
-    const { username, password, role = 'user', balance = 0, isActive = true } = req.body;
+    const { 
+        username, password, role = 'user', balance = 0, isActive = true,
+        realName, phone, idCard, email
+    } = req.body;
 
     // 参数验证
     if (!username || !password) {
@@ -133,21 +149,51 @@ async function handleCreate(req, res) {
         return res.status(400).json({ error: '初始余额不能为负数' });
     }
 
+    // 手机号格式验证
+    if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+        return res.status(400).json({ error: '手机号格式不正确' });
+    }
+
+    // 身份证格式验证
+    if (idCard && !/^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/.test(idCard)) {
+        return res.status(400).json({ error: '身份证号格式不正确' });
+    }
+
     // 检查用户名是否已存在
     const existing = await User.findOne({ username });
     if (existing) {
         return res.status(400).json({ error: '用户名已存在' });
     }
 
-    // 创建用户
+    // 检查手机号是否已被使用
+    if (phone) {
+        const existingPhone = await User.findOne({ phone });
+        if (existingPhone) {
+            return res.status(400).json({ error: '该手机号已被注册' });
+        }
+    }
+
+    // 检查身份证是否已被使用
+    if (idCard) {
+        const existingIdCard = await User.findOne({ idCard });
+        if (existingIdCard) {
+            return res.status(400).json({ error: '该身份证号已被注册' });
+        }
+    }
+
+    // 创建用户 - 密码使用bcrypt加密
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
         username,
-        password: hashedPassword,
+        password: hashedPassword, // bcrypt加密存储
         role,
         balance: parseFloat(balance),
-        isActive
+        isActive,
+        realName,
+        phone,
+        idCard,
+        email
     });
 
     res.status(201).json({
@@ -158,6 +204,8 @@ async function handleCreate(req, res) {
             role: user.role,
             balance: user.balance,
             isActive: user.isActive,
+            realName: user.realName,
+            phone: phone ? maskPhone(phone) : null, // 返回脱敏手机号
             createdAt: user.createdAt
         }
     });
@@ -174,7 +222,6 @@ async function handleBalance(req, res) {
 
     const { userId, amount, note } = req.body;
 
-    // 验证参数
     if (!userId) {
         return res.status(400).json({ error: '缺少用户ID' });
     }
@@ -185,26 +232,20 @@ async function handleBalance(req, res) {
 
     const amountNum = parseFloat(amount);
 
-    // 查找用户
     const user = await User.findById(userId);
     if (!user) {
         return res.status(404).json({ error: '用户不存在' });
     }
 
-    // 计算新余额
     const newBalance = user.balance + amountNum;
     if (newBalance < 0) {
         return res.status(400).json({ error: '余额不足，无法扣款' });
     }
 
-    // 更新用户余额
     user.balance = newBalance;
     await user.save();
-
-    // 更新用户余额缓存
     await cache.setUserBalance(user._id.toString(), newBalance);
 
-    // 创建交易记录
     const transaction = await Transaction.create({
         userId: user._id,
         type: 'adjust',
@@ -231,19 +272,165 @@ async function handleBalance(req, res) {
 }
 
 /**
+ * 添加银行卡
+ */
+async function handleAddBankCard(req, res) {
+    const admin = await verifyAdmin(req);
+    const userData = extractUserFromRequest(req);
+    
+    if (!admin && !userData) {
+        return res.status(401).json({ error: '未授权' });
+    }
+
+    const { userId, bankName, cardNumber, cardHolder, bankBranch, isDefault } = req.body;
+
+    // 确定目标用户ID
+    let targetUserId = userId;
+    if (!admin && userData) {
+        targetUserId = userData.id; // 普通用户只能给自己添加
+    }
+
+    if (!targetUserId || !bankName || !cardNumber || !cardHolder) {
+        return res.status(400).json({ error: '缺少必要参数' });
+    }
+
+    // 银行卡号格式验证
+    if (!/^\d{16,19}$/.test(cardNumber)) {
+        return res.status(400).json({ error: '银行卡号格式不正确' });
+    }
+
+    const user = await User.findById(targetUserId);
+    if (!user) {
+        return res.status(404).json({ error: '用户不存在' });
+    }
+
+    // 检查银行卡是否已存在
+    const existingCard = user.bankCards.find(c => c.cardNumber === cardNumber);
+    if (existingCard) {
+        return res.status(400).json({ error: '该银行卡已添加' });
+    }
+
+    // 如果设为默认，取消其他卡的默认
+    if (isDefault) {
+        user.bankCards.forEach(card => card.isDefault = false);
+    }
+
+    // 添加银行卡
+    user.bankCards.push({
+        bankName,
+        cardNumber,
+        cardHolder,
+        bankBranch,
+        isDefault: isDefault || user.bankCards.length === 0 // 第一张卡默认为默认卡
+    });
+
+    await user.save();
+
+    res.json({
+        message: '银行卡添加成功',
+        bankCards: user.bankCards.map(card => ({
+            id: card._id,
+            bankName: card.bankName,
+            cardNumber: maskBankCard(card.cardNumber),
+            cardHolder: card.cardHolder,
+            bankBranch: card.bankBranch,
+            isDefault: card.isDefault
+        }))
+    });
+}
+
+/**
+ * 删除银行卡
+ */
+async function handleDeleteBankCard(req, res) {
+    const admin = await verifyAdmin(req);
+    const userData = extractUserFromRequest(req);
+    
+    if (!admin && !userData) {
+        return res.status(401).json({ error: '未授权' });
+    }
+
+    const { id } = req.query; // 银行卡ID
+    const { userId } = req.body;
+
+    let targetUserId = userId;
+    if (!admin && userData) {
+        targetUserId = userData.id;
+    }
+
+    const user = await User.findById(targetUserId);
+    if (!user) {
+        return res.status(404).json({ error: '用户不存在' });
+    }
+
+    // 找到并删除银行卡
+    const cardIndex = user.bankCards.findIndex(c => c._id.toString() === id);
+    if (cardIndex === -1) {
+        return res.status(404).json({ error: '银行卡不存在' });
+    }
+
+    const wasDefault = user.bankCards[cardIndex].isDefault;
+    user.bankCards.splice(cardIndex, 1);
+
+    // 如果删除的是默认卡，设置第一张为默认
+    if (wasDefault && user.bankCards.length > 0) {
+        user.bankCards[0].isDefault = true;
+    }
+
+    await user.save();
+
+    res.json({
+        message: '银行卡删除成功',
+        bankCards: user.bankCards.map(card => ({
+            id: card._id,
+            bankName: card.bankName,
+            cardNumber: maskBankCard(card.cardNumber),
+            cardHolder: card.cardHolder,
+            bankBranch: card.bankBranch,
+            isDefault: card.isDefault
+        }))
+    });
+}
+
+/**
  * 获取用户详情
  */
 async function handleGetUser(req, res) {
-    const { id } = req.query;
+    const { id, full } = req.query;
     if (!id) {
         return res.status(400).json({ error: '缺少用户ID' });
     }
 
+    const admin = await verifyAdmin(req);
+    
     const user = await User.findById(id).select('-password');
     if (!user) {
         return res.status(404).json({ error: '用户不存在' });
     }
-    res.json({ user });
+
+    const userObj = user.toObject();
+    
+    // 计算在线状态
+    const now = Date.now();
+    const onlineThreshold = 5 * 60 * 1000;
+    userObj.isOnline = user.lastActiveAt && (now - new Date(user.lastActiveAt).getTime()) < onlineThreshold;
+
+    // 管理员可以查看完整信息（full=1时），否则脱敏
+    if (admin && full === '1') {
+        // 管理员查看完整信息，但身份证仍需脱敏
+        userObj.idCard = user.idCard ? maskIdCard(user.idCard) : null;
+        userObj.phone = user.phone; // 管理员可看完整手机号
+        userObj.bankCards = user.bankCards.map(card => ({
+            ...card.toObject(),
+            cardNumber: card.cardNumber // 管理员可看完整卡号
+        }));
+    } else {
+        // 脱敏处理
+        const masked = maskUserInfo(userObj, { maskName: false });
+        return res.json({ user: masked });
+    }
+
+    res.json({ user: userObj });
 }
 
 /**
@@ -260,14 +447,18 @@ async function handleUpdate(req, res) {
         return res.status(400).json({ error: '缺少用户ID' });
     }
 
-    const { username, role, isActive, balance, password, ipWhitelist, ipWhitelistEnabled } = req.body;
+    const { 
+        username, role, isActive, balance, password, 
+        ipWhitelist, ipWhitelistEnabled,
+        realName, phone, idCard, email
+    } = req.body;
 
     const user = await User.findById(id);
     if (!user) {
         return res.status(404).json({ error: '用户不存在' });
     }
 
-    // 更新字段
+    // 更新用户名
     if (username && username !== user.username) {
         const existing = await User.findOne({ username, _id: { $ne: id } });
         if (existing) {
@@ -276,31 +467,66 @@ async function handleUpdate(req, res) {
         user.username = username;
     }
 
+    // 更新角色
     if (role && ['user', 'admin'].includes(role)) {
         user.role = role;
     }
 
+    // 更新状态
     if (isActive !== undefined) {
         user.isActive = isActive;
     }
 
+    // 更新余额
     if (balance !== undefined && !isNaN(parseFloat(balance))) {
         user.balance = parseFloat(balance);
+        await cache.setUserBalance(user._id.toString(), user.balance);
     }
 
-    // 更新密码
+    // 更新密码（bcrypt加密）
     if (password && password.length >= 6) {
         user.password = await bcrypt.hash(password, 10);
     }
 
-    // 更新IP白名单（仅管理员可用）
+    // 更新基本信息
+    if (realName !== undefined) user.realName = realName;
+    if (email !== undefined) user.email = email;
+    
+    // 更新手机号（检查唯一性）
+    if (phone !== undefined) {
+        if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+            return res.status(400).json({ error: '手机号格式不正确' });
+        }
+        if (phone) {
+            const existingPhone = await User.findOne({ phone, _id: { $ne: id } });
+            if (existingPhone) {
+                return res.status(400).json({ error: '该手机号已被使用' });
+            }
+        }
+        user.phone = phone || null;
+    }
+
+    // 更新身份证（检查唯一性）
+    if (idCard !== undefined) {
+        if (idCard && !/^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/.test(idCard)) {
+            return res.status(400).json({ error: '身份证号格式不正确' });
+        }
+        if (idCard) {
+            const existingIdCard = await User.findOne({ idCard, _id: { $ne: id } });
+            if (existingIdCard) {
+                return res.status(400).json({ error: '该身份证号已被使用' });
+            }
+        }
+        user.idCard = idCard || null;
+    }
+
+    // 更新IP白名单（仅管理员）
     if (user.role === 'admin') {
         if (ipWhitelistEnabled !== undefined) {
             user.ipWhitelistEnabled = ipWhitelistEnabled;
         }
         
         if (ipWhitelist !== undefined && Array.isArray(ipWhitelist)) {
-            // 验证IP格式
             const ipRegex = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/;
             for (const ip of ipWhitelist) {
                 if (!ipRegex.test(ip)) {
@@ -324,6 +550,9 @@ async function handleUpdate(req, res) {
             role: user.role,
             balance: user.balance,
             isActive: user.isActive,
+            realName: user.realName,
+            phone: user.phone ? maskPhone(user.phone) : null,
+            email: user.email,
             ipWhitelist: user.ipWhitelist,
             ipWhitelistEnabled: user.ipWhitelistEnabled
         }
@@ -351,20 +580,15 @@ async function handlePatch(req, res) {
         return res.status(404).json({ error: '用户不存在' });
     }
 
-    // 不能禁用自己
     if (user._id.toString() === admin._id.toString() && isActive === false) {
         return res.status(400).json({ error: '不能禁用自己的账户' });
     }
 
-    // 更新状态
-    if (isActive !== undefined) {
-        user.isActive = isActive;
-    }
-    if (role !== undefined && ['user', 'admin'].includes(role)) {
-        user.role = role;
-    }
+    if (isActive !== undefined) user.isActive = isActive;
+    if (role !== undefined && ['user', 'admin'].includes(role)) user.role = role;
     if (balance !== undefined && !isNaN(parseFloat(balance))) {
         user.balance = parseFloat(balance);
+        await cache.setUserBalance(user._id.toString(), user.balance);
     }
 
     await user.save();
@@ -390,7 +614,6 @@ async function handleResetBalanceCache(req, res) {
         return res.status(401).json({ error: '需要管理员权限' });
     }
 
-    // 获取所有用户
     const users = await User.find({}, '_id balance');
     let count = 0;
     
@@ -425,12 +648,10 @@ async function handleDelete(req, res) {
         return res.status(404).json({ error: '用户不存在' });
     }
 
-    // 不能删除自己
     if (user._id.toString() === admin._id.toString()) {
         return res.status(400).json({ error: '不能删除自己的账户' });
     }
 
-    // 软删除：设置为禁用状态
     user.isActive = false;
     user.deletedAt = new Date();
     await user.save();
@@ -455,6 +676,17 @@ const handleUsers = async (req, res) => {
 
     try {
         await dbConnect();
+
+        // 银行卡操作
+        if (action === 'bankcard') {
+            if (req.method === 'POST') {
+                return await handleAddBankCard(req, res);
+            }
+            if (req.method === 'DELETE') {
+                return await handleDeleteBankCard(req, res);
+            }
+            return res.status(405).json({ error: '方法不允许' });
+        }
 
         // 有 id 参数时的操作
         if (id) {
@@ -498,7 +730,7 @@ const handleUsers = async (req, res) => {
                 }
                 return res.status(400).json({ 
                     error: '无效的action参数',
-                    availableActions: ['create', 'balance', 'reset-balance-cache']
+                    availableActions: ['create', 'balance', 'bankcard', 'reset-balance-cache']
                 });
         }
     } catch (error) {

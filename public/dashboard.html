@@ -261,7 +261,7 @@
             <div id="users" class="tab-content">
                 <div class="card">
                     <div class="toolbar">
-                        <input type="text" id="userSearch" placeholder="用户名" style="width:150px">
+                        <input type="text" id="userSearch" placeholder="用户名/姓名/手机号" style="width:180px">
                         <select id="userRole">
                             <option value="">全部角色</option>
                             <option value="admin">管理员</option>
@@ -280,11 +280,12 @@
                             <tr>
                                 <th>在线</th>
                                 <th>用户名</th>
+                                <th>姓名</th>
+                                <th>手机号</th>
                                 <th>角色</th>
                                 <th>余额</th>
                                 <th>状态</th>
                                 <th>最后活动</th>
-                                <th>注册时间</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -931,39 +932,69 @@
                 <h3 id="userModalTitle">新建用户</h3>
                 <button class="modal-close" onclick="closeModal('userModal')">&times;</button>
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>用户名</label>
-                    <input type="text" id="editUsername" class="form-control">
+            
+            <!-- 账户信息 -->
+            <div style="background:#f8f9fa;padding:10px 15px;margin-bottom:15px;border-radius:4px">
+                <div style="font-weight:600;color:#333;margin-bottom:10px">🔐 账户信息</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>用户名 <span style="color:#dc3545">*</span></label>
+                        <input type="text" id="editUsername" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>密码 <span style="color:#888;font-size:12px">(至少6位)</span></label>
+                        <input type="password" id="editPassword" class="form-control" placeholder="留空不修改">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>角色</label>
+                        <select id="editRole" class="form-control" onchange="toggleIpWhitelistSection()">
+                            <option value="user">普通用户</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>余额 (元)</label>
+                        <input type="number" id="editBalance" class="form-control" step="0.01" min="0">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label>密码</label>
-                    <input type="text" id="editPassword" class="form-control" placeholder="留空不修改">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>角色</label>
-                    <select id="editRole" class="form-control" onchange="toggleIpWhitelistSection()">
-                        <option value="user">普通用户</option>
-                        <option value="admin">管理员</option>
+                    <label>状态</label>
+                    <select id="editActive" class="form-control">
+                        <option value="true">启用</option>
+                        <option value="false">禁用</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>余额</label>
-                    <input type="number" id="editBalance" class="form-control" step="0.01" min="0">
-                </div>
             </div>
-            <div class="form-group">
-                <label>状态</label>
-                <select id="editActive" class="form-control">
-                    <option value="true">启用</option>
-                    <option value="false">禁用</option>
-                </select>
+            
+            <!-- 基本信息 -->
+            <div style="background:#e8f4f8;padding:10px 15px;margin-bottom:15px;border-radius:4px">
+                <div style="font-weight:600;color:#333;margin-bottom:10px">👤 基本信息</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>真实姓名</label>
+                        <input type="text" id="editRealName" class="form-control" placeholder="用户真实姓名">
+                    </div>
+                    <div class="form-group">
+                        <label>手机号</label>
+                        <input type="text" id="editPhone" class="form-control" placeholder="11位手机号">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>身份证号</label>
+                        <input type="text" id="editIdCard" class="form-control" placeholder="18位身份证号" maxlength="18">
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="email" id="editEmail" class="form-control" placeholder="user@example.com">
+                    </div>
+                </div>
             </div>
             
             <!-- IP白名单配置（仅管理员可见） -->
-            <div id="ipWhitelistSection" style="display:none;background:#f8f9fa;padding:15px;border-radius:8px;margin-top:15px">
+            <div id="ipWhitelistSection" style="display:none;background:#fff3cd;padding:15px;border-radius:8px;margin-bottom:15px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
                     <label style="margin:0;font-weight:600">🔒 IP白名单访问控制</label>
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
@@ -975,7 +1006,7 @@
                     <div style="font-size:12px;color:#666;margin-bottom:8px">
                         每行一个IP地址，支持单IP或CIDR格式（如 192.168.1.0/24）
                     </div>
-                    <textarea id="editIpWhitelist" class="form-control" rows="4" placeholder="192.168.1.100&#10;10.0.0.0/8&#10;172.16.0.1"></textarea>
+                    <textarea id="editIpWhitelist" class="form-control" rows="3" placeholder="192.168.1.100&#10;10.0.0.0/8&#10;172.16.0.1"></textarea>
                     <div style="font-size:12px;color:#888;margin-top:5px">
                         当前登录IP: <span id="currentClientIp" style="color:#667eea;font-weight:600">检测中...</span>
                         <button type="button" class="btn btn-sm" style="font-size:11px;padding:2px 8px;margin-left:10px" onclick="addCurrentIpToWhitelist()">添加当前IP</button>
@@ -984,7 +1015,10 @@
             </div>
             
             <input type="hidden" id="editUserId">
-            <button class="btn btn-primary" onclick="saveUser()" style="width:100%;margin-top:15px">保存</button>
+            <div style="display:flex;gap:10px">
+                <button class="btn btn-secondary" onclick="closeModal('userModal')" style="flex:1">取消</button>
+                <button class="btn btn-primary" onclick="saveUser()" style="flex:2">保存</button>
+            </div>
         </div>
     </div>
 
@@ -1318,24 +1352,29 @@
                         ? `<div style="font-size:12px">${new Date(u.lastActiveAt).toLocaleString('zh-CN')}</div>`
                         : '<span style="color:#999">-</span>';
                     
+                    // 姓名和手机号（脱敏显示）
+                    const realName = u.realName || '-';
+                    const phone = u.phone || '-';
+                    
                     return `
                     <tr>
                         <td>${onlineBadge}</td>
                         <td><strong>${u.username}</strong></td>
+                        <td>${realName}</td>
+                        <td>${phone}</td>
                         <td>${u.role === 'admin' ? '<span class="badge badge-info">管理员</span>' : '<span class="badge badge-secondary">用户</span>'}</td>
                         <td style="color:#28a745;font-weight:bold">¥${u.balance.toFixed(2)}</td>
                         <td>${u.isActive ? '<span class="badge badge-success">启用</span>' : '<span class="badge badge-danger">禁用</span>'}</td>
                         <td>${lastActive}</td>
-                        <td>${new Date(u.createdAt).toLocaleString('zh-CN')}</td>
                         <td class="action-btns">
-                            <button class="btn btn-primary btn-sm" onclick="editUser('${u._id}','${u.username}','${u.role}',${u.balance},${u.isActive})">编辑</button>
+                            <button class="btn btn-primary btn-sm" onclick="editUser('${u._id}')">编辑</button>
                             <button class="btn btn-secondary btn-sm" onclick="showAdjust('${u._id}','${u.username}',${u.balance})">调账</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteUser('${u._id}','${u.username}')">删除</button>
                         </td>
                     </tr>
-                `}).join('') || '<tr><td colspan="8">暂无数据</td></tr>';
+                `}).join('') || '<tr><td colspan="9">暂无数据</td></tr>';
             } catch (e) {
-                document.getElementById('usersBody').innerHTML = '<tr><td colspan="8">加载失败</td></tr>';
+                document.getElementById('usersBody').innerHTML = '<tr><td colspan="9">加载失败</td></tr>';
             }
         }
 
@@ -1348,6 +1387,11 @@
             document.getElementById('editRole').value = 'user';
             document.getElementById('editBalance').value = '0';
             document.getElementById('editActive').value = 'true';
+            // 重置基本信息
+            document.getElementById('editRealName').value = '';
+            document.getElementById('editPhone').value = '';
+            document.getElementById('editIdCard').value = '';
+            document.getElementById('editEmail').value = '';
             // 重置IP白名单配置
             document.getElementById('editIpWhitelistEnabled').checked = false;
             document.getElementById('editIpWhitelist').value = '';
@@ -1356,16 +1400,42 @@
             document.getElementById('userModal').classList.add('active');
         }
 
-        function editUser(id, username, role, balance, isActive) {
-            document.getElementById('userModalTitle').textContent = '编辑用户';
-            document.getElementById('editUserId').value = id;
-            document.getElementById('editUsername').value = username;
-            document.getElementById('editUsername').setAttribute('readonly', true);
-            document.getElementById('editPassword').value = '';
-            document.getElementById('editRole').value = role;
-            document.getElementById('editBalance').value = balance;
-            document.getElementById('editActive').value = isActive ? 'true' : 'false';
-            document.getElementById('userModal').classList.add('active');
+        async function editUser(id) {
+            try {
+                const res = await fetch(`/api/users?id=${id}&full=1`, { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    return alert(data.error);
+                }
+                
+                const u = data.user;
+                document.getElementById('userModalTitle').textContent = '编辑用户';
+                document.getElementById('editUserId').value = id;
+                document.getElementById('editUsername').value = u.username;
+                document.getElementById('editUsername').setAttribute('readonly', true);
+                document.getElementById('editPassword').value = '';
+                document.getElementById('editRole').value = u.role;
+                document.getElementById('editBalance').value = u.balance;
+                document.getElementById('editActive').value = u.isActive ? 'true' : 'false';
+                // 基本信息
+                document.getElementById('editRealName').value = u.realName || '';
+                document.getElementById('editPhone').value = u.phone || '';
+                document.getElementById('editIdCard').value = u.idCard || '';
+                document.getElementById('editEmail').value = u.email || '';
+                
+                // IP白名单
+                if (u.role === 'admin') {
+                    document.getElementById('editIpWhitelistEnabled').checked = u.ipWhitelistEnabled || false;
+                    document.getElementById('editIpWhitelist').value = (u.ipWhitelist || []).join('\n');
+                }
+                toggleIpWhitelistSection();
+                toggleIpWhitelistInput();
+                document.getElementById('userModal').classList.add('active');
+            } catch (e) {
+                alert('获取用户信息失败');
+            }
         }
 
         async function saveUser() {
@@ -1376,7 +1446,12 @@
                 password: document.getElementById('editPassword').value || undefined,
                 role: role,
                 balance: parseFloat(document.getElementById('editBalance').value) || 0,
-                isActive: document.getElementById('editActive').value === 'true'
+                isActive: document.getElementById('editActive').value === 'true',
+                // 基本信息
+                realName: document.getElementById('editRealName').value.trim() || undefined,
+                phone: document.getElementById('editPhone').value.trim() || undefined,
+                idCard: document.getElementById('editIdCard').value.trim() || undefined,
+                email: document.getElementById('editEmail').value.trim() || undefined
             };
             
             // 管理员IP白名单配置
