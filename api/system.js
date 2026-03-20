@@ -286,13 +286,14 @@ async function fillExpiredDraws(date, interval) {
 
     logger.info('补全历史开奖', { date, interval, count: expiredPeriods.length });
 
-    // 批量创建
+    // 批量创建 - 已过期的期号直接设为settled
     const docs = expiredPeriods.map(period => ({
         date,
         interval,
         period,
         result: generateRandomResult(),
-        status: 'drawn',
+        status: 'settled',  // 直接设为已结算
+        settledAt: new Date(),
         updatedAt: new Date()
     }));
 

@@ -223,10 +223,16 @@ class AutoDrawScheduler {
                 draw.status = 'drawn';
                 await draw.save();
                 console.log(`[开奖检查器] 更新开奖结果: 结果=${draw.result}`);
+            } else if (draw.status !== 'settled') {
+                // 有结果但未结算，更新状态
+                draw.status = 'drawn';
+                console.log(`[开奖检查器] 已有结果待结算: 结果=${draw.result}`);
             }
 
-            // 结算投注
-            await this.settleBets(draw);
+            // 结算投注（无论状态如何，只要未结算就执行）
+            if (draw.status !== 'settled') {
+                await this.settleBets(draw);
+            }
 
         } catch (error) {
             console.error(`[开奖检查器] 开奖失败:`, error.message);
@@ -432,13 +438,14 @@ class DailyDataInitializer {
 
         console.log(`[补全历史] ${date} ${interval}分钟期 需要补录 ${expiredPeriods.length} 期`);
 
-        // 批量创建
+        // 批量创建 - 已过期的期号直接设为settled（因为没有投注了）
         const docs = expiredPeriods.map(period => ({
             date,
             interval,
             period,
             result: this.generateResult(),
-            status: 'drawn',
+            status: 'settled',  // 直接设为已结算
+            settledAt: new Date(),
             updatedAt: new Date()
         }));
 
