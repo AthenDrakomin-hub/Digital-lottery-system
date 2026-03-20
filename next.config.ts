@@ -4,9 +4,8 @@ const nextConfig: NextConfig = {
   // 输出为独立模式，适合部署
   output: 'standalone',
   
-  // 实验性功能
+  // 服务端Actions
   experimental: {
-    // 启用服务端Actions
     serverActions: {
       bodySizeLimit: '2mb',
     },

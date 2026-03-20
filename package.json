@@ -4,7 +4,8 @@
   "description": "港华智慧能源投资平台 - 全栈式数字开奖管理系统",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 5000",
+    "dev": "next dev --port 5000 --webpack",
+    "dev:turbo": "next dev --port 5000 --turbopack",
     "build": "next build",
     "start": "next start --port 5000",
     "lint": "next lint"
