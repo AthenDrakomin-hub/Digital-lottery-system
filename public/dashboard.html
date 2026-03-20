@@ -491,6 +491,50 @@
                 </div>
 
                 <div class="card">
+                    <h3>🌐 客户端CORS跨域配置</h3>
+                    <p style="color:#666;font-size:12px;margin-bottom:15px">配置允许跨域访问API的客户端域名。使用 * 允许所有域名访问（不安全），或指定具体域名列表。</p>
+                    
+                    <div class="config-item">
+                        <div>
+                            <div class="config-label">启用CORS</div>
+                            <div class="config-desc">开启后允许跨域请求</div>
+                        </div>
+                        <div>
+                            <label class="switch">
+                                <input type="checkbox" id="corsEnabled" checked onchange="saveCorsConfig()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="config-item" style="flex-direction:column;align-items:flex-start">
+                        <div style="margin-bottom:10px;width:100%;display:flex;justify-content:space-between;align-items:center">
+                            <div>
+                                <div class="config-label">允许的域名列表</div>
+                                <div class="config-desc">每行一个域名，支持带端口号。使用 * 允许所有域名</div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="testCorsConfig()">测试配置</button>
+                        </div>
+                        <textarea id="corsOrigins" class="form-control" rows="4" style="width:100%;font-family:monospace;font-size:13px" placeholder="https://example.com&#10;https://client.example.com:8080&#10;*">*</textarea>
+                    </div>
+                    
+                    <div style="margin-top:15px;display:flex;gap:10px;align-items:center">
+                        <button class="btn btn-primary btn-sm" onclick="saveCorsConfig()">保存配置</button>
+                        <button class="btn btn-secondary btn-sm" onclick="resetCorsConfig()">重置为默认</button>
+                        <span id="corsStatus" style="font-size:12px;color:#666"></span>
+                    </div>
+                    
+                    <div style="margin-top:15px;padding:10px;background:#f8f9fa;border-radius:4px">
+                        <div style="font-size:12px;color:#666;margin-bottom:5px">💡 说明：</div>
+                        <ul style="font-size:12px;color:#888;margin:0;padding-left:20px">
+                            <li><code style="background:#e9ecef;padding:2px 6px;border-radius:3px">*</code> 允许所有域名访问（开发环境适用，生产环境不推荐）</li>
+                            <li><code style="background:#e9ecef;padding:2px 6px;border-radius:3px">https://example.com</code> 只允许该域名访问</li>
+                            <li>修改后立即生效，无需重启服务</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
                     <h3>支付方式配置</h3>
                     <div class="config-item">
                         <div>
@@ -1915,6 +1959,107 @@
             closeModal('paymentModal');
         }
 
+        // ========== CORS配置管理 ==========
+        async function loadCorsConfig() {
+            try {
+                const res = await fetch('/api/admin?action=config', { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                const data = await res.json();
+                
+                if (res.ok && data.configs) {
+                    // CORS启用状态
+                    const corsEnabled = data.configs['cors.enabled'];
+                    document.getElementById('corsEnabled').checked = corsEnabled?.value !== false;
+                    
+                    // 允许的域名列表
+                    const corsOrigins = data.configs['cors.allowedOrigins'];
+                    const origins = corsOrigins?.value || ['*'];
+                    document.getElementById('corsOrigins').value = Array.isArray(origins) ? origins.join('\n') : origins;
+                }
+            } catch (e) {
+                console.error('加载CORS配置失败:', e);
+            }
+        }
+
+        async function saveCorsConfig() {
+            const enabled = document.getElementById('corsEnabled').checked;
+            const originsText = document.getElementById('corsOrigins').value.trim();
+            const origins = originsText.split('\n').map(s => s.trim()).filter(s => s);
+            
+            if (origins.length === 0) {
+                alert('请至少输入一个域名');
+                return;
+            }
+
+            const statusEl = document.getElementById('corsStatus');
+            statusEl.textContent = '保存中...';
+            statusEl.style.color = '#666';
+
+            try {
+                // 保存启用状态
+                await fetch('/api/admin?action=config', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ key: 'cors.enabled', value: enabled })
+                });
+
+                // 保存域名列表
+                const res = await fetch('/api/admin?action=config', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ key: 'cors.allowedOrigins', value: origins })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    statusEl.textContent = '✓ 保存成功';
+                    statusEl.style.color = '#28a745';
+                    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+                } else {
+                    statusEl.textContent = '✗ 保存失败: ' + (data.error || '未知错误');
+                    statusEl.style.color = '#dc3545';
+                }
+            } catch (e) {
+                statusEl.textContent = '✗ 保存失败: ' + e.message;
+                statusEl.style.color = '#dc3545';
+            }
+        }
+
+        function resetCorsConfig() {
+            document.getElementById('corsEnabled').checked = true;
+            document.getElementById('corsOrigins').value = '*';
+            document.getElementById('corsStatus').textContent = '已重置为默认值';
+            document.getElementById('corsStatus').style.color = '#666';
+        }
+
+        async function testCorsConfig() {
+            const originsText = document.getElementById('corsOrigins').value.trim();
+            const origins = originsText.split('\n').map(s => s.trim()).filter(s => s);
+            
+            let message = 'CORS配置预览：\n\n';
+            message += `启用状态: ${document.getElementById('corsEnabled').checked ? '✓ 已启用' : '✗ 已禁用'}\n`;
+            message += `允许的域名 (${origins.length}个):\n`;
+            
+            origins.forEach((origin, i) => {
+                if (origin === '*') {
+                    message += `  ${i + 1}. ${origin} (所有域名)\n`;
+                } else {
+                    // 简单验证域名格式
+                    const isValid = /^https?:\/\/.+/i.test(origin);
+                    message += `  ${i + 1}. ${origin} ${isValid ? '✓' : '⚠️ 格式可能不正确'}\n`;
+                }
+            });
+            
+            alert(message);
+        }
+
         // 管理员列表
         async function loadAdmins() {
             try {
@@ -2513,6 +2658,7 @@
                     systemConfigs = data.configs;
                     renderBetConfig();
                     renderWithdrawConfig();
+                    loadCorsConfig(); // 加载CORS配置
                 }
             } catch (e) {
                 console.error('加载配置失败:', e);

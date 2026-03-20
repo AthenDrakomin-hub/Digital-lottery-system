@@ -23,7 +23,7 @@ const Transaction = require('../models/Transaction');
 const Config = require('../models/Config');
 const bcrypt = require('bcryptjs');
 const { extractUserFromRequest } = require('../lib/auth');
-const { setCorsHeaders, handlePreflightRequest } = require('../lib/cors');
+const { setCorsHeaders, handlePreflightRequest, clearCorsCache } = require('../lib/cors');
 const { createLogger } = require('../lib/logger');
 
 const logger = createLogger('admin');
@@ -555,6 +555,12 @@ async function handleConfigUpdate(req, res) {
     }
 
     await Config.set(key, value, admin._id);
+    
+    // 如果是CORS配置更新，清除缓存
+    if (key.startsWith('cors.')) {
+        clearCorsCache();
+        logger.info('CORS配置已更新，缓存已清除', { key, operator: admin.username });
+    }
     
     logger.info('配置已更新', { key, value, operator: admin.username });
     res.json({ success: true, message: '配置已保存' });

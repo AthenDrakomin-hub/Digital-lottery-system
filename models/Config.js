@@ -43,7 +43,11 @@ const DEFAULT_CONFIG = {
     'payment.alipay': { value: { name: '', account: '', qrcode: '' }, description: '支付宝收款信息' },
     'payment.wechat': { value: { name: '', account: '', qrcode: '' }, description: '微信收款信息' },
     'payment.bank': { value: { bankName: '', accountName: '', accountNumber: '', branch: '' }, description: '银行卡收款信息' },
-    'payment.usdt': { value: { network: 'TRC20', address: '' }, description: 'USDT收款地址' }
+    'payment.usdt': { value: { network: 'TRC20', address: '' }, description: 'USDT收款地址' },
+    
+    // CORS跨域配置
+    'cors.allowedOrigins': { value: ['*'], description: '允许跨域访问的域名列表，* 表示允许所有' },
+    'cors.enabled': { value: true, description: '是否启用CORS跨域' }
 };
 
 // 静态方法：获取配置
