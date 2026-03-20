@@ -162,13 +162,20 @@ async function handleDrawsCreate(req, res) {
 }
 
 async function handleDrawsDaily(req, res) {
-    const { date, interval, nocache } = req.query;
+    const { date, interval, nocache, fill } = req.query;
     if (!date || !interval) return res.status(400).json({ error: '缺少date或interval参数' });
 
     const intervalNum = parseInt(interval);
     if (!CONFIG.INTERVALS.includes(intervalNum)) return res.status(400).json({ error: 'interval参数必须是5、10或15' });
 
     const totalPeriods = getTotalPeriods(intervalNum);
+
+    // 如果fill=1，自动补全已过期的期号
+    if (fill === '1') {
+        await fillExpiredDraws(date, intervalNum);
+        // 补全后清除缓存
+        await cache.delDailyDraws(date, intervalNum);
+    }
 
     if (nocache !== '1') {
         const cached = await cache.getDailyDraws(date, intervalNum);
@@ -186,6 +193,7 @@ async function handleDrawsDaily(req, res) {
                 period: existing.period,
                 result: existing.result,
                 status: existing.status,
+                settlementStats: existing.settlementStats,
                 updatedAt: existing.updatedAt
             };
         }
@@ -199,6 +207,55 @@ async function handleDrawsDaily(req, res) {
 
     await cache.setDailyDraws(date, intervalNum, fullDay);
     res.json({ date, interval: intervalNum, totalPeriods, draws: fullDay, cached: false });
+}
+
+/**
+ * 补全已过期但无数据的期号
+ */
+async function fillExpiredDraws(date, interval) {
+    const now = new Date();
+    const isToday = date === now.toISOString().slice(0, 10);
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const totalPeriodsMap = { 5: 288, 10: 144, 15: 96 };
+    const totalPeriods = totalPeriodsMap[interval];
+
+    // 获取已有的开奖记录
+    const existingDraws = await Draw.find({ date, interval }).lean();
+    const existingPeriods = new Set(existingDraws.map(d => d.period));
+
+    // 找出需要补录的期号（已过期但没有记录的）
+    const expiredPeriods = [];
+    for (let period = 0; period < totalPeriods; period++) {
+        const periodEndMinutes = (period + 1) * interval;
+        const isExpired = !isToday || periodEndMinutes <= currentMinutes;
+        
+        if (isExpired && !existingPeriods.has(period)) {
+            expiredPeriods.push(period);
+        }
+    }
+
+    if (expiredPeriods.length === 0) {
+        return { filled: 0 };
+    }
+
+    logger.info('补全历史开奖', { date, interval, count: expiredPeriods.length });
+
+    // 批量创建
+    const docs = expiredPeriods.map(period => ({
+        date,
+        interval,
+        period,
+        result: generateRandomResult(),
+        status: 'drawn',
+        updatedAt: new Date()
+    }));
+
+    if (docs.length > 0) {
+        await Draw.insertMany(docs, { ordered: false });
+    }
+
+    return { filled: docs.length };
 }
 
 async function handleDrawsDetail(req, res) {

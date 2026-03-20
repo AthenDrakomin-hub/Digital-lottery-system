@@ -332,6 +332,164 @@ class AutoDrawScheduler {
 // 创建开奖检查器实例
 const drawScheduler = new AutoDrawScheduler();
 
+// ==================== 每日数据初始化器 ====================
+
+/**
+ * 每日数据初始化器
+ * 每天凌晨0点初始化新一天的开奖数据
+ */
+class DailyDataInitializer {
+    constructor() {
+        this.isRunning = false;
+        this.lastInitDate = null;
+        this.db = null;
+        this.Draw = null;
+    }
+
+    /**
+     * 初始化一天的开奖数据
+     */
+    async initDailyData(date) {
+        if (!this.db) {
+            try {
+                this.db = require('./lib/db');
+                this.Draw = require('./models/Draw');
+                await this.db();
+            } catch (error) {
+                console.error('[每日初始化] 数据库连接失败:', error.message);
+                return;
+            }
+        }
+
+        const intervals = [5, 10, 15];
+        const totalPeriodsMap = { 5: 288, 10: 144, 15: 96 };
+
+        console.log(`[每日初始化] 开始初始化 ${date} 的数据...`);
+
+        for (const interval of intervals) {
+            const totalPeriods = totalPeriodsMap[interval];
+            
+            // 检查是否已有数据
+            const existingCount = await this.Draw.countDocuments({ date, interval });
+            
+            if (existingCount === 0) {
+                console.log(`[每日初始化] 初始化 ${interval}分钟期，共 ${totalPeriods} 期`);
+                // 不预先创建记录，让自动开奖器按需创建
+            } else {
+                console.log(`[每日初始化] ${interval}分钟期已有 ${existingCount} 条记录`);
+            }
+        }
+
+        console.log(`[每日初始化] ${date} 初始化完成`);
+    }
+
+    /**
+     * 补全已过期但无数据的期号
+     */
+    async fillExpiredPeriods(date, interval) {
+        if (!this.db) {
+            try {
+                this.db = require('./lib/db');
+                this.Draw = require('./models/Draw');
+                await this.db();
+            } catch (error) {
+                console.error('[补全历史] 数据库连接失败:', error.message);
+                return;
+            }
+        }
+
+        const now = new Date();
+        const isToday = date === now.toISOString().split('T')[0];
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        const totalPeriodsMap = { 5: 288, 10: 144, 15: 96 };
+        const totalPeriods = totalPeriodsMap[interval];
+
+        // 获取已有的开奖记录
+        const existingDraws = await this.Draw.find({ date, interval }).lean();
+        const existingPeriods = new Set(existingDraws.map(d => d.period));
+
+        // 找出需要补录的期号（已过期但没有记录的）
+        const expiredPeriods = [];
+        for (let period = 0; period < totalPeriods; period++) {
+            const periodEndMinutes = (period + 1) * interval;
+            const isExpired = !isToday || periodEndMinutes <= currentMinutes;
+            
+            if (isExpired && !existingPeriods.has(period)) {
+                expiredPeriods.push(period);
+            }
+        }
+
+        if (expiredPeriods.length === 0) {
+            return { filled: 0 };
+        }
+
+        console.log(`[补全历史] ${date} ${interval}分钟期 需要补录 ${expiredPeriods.length} 期`);
+
+        // 批量创建
+        const docs = expiredPeriods.map(period => ({
+            date,
+            interval,
+            period,
+            result: this.generateResult(),
+            status: 'drawn',
+            updatedAt: new Date()
+        }));
+
+        if (docs.length > 0) {
+            await this.Draw.insertMany(docs, { ordered: false });
+        }
+
+        return { filled: docs.length };
+    }
+
+    /**
+     * 生成随机结果
+     */
+    generateResult() {
+        let result = '';
+        for (let i = 0; i < 10; i++) {
+            result += Math.floor(Math.random() * 10);
+        }
+        return result;
+    }
+
+    /**
+     * 检查是否需要初始化
+     */
+    async checkAndInit() {
+        const now = new Date();
+        const today = now.toISOString().slice(0, 10);
+
+        // 如果是新的一天，初始化数据
+        if (this.lastInitDate !== today) {
+            await this.initDailyData(today);
+            this.lastInitDate = today;
+        }
+    }
+
+    /**
+     * 启动定时器
+     */
+    start() {
+        if (this.isRunning) return;
+        this.isRunning = true;
+
+        console.log('[每日初始化] 启动...');
+
+        // 立即检查一次
+        this.checkAndInit();
+
+        // 每分钟检查一次是否需要初始化新一天
+        this.timer = setInterval(() => {
+            this.checkAndInit();
+        }, 60000);
+    }
+}
+
+// 创建每日初始化器实例
+const dailyInitializer = new DailyDataInitializer();
+
 // 启动服务器
 app.listen(PORT, () => {
     console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
@@ -344,6 +502,9 @@ app.listen(PORT, () => {
     
     // 启动自动开奖
     drawScheduler.start();
+    
+    // 启动每日初始化
+    dailyInitializer.start();
 });
 
 // 导出用于测试

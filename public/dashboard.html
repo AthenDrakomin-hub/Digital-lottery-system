@@ -196,7 +196,8 @@
                         <thead>
                             <tr>
                                 <th>期号</th>
-                                <th>时间</th>
+                                <th>日期</th>
+                                <th>时间段</th>
                                 <th>开奖号码</th>
                                 <th>冠军</th>
                                 <th>投注数</th>
@@ -673,33 +674,63 @@
             if (!date) return;
 
             try {
-                const res = await fetch(`/api/system?type=draws&date=${date}&interval=${interval}&nocache=1`, { headers: { 'Authorization': `Bearer ${token}` } });
+                // 使用 daily 接口并自动补全历史数据
+                const res = await fetch(`/api/system?type=draws&action=daily&date=${date}&interval=${interval}&fill=1&nocache=1`, { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
                 const tbody = document.getElementById('drawsBody');
                 
-                // 只显示最近50条
-                const draws = (data.draws || []).slice(-50).reverse();
+                // 获取当前时间判断哪些期号已过期
+                const now = new Date();
+                const currentMinutes = now.getHours() * 60 + now.getMinutes();
+                const isToday = date === now.toISOString().split('T')[0];
+                
+                // 显示所有期号
+                const draws = data.draws || [];
                 tbody.innerHTML = draws.map(d => {
+                    const periodNum = d.period + 1;
+                    // 期号格式：20260320001
+                    const periodId = `${date.replace(/-/g, '')}${String(periodNum).padStart(3, '0')}`;
                     const time = calcTime(parseInt(interval), d.period);
+                    
+                    // 判断是否已过期
+                    const periodEndMinutes = (d.period + 1) * parseInt(interval);
+                    const isExpired = !isToday || periodEndMinutes <= currentMinutes;
+                    
+                    // 状态显示
+                    let statusBadge;
+                    if (d.status === 'settled') {
+                        statusBadge = '<span class="badge badge-success">已结算</span>';
+                    } else if (d.result) {
+                        statusBadge = '<span class="badge badge-info">已开奖</span>';
+                    } else if (isExpired) {
+                        statusBadge = '<span class="badge badge-danger">待补录</span>';
+                    } else {
+                        statusBadge = '<span class="badge badge-warning">待开奖</span>';
+                    }
+                    
                     return `
                     <tr>
-                        <td>第${d.period + 1}期</td>
+                        <td style="font-family:monospace;font-weight:bold">${periodId}</td>
+                        <td>${date}</td>
                         <td>${time}</td>
-                        <td style="font-family:monospace;letter-spacing:2px">${d.result || '-'}</td>
-                        <td><strong style="color:#d4af37">${d.result ? d.result[0] : '-'}</strong></td>
+                        <td style="font-family:monospace;letter-spacing:2px;font-size:16px">${d.result || '-'}</td>
+                        <td><strong style="color:#d4af37;font-size:18px">${d.result ? d.result[0] : '-'}</strong></td>
                         <td>${d.settlementStats?.totalBets || 0}</td>
                         <td style="color:#28a745">¥${(d.settlementStats?.totalWinAmount || 0).toFixed(2)}</td>
-                        <td>${d.status === 'settled' ? '<span class="badge badge-success">已结算</span>' : '<span class="badge badge-warning">待开奖</span>'}</td>
+                        <td>${statusBadge}</td>
                         <td class="action-btns">
                             ${d._id ? `
-                                <button class="btn btn-primary btn-sm" onclick="manualDraw('${d._id}','${d.period}')">手动开奖</button>
+                                <button class="btn btn-primary btn-sm" onclick="manualDraw('${d._id}')">开奖</button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteDraw('${d._id}')">删除</button>
                             ` : '-'}
                         </td>
                     </tr>`;
-                }).join('') || '<tr><td colspan="7">暂无数据</td></tr>';
+                }).join('') || '<tr><td colspan="9">暂无数据</td></tr>';
+                
+                // 分页信息
+                document.getElementById('drawsPage').innerHTML = `共 ${draws.length} 期`;
             } catch (e) {
-                document.getElementById('drawsBody').innerHTML = '<tr><td colspan="7">加载失败</td></tr>';
+                document.getElementById('drawsBody').innerHTML = '<tr><td colspan="9">加载失败</td></tr>';
             }
         }
 
@@ -709,14 +740,35 @@
             const fmt = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
             return `${fmt(start)}-${fmt(end)}`;
         }
+        
+        // 补录开奖
+        async function fillDraw(date, interval, period) {
+            try {
+                const res = await fetch('/api/system?type=draws', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ date, interval, periods: [{ period, result: generateRandom() }] })
+                });
+                const data = await res.json();
+                if (res.ok) { loadDraws(); }
+                else alert(data.error);
+            } catch (e) { alert('补录失败'); }
+        }
+        
+        function generateRandom() {
+            let r = '';
+            for (let i = 0; i < 10; i++) r += Math.floor(Math.random() * 10);
+            return r;
+        }
+        }
 
         // 手动开奖
-        async function manualDraw(id, period) {
-            const result = prompt(`请输入第${parseInt(period)+1}期的开奖号码（10位数字）：`);
+        async function manualDraw(id) {
+            const result = prompt('请输入开奖号码（10位数字）：');
             if (!result || result.length !== 10 || !/^\d{10}$/.test(result)) {
                 return alert('请输入有效的10位数字');
             }
-            if (!confirm(`确定要将第${parseInt(period)+1}期开奖号码设为 ${result} 吗？`)) return;
+            if (!confirm(`确定要将开奖号码设为 ${result} 吗？`)) return;
             
             try {
                 const res = await fetch(`/api/system?type=draws&id=${id}`, {
