@@ -192,8 +192,8 @@ async function handleDrawsDaily(req, res) {
     const totalPeriods = getTotalPeriods(intervalNum);
     const isToday = date === today;
 
-    // 如果fill=1，自动补全已过期的期号（仅当天有效）
-    if (fill === '1' && isToday) {
+    // 防抖策略：查询当天数据时，自动补全已过期的期号
+    if (isToday) {
         await fillExpiredDraws(date, intervalNum);
         await cache.delDailyDraws(date, intervalNum);
     }
