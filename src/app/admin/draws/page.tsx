@@ -2,6 +2,26 @@
 
 import { useEffect, useState } from 'react'
 
+interface EnergyType {
+  id: string
+  name: string
+  color: string
+  enabled: boolean
+  sortOrder: number
+}
+
+interface Province {
+  id: string
+  name: string
+  enabled: boolean
+  sortOrder: number
+}
+
+interface Config {
+  energyTypes: EnergyType[]
+  provinces: Province[]
+}
+
 interface SettlementStats {
   totalBets: number
   wonBets: number
@@ -23,21 +43,36 @@ interface Draw {
 
 export default function DrawsPage() {
   const [draws, setDraws] = useState<Draw[]>([])
+  const [config, setConfig] = useState<Config>({ energyTypes: [], provinces: [] })
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState({
     date: new Date().toISOString().split('T')[0],
     interval: 'all',
     status: 'all',
   })
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    settled: 0,
-  })
+
+  useEffect(() => {
+    fetchConfig()
+  }, [])
 
   useEffect(() => {
     fetchDraws()
   }, [filter])
+
+  const fetchConfig = async () => {
+    try {
+      const res = await fetch('/api/config', { credentials: 'include' })
+      const data = await res.json()
+      if (data.success) {
+        setConfig({
+          energyTypes: data.config.energyTypes || [],
+          provinces: data.config.provinces || [],
+        })
+      }
+    } catch {
+      console.error('Failed to fetch config')
+    }
+  }
 
   const fetchDraws = async () => {
     setLoading(true)
@@ -53,13 +88,6 @@ export default function DrawsPage() {
       const data = await res.json()
       if (data.success) {
         setDraws(data.draws)
-        // 计算统计
-        const allDraws = data.draws as Draw[]
-        setStats({
-          total: allDraws.length,
-          pending: allDraws.filter(d => d.status === 'pending').length,
-          settled: allDraws.filter(d => d.status === 'settled').length,
-        })
       }
     } catch {
       console.error('Failed to fetch draws')
@@ -68,8 +96,83 @@ export default function DrawsPage() {
     }
   }
 
-  const getIntervalLabel = (interval: number) => {
-    return `${interval}分鐘`
+  // 根据数字索引获取能源类型
+  const getEnergyType = (index: number): EnergyType | null => {
+    if (index < 0 || index >= config.energyTypes.length) return null
+    return config.energyTypes[index]
+  }
+
+  // 根据数字索引获取省份
+  const getProvince = (index: number): Province | null => {
+    if (index < 0 || index >= config.provinces.length) return null
+    return config.provinces[index]
+  }
+
+  // 渲染开奖结果 - 使用字段映射
+  const renderResult = (result: string) => {
+    if (!result || result.length < 2) {
+      return <span className="text-gray-500">未設置</span>
+    }
+
+    const digits = result.split('').map(Number)
+    
+    // 前2位：能源类型和省份
+    const energyIndex = digits[0]
+    const provinceIndex = digits[1]
+    
+    const energy = getEnergyType(energyIndex)
+    const province = getProvince(provinceIndex)
+
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        {/* 能源类型 */}
+        {energy && (
+          <span 
+            className="px-2 py-1 rounded text-xs font-medium"
+            style={{ backgroundColor: energy.color + '30', color: energy.color }}
+          >
+            {energy.name}
+          </span>
+        )}
+        
+        {/* 省份 */}
+        {province && (
+          <span className="px-2 py-1 bg-blue-900/50 text-blue-400 rounded text-xs font-medium">
+            {province.name}
+          </span>
+        )}
+
+        {/* 完整数字 */}
+        <div className="flex gap-0.5 ml-2">
+          {digits.map((digit, index) => (
+            <span
+              key={index}
+              className="w-5 h-5 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold"
+            >
+              {digit}
+            </span>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // 渲染纯数字球
+  const renderDigits = (result: string) => {
+    if (!result) return <span className="text-gray-500">-</span>
+    const digits = result.split('')
+    return (
+      <div className="flex gap-0.5">
+        {digits.map((digit, index) => (
+          <span
+            key={index}
+            className="w-5 h-5 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold"
+          >
+            {digit}
+          </span>
+        ))}
+      </div>
+    )
   }
 
   const getStatusColor = (status: string) => {
@@ -98,22 +201,11 @@ export default function DrawsPage() {
     return acc
   }, {} as Record<string, Draw[]>)
 
-  // 渲染开奖结果 - 10位数字，每2位一组
-  const renderResult = (result: string) => {
-    if (!result) return '-'
-    const digits = result.split('')
-    return (
-      <div className="flex gap-1">
-        {digits.map((digit, index) => (
-          <span
-            key={index}
-            className="w-7 h-7 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md"
-          >
-            {digit}
-          </span>
-        ))}
-      </div>
-    )
+  // 统计
+  const stats = {
+    total: draws.length,
+    pending: draws.filter(d => d.status === 'pending').length,
+    settled: draws.filter(d => d.status === 'settled').length,
   }
 
   if (loading) {
@@ -175,6 +267,22 @@ export default function DrawsPage() {
         </div>
       </div>
 
+      {/* 图例说明 */}
+      <div className="bg-gray-800 rounded-xl p-4 mb-6">
+        <p className="text-gray-400 text-sm mb-2">開獎結果說明：</p>
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <span className="text-gray-300">
+            第1位 = 能源類型（0-{config.energyTypes.length - 1}）
+          </span>
+          <span className="text-gray-300">
+            第2位 = 省份（0-{config.provinces.length - 1}）
+          </span>
+          <span className="text-gray-300">
+            後8位 = 其他數據
+          </span>
+        </div>
+      </div>
+
       {/* Results by Cycle */}
       {Object.keys(groupedDraws).length > 0 ? (
         <div className="space-y-6">
@@ -191,38 +299,38 @@ export default function DrawsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="text-gray-400 text-left border-b border-gray-700">
+                      <tr className="text-gray-400 text-left border-b border-gray-700 text-sm">
                         <th className="px-6 py-3">期號</th>
                         <th className="px-6 py-3">開獎結果</th>
                         <th className="px-6 py-3">投注/中獎</th>
-                        <th className="px-6 py-3">派彩金額</th>
+                        <th className="px-6 py-3">派彩</th>
                         <th className="px-6 py-3">狀態</th>
-                        <th className="px-6 py-3">開獎時間</th>
+                        <th className="px-6 py-3">時間</th>
                       </tr>
                     </thead>
                     <tbody>
                       {cycleDraws.map((draw) => (
                         <tr key={draw._id} className="text-gray-300 border-b border-gray-700/50 hover:bg-gray-700/30">
-                          <td className="px-6 py-4 font-medium">
-                            {draw.date} #{draw.period}
+                          <td className="px-6 py-3 font-medium text-sm">
+                            #{draw.period}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-3">
                             {renderResult(draw.result)}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-3 text-sm">
                             <span className="text-blue-400">{draw.settlementStats?.totalBets || 0}</span>
                             <span className="text-gray-500">/</span>
                             <span className="text-green-400">{draw.settlementStats?.wonBets || 0}</span>
                           </td>
-                          <td className="px-6 py-4 text-yellow-400">
+                          <td className="px-6 py-3 text-sm text-yellow-400">
                             ¥{(draw.settlementStats?.totalWinAmount || 0).toLocaleString()}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-3">
                             <span className={`px-2 py-1 rounded text-xs ${getStatusColor(draw.status)}`}>
                               {getStatusLabel(draw.status)}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-400">
+                          <td className="px-6 py-3 text-xs text-gray-400">
                             {draw.settledAt ? new Date(draw.settledAt).toLocaleString('zh-CN') : '-'}
                           </td>
                         </tr>

@@ -2,6 +2,26 @@
 
 import { useEffect, useState } from 'react'
 
+interface EnergyType {
+  id: string
+  name: string
+  color: string
+  enabled: boolean
+  sortOrder: number
+}
+
+interface Province {
+  id: string
+  name: string
+  enabled: boolean
+  sortOrder: number
+}
+
+interface Config {
+  energyTypes: EnergyType[]
+  provinces: Province[]
+}
+
 interface Draw {
   _id: string
   interval: 5 | 10 | 15
@@ -13,6 +33,7 @@ interface Draw {
 
 export default function LotteryPage() {
   const [draws, setDraws] = useState<Draw[]>([])
+  const [config, setConfig] = useState<Config>({ energyTypes: [], provinces: [] })
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -27,8 +48,27 @@ export default function LotteryPage() {
   })
 
   useEffect(() => {
+    fetchConfig()
+  }, [])
+
+  useEffect(() => {
     fetchDraws()
   }, [selectedDate])
+
+  const fetchConfig = async () => {
+    try {
+      const res = await fetch('/api/config', { credentials: 'include' })
+      const data = await res.json()
+      if (data.success) {
+        setConfig({
+          energyTypes: data.config.energyTypes || [],
+          provinces: data.config.provinces || [],
+        })
+      }
+    } catch {
+      console.error('Failed to fetch config')
+    }
+  }
 
   const fetchDraws = async () => {
     setLoading(true)
@@ -45,6 +85,14 @@ export default function LotteryPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // 根据选择的能源类型和省份生成数字
+  const generateResultFromSelection = (energyIndex: number, provinceIndex: number) => {
+    // 后8位随机生成
+    const randomDigits = Array.from({ length: 8 }, () => Math.floor(Math.random() * 10)).join('')
+    const result = `${energyIndex}${provinceIndex}${randomDigits}`
+    setFormData({ ...formData, result })
   }
 
   const generateRandomResult = () => {
@@ -142,6 +190,43 @@ export default function LotteryPage() {
     return existingPeriods.length > 0 ? Math.max(...existingPeriods) + 1 : 0
   }
 
+  // 渲染开奖结果 - 使用字段映射
+  const renderResult = (result: string) => {
+    if (!result || result.length < 2) return <span className="text-gray-500">未設置</span>
+
+    const digits = result.split('').map(Number)
+    const energy = config.energyTypes[digits[0]]
+    const province = config.provinces[digits[1]]
+
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        {energy && (
+          <span 
+            className="px-2 py-0.5 rounded text-xs font-medium"
+            style={{ backgroundColor: energy.color + '30', color: energy.color }}
+          >
+            {energy.name}
+          </span>
+        )}
+        {province && (
+          <span className="px-2 py-0.5 bg-blue-900/50 text-blue-400 rounded text-xs font-medium">
+            {province.name}
+          </span>
+        )}
+        <div className="flex gap-0.5">
+          {digits.map((digit, index) => (
+            <span
+              key={index}
+              className="w-5 h-5 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold"
+            >
+              {digit}
+            </span>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   // 按周期分组
   const groupedDraws = draws.reduce((acc, draw) => {
     const key = `${draw.interval}min`
@@ -149,24 +234,6 @@ export default function LotteryPage() {
     acc[key].push(draw)
     return acc
   }, {} as Record<string, Draw[]>)
-
-  // 渲染开奖结果
-  const renderResult = (result: string) => {
-    if (!result) return <span className="text-gray-500">未設置</span>
-    const digits = result.split('')
-    return (
-      <div className="flex gap-0.5">
-        {digits.map((digit, index) => (
-          <span
-            key={index}
-            className="w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold"
-          >
-            {digit}
-          </span>
-        ))}
-      </div>
-    )
-  }
 
   if (loading) {
     return (
@@ -215,7 +282,7 @@ export default function LotteryPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="text-gray-400 text-left border-b border-gray-700">
+                      <tr className="text-gray-400 text-left border-b border-gray-700 text-sm">
                         <th className="px-6 py-3">期號</th>
                         <th className="px-6 py-3">開獎結果</th>
                         <th className="px-6 py-3">狀態</th>
@@ -225,11 +292,11 @@ export default function LotteryPage() {
                     <tbody>
                       {cycleDraws.map((draw) => (
                         <tr key={draw._id} className="text-gray-300 border-b border-gray-700/50 hover:bg-gray-700/30">
-                          <td className="px-6 py-4 font-medium">#{draw.period}</td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-3 font-medium">#{draw.period}</td>
+                          <td className="px-6 py-3">
                             {renderResult(draw.result)}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-3">
                             <span className={`px-2 py-1 rounded text-xs ${
                               draw.status === 'settled' 
                                 ? 'bg-green-900/50 text-green-400' 
@@ -238,7 +305,7 @@ export default function LotteryPage() {
                               {draw.status === 'settled' ? '已開獎' : '待開獎'}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-3">
                             <button
                               onClick={() => openEditModal(draw)}
                               className="text-blue-400 hover:text-blue-300 text-sm"
@@ -264,7 +331,7 @@ export default function LotteryPage() {
       {/* Create/Edit Modal */}
       {(showCreateModal || editingDraw) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4">
+          <div className="bg-gray-800 rounded-xl p-6 w-full max-w-lg mx-4">
             <h3 className="text-xl font-bold text-white mb-6">
               {editingDraw ? '編輯開獎結果' : '設置開獎結果'}
             </h3>
@@ -297,6 +364,44 @@ export default function LotteryPage() {
                 </div>
               </div>
 
+              {/* 快捷选择：能源类型 + 省份 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-300 mb-2">能源類型 (第1位)</label>
+                  <select
+                    id="energy-select"
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                    onChange={(e) => {
+                      const provinceSelect = document.getElementById('province-select') as HTMLSelectElement
+                      generateResultFromSelection(Number(e.target.value), Number(provinceSelect?.value || 0))
+                    }}
+                  >
+                    {config.energyTypes.map((type, index) => (
+                      <option key={type.id} value={index}>
+                        {index} - {type.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-2">省份 (第2位)</label>
+                  <select
+                    id="province-select"
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
+                    onChange={(e) => {
+                      const energySelect = document.getElementById('energy-select') as HTMLSelectElement
+                      generateResultFromSelection(Number(energySelect?.value || 0), Number(e.target.value))
+                    }}
+                  >
+                    {config.provinces.map((province, index) => (
+                      <option key={province.id} value={index}>
+                        {index} - {province.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-gray-300 mb-2">
                   開獎結果 (10位數字)
@@ -318,7 +423,7 @@ export default function LotteryPage() {
                     🎲
                   </button>
                 </div>
-                {formData.result && (
+                {formData.result && formData.result.length === 10 && (
                   <div className="mt-3 flex justify-center">
                     {renderResult(formData.result)}
                   </div>
