@@ -42,7 +42,7 @@ async function dbConnect(): Promise<mongoose.Connection> {
   if (!cached.promise) {
     const opts: mongoose.ConnectOptions = {
       bufferCommands: false,
-      dbName: 'lottery', // 明确指定数据库名
+      // 不硬编码数据库名，使用 URI 中的默认数据库或 Mongoose 默认
       maxPoolSize: parseInt(process.env.DB_POOL_SIZE || '10'),
       minPoolSize: parseInt(process.env.DB_MIN_POOL_SIZE || '1'),
       maxIdleTimeMS: 30000,

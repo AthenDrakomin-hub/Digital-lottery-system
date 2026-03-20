@@ -79,9 +79,10 @@ export default function AdminLayout({
   const menuItems = [
     { href: '/admin', label: '儀表盤', icon: '📊' },
     { href: '/admin/users', label: '用戶管理', icon: '👥' },
-    { href: '/admin/lottery', label: '開獎管理', icon: '🎰' },
-    { href: '/admin/config', label: '系統配置', icon: '⚙️' },
+    { href: '/admin/draws', label: '開獎記錄', icon: '🎰' },
+    { href: '/admin/lottery', label: '開獎設置', icon: '🎯' },
     { href: '/admin/records', label: '交易記錄', icon: '📋' },
+    { href: '/admin/config', label: '系統配置', icon: '⚙️' },
   ]
 
   const isActive = (href: string) => {
