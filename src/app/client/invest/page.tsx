@@ -27,6 +27,16 @@ interface PeriodStatus {
   cycleMinutes: number
 }
 
+// 最新开奖结果
+interface LatestDraw {
+  _id: string
+  interval: number
+  date: string
+  period: number
+  result: string
+  status: string
+}
+
 // 能源名称映射
 const ENERGY_NAMES: Record<string, string> = {
   nuclear: '核能',
@@ -66,14 +76,9 @@ export default function InvestPage() {
   const [bets, setBets] = useState<BetRecord[]>([])
   const [loadingBets, setLoadingBets] = useState(false)
   
-  // 开奖动画状态
-  const [showAnimation, setShowAnimation] = useState(false)
-  const [animationCountdown, setAnimationCountdown] = useState(10)
-  const [animationResult, setAnimationResult] = useState<{
-    energyType: string
-    province: string
-    amount: number
-  } | null>(null)
+  // 最新开奖结果
+  const [latestDraw, setLatestDraw] = useState<LatestDraw | null>(null)
+  const [showDrawResult, setShowDrawResult] = useState(false)
 
   // 获取配置
   const fetchConfig = useCallback(async () => {
@@ -103,6 +108,20 @@ export default function InvestPage() {
       }
     } catch (error) {
       console.error('获取期号状态失败:', error)
+    }
+  }, [])
+
+  // 获取最新开奖结果
+  const fetchLatestDraw = useCallback(async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const res = await fetch(`/api/draws?date=${today}&interval=5&limit=1`, { credentials: 'include' })
+      const data = await res.json()
+      if (data.success && data.draws?.length > 0) {
+        setLatestDraw(data.draws[0])
+      }
+    } catch (error) {
+      console.error('获取开奖结果失败:', error)
     }
   }, [])
 
@@ -137,27 +156,27 @@ export default function InvestPage() {
     if (isLoggedIn) {
       fetchConfig()
       fetchPeriodStatus()
+      fetchLatestDraw()
       fetchBets()
     }
-  }, [isLoggedIn, fetchConfig, fetchPeriodStatus, fetchBets])
+  }, [isLoggedIn, fetchConfig, fetchPeriodStatus, fetchLatestDraw, fetchBets])
 
   // 倒计时
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          // 期号结束，触发开奖动画
-          if (!showAnimation && periodStatus?.isSealed) {
-            startLotteryAnimation()
-          }
+          // 期号结束，刷新数据
           fetchPeriodStatus()
+          fetchLatestDraw()
+          fetchBets()
           return periodStatus?.cycleMinutes ? periodStatus.cycleMinutes * 60 : 300
         }
         return prev - 1
       })
     }, 1000)
     return () => clearInterval(timer)
-  }, [showAnimation, periodStatus, fetchPeriodStatus])
+  }, [periodStatus, fetchPeriodStatus, fetchLatestDraw, fetchBets])
 
   // 封盘警告
   useEffect(() => {
@@ -167,35 +186,6 @@ export default function InvestPage() {
       setShowSealWarning(false)
     }
   }, [timeLeft, periodStatus])
-
-  // 开奖动画
-  const startLotteryAnimation = () => {
-    setShowAnimation(true)
-    setAnimationCountdown(10)
-    
-    // 模拟开奖结果（实际应从后端获取）
-    const randomEnergy = energyTypes[Math.floor(Math.random() * energyTypes.length)]
-    const randomProvince = provinces[Math.floor(Math.random() * provinces.length)]
-    
-    setAnimationResult({
-      energyType: randomEnergy?.name || '風能',
-      province: randomProvince || '浙江',
-      amount: Math.floor(Math.random() * 10000) + 1000,
-    })
-    
-    // 动画倒计时
-    const animTimer = setInterval(() => {
-      setAnimationCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(animTimer)
-          setShowAnimation(false)
-          fetchBets()
-          return 10
-        }
-        return prev - 1
-      })
-    }, 1000)
-  }
 
   // 投注提交
   const handleSubmit = async () => {
@@ -269,6 +259,30 @@ export default function InvestPage() {
     return statusMap[status] || { text: status, color: 'text-gray-500' }
   }
 
+  // 根据数字索引获取能源类型
+  const getEnergyByIndex = (index: number) => {
+    if (index < 0 || index >= energyTypes.length) return null
+    return energyTypes[index]
+  }
+
+  // 渲染开奖结果数字球
+  const renderResultBalls = (result: string) => {
+    if (!result) return null
+    const digits = result.split('')
+    return (
+      <div className="flex gap-1 justify-center">
+        {digits.map((digit, index) => (
+          <div
+            key={index}
+            className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg"
+          >
+            {digit}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   // 加载中或未登录时显示
   if (loading || !isLoggedIn) {
     return (
@@ -285,110 +299,112 @@ export default function InvestPage() {
 
   return (
     <div className="bg-gray-100 min-h-screen py-10 px-4">
-      {/* 开奖动画弹窗 */}
-      {showAnimation && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-2xl p-10 max-w-lg w-full mx-4 text-center border border-green-500/30 shadow-2xl shadow-green-500/20">
-            {/* 粒子效果 */}
-            <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
-              {Array.from({ length: 30 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute w-2 h-2 bg-green-400 rounded-full animate-pulse"
-                  style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                    animationDelay: `${Math.random() * 2}s`,
-                    animationDuration: `${1 + Math.random()}s`,
-                  }}
-                />
-              ))}
-            </div>
+      {/* 开奖结果弹窗 */}
+      {showDrawResult && latestDraw && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" onClick={() => setShowDrawResult(false)}>
+          <div className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-2xl p-8 max-w-md w-full mx-4 text-center border border-green-500/30 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="text-4xl mb-4">🎰</div>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              第 {latestDraw.period} 期開獎結果
+            </h2>
+            <p className="text-gray-400 text-sm mb-6">{latestDraw.date}</p>
             
-            {/* 标题 */}
-            <div className="relative z-10">
-              <div className="text-6xl mb-4 animate-bounce">🎰</div>
-              <h2 className="text-3xl font-black text-white mb-2 animate-pulse">
-                開獎中...
-              </h2>
-              <p className="text-gray-400 mb-6">期號: {periodStatus?.currentPeriod}</p>
-              
-              {/* 倒计时 */}
-              <div className="text-8xl font-black text-green-400 mb-8 animate-pulse">
-                {animationCountdown}
-              </div>
-              
-              {/* 滚动效果 */}
-              <div className="bg-gray-800/50 rounded-xl p-6 mb-6 border border-gray-700">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <p className="text-gray-400 text-sm mb-2">能源類型</p>
-                    <div className="text-2xl font-bold text-yellow-400 animate-pulse">
-                      {animationResult?.energyType || '---'}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-gray-400 text-sm mb-2">省份</p>
-                    <div className="text-2xl font-bold text-cyan-400 animate-pulse">
-                      {animationResult?.province || '---'}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-gray-400 text-sm mb-2">金額</p>
-                    <div className="text-2xl font-bold text-green-400 animate-pulse">
-                      ¥{animationResult?.amount?.toLocaleString() || '---'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* 进度条 */}
-              <div className="w-full bg-gray-700 rounded-full h-3 mb-4">
-                <div 
-                  className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-1000"
-                  style={{ width: `${((10 - animationCountdown) / 10) * 100}%` }}
-                />
-              </div>
-              
-              <p className="text-gray-500 text-sm">開獎結果即將揭曉...</p>
+            {/* 开奖结果数字球 */}
+            <div className="mb-6">
+              {renderResultBalls(latestDraw.result)}
             </div>
+
+            {/* 能源类型映射 */}
+            {latestDraw.result && (
+              <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
+                <p className="text-gray-400 text-sm mb-2">開獎能源類型</p>
+                <div className="flex justify-center">
+                  {(() => {
+                    const energyIndex = parseInt(latestDraw.result[0])
+                    const energy = getEnergyByIndex(energyIndex)
+                    return energy ? (
+                      <span 
+                        className="px-4 py-2 rounded-lg text-white font-bold text-lg"
+                        style={{ backgroundColor: energy.color }}
+                      >
+                        {energy.name}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">未知</span>
+                    )
+                  })()}
+                </div>
+                <p className="text-gray-500 text-xs mt-2">
+                  數字 {latestDraw.result[0]} = {getEnergyByIndex(parseInt(latestDraw.result[0]))?.name || '未知'}
+                </p>
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowDrawResult(false)}
+              className="px-8 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+            >
+              關閉
+            </button>
           </div>
         </div>
       )}
 
       <div className="max-w-[1200px] mx-auto bg-white rounded-lg shadow-xl overflow-hidden border border-gray-200">
         {/* Header */}
-        <div className={`p-6 flex items-center justify-between text-white transition-colors ${
+        <div className={`p-6 text-white transition-colors ${
           periodStatus?.isSealed ? 'bg-red-600' : 'bg-[#32b24a]'
         }`}>
-          <div>
-            <h1 className="text-3xl font-black italic tracking-widest">
-              {periodStatus?.isSealed ? '封盤中' : '競價結果'}
-            </h1>
-            <p className="text-xs opacity-80 mt-1">
-              當前期號: {periodStatus?.currentPeriod || '---'} | 
-              {periodStatus?.isSealed ? '等待開獎' : '競價進行中'}
-            </p>
-          </div>
-          
-          {/* 倒计时 */}
-          <div className="flex space-x-1">
-            {formatTime(timeLeft).split('').map((char, i) => (
-              <div key={i} className={`w-10 h-14 ${char === ':' ? 'flex items-center text-4xl' : 'bg-gray-800 rounded flex items-center justify-center text-3xl font-bold'} ${showSealWarning ? 'animate-pulse text-red-300' : ''}`}>
-                {char}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-black italic tracking-widest">
+                {periodStatus?.isSealed ? '封盤中' : '競價結果'}
+              </h1>
+              <p className="text-xs opacity-80 mt-1">
+                當前期號: {periodStatus?.currentPeriod || '---'} | 
+                {periodStatus?.isSealed ? '等待開獎' : '競價進行中'}
+              </p>
+            </div>
+            
+            {/* 倒计时 */}
+            <div className="flex items-center gap-6">
+              <div className="flex space-x-1">
+                {formatTime(timeLeft).split('').map((char, i) => (
+                  <div key={i} className={`w-10 h-14 ${char === ':' ? 'flex items-center text-4xl' : 'bg-gray-800 rounded flex items-center justify-center text-3xl font-bold'} ${showSealWarning ? 'animate-pulse text-red-300' : ''}`}>
+                    {char}
+                  </div>
+                ))}
               </div>
-            ))}
+
+              {/* 查看最新开奖 */}
+              {latestDraw && (
+                <button
+                  onClick={() => setShowDrawResult(true)}
+                  className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  <span>上一期結果</span>
+                  <div className="flex gap-0.5">
+                    {latestDraw.result?.slice(0, 3).split('').map((d, i) => (
+                      <span key={i} className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-xs text-gray-800 font-bold">
+                        {d}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* 能源类型标签 */}
-          <div className="flex space-x-1">
-            {energyTypes.slice(0, 10).map(t => (
+          <div className="flex space-x-1 mt-4">
+            {energyTypes.slice(0, 10).map((t, index) => (
               <div 
                 key={t.id} 
                 style={{ backgroundColor: t.color }}
-                className="w-8 h-8 rounded text-[10px] flex items-center justify-center font-bold text-white text-center leading-tight p-0.5"
+                className="px-2 py-1 rounded text-xs flex items-center gap-1 font-bold text-white"
               >
-                {t.name}
+                <span className="bg-black/20 px-1 rounded">{index}</span>
+                <span>{t.name}</span>
               </div>
             ))}
           </div>
@@ -456,19 +472,23 @@ export default function InvestPage() {
 
           {/* 能源类型选择 */}
           <div className="mb-6">
-            <h3 className="text-sm font-bold text-gray-700 mb-3">選擇能源類型</h3>
+            <h3 className="text-sm font-bold text-gray-700 mb-3">
+              選擇能源類型
+              <span className="text-gray-400 font-normal ml-2">（數字0-9對應）</span>
+            </h3>
             <div className="grid grid-cols-5 gap-2">
-              {energyTypes.map(t => (
+              {energyTypes.map((t, index) => (
                 <button
                   key={t.id}
                   onClick={() => !periodStatus?.isSealed && setSelectedEnergy(t.id)}
                   disabled={periodStatus?.isSealed}
                   style={{ backgroundColor: t.color }}
-                  className={`py-3 rounded text-white text-sm font-bold transition-opacity ${
+                  className={`py-3 rounded text-white text-sm font-bold transition-opacity flex items-center justify-center gap-1 ${
                     periodStatus?.isSealed ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'
                   } ${selectedEnergy === t.id ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
                 >
-                  {t.name}
+                  <span className="bg-black/20 px-1.5 rounded text-xs">{index}</span>
+                  <span>{t.name}</span>
                 </button>
               ))}
             </div>
