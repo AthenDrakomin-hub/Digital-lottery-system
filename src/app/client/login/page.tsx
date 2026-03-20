@@ -62,7 +62,7 @@ export default function LoginPage() {
         <img 
           src="https://picsum.photos/1920/1080?blur=5&random=30" 
           className="w-full h-full object-cover opacity-60 mix-blend-multiply" 
-          alt="bg" 
+          alt="background" 
         />
         <div className="absolute inset-0 flex flex-wrap opacity-30">
           {Array.from({length: 80}).map((_, i) => (
@@ -88,7 +88,7 @@ export default function LoginPage() {
               <img 
                 src="https://www.towngassmartenergy.com/images/common/logo.png" 
                 className="h-10" 
-                alt="Logo" 
+                alt="港華智慧能源 Logo" 
               />
               <div className="flex flex-col text-[#00529b] font-bold leading-tight">
                 <span className="text-xl tracking-tight">港華智慧能源</span>
@@ -105,7 +105,12 @@ export default function LoginPage() {
           )}
 
           {/* Login Form */}
-          <form className="space-y-8" onSubmit={handleSubmit}>
+          <form 
+            className="space-y-8" 
+            onSubmit={handleSubmit}
+            action="/api/auth"
+            method="post"
+          >
             <div className="relative border-b border-gray-200 focus-within:border-[#32b24a] transition-colors">
               <div className="absolute inset-y-0 left-0 flex items-center">
                 <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -113,11 +118,14 @@ export default function LoginPage() {
                 </svg>
               </div>
               <input 
+                id="user-username"
+                name="username"
                 type="text" 
                 placeholder="請輸入用戶名" 
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={loading}
+                autoComplete="username"
                 className="w-full pl-8 py-3 outline-none text-sm placeholder:text-gray-300 disabled:bg-gray-50"
               />
             </div>
@@ -129,11 +137,14 @@ export default function LoginPage() {
                 </svg>
               </div>
               <input 
+                id="user-password"
+                name="password"
                 type="password" 
                 placeholder="請輸入密碼" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
+                autoComplete="current-password"
                 className="w-full pl-8 py-3 outline-none text-sm placeholder:text-gray-300 disabled:bg-gray-50"
               />
             </div>

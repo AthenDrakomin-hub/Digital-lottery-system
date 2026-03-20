@@ -50,27 +50,37 @@ export default function AdminLoginPage() {
 
         {/* Login Form */}
         <div className="bg-gray-800 rounded-xl p-8 shadow-xl">
-          <form onSubmit={handleSubmit}>
+          <form 
+            onSubmit={handleSubmit} 
+            action="/api/admin/auth" 
+            method="post"
+          >
             <div className="mb-6">
-              <label className="block text-gray-300 mb-2">管理員賬號</label>
+              <label htmlFor="admin-username" className="block text-gray-300 mb-2">管理員賬號</label>
               <input
+                id="admin-username"
+                name="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
                 placeholder="請輸入管理員賬號"
+                autoComplete="username"
                 required
               />
             </div>
 
             <div className="mb-6">
-              <label className="block text-gray-300 mb-2">密碼</label>
+              <label htmlFor="admin-password" className="block text-gray-300 mb-2">密碼</label>
               <input
+                id="admin-password"
+                name="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
                 placeholder="請輸入密碼"
+                autoComplete="current-password"
                 required
               />
             </div>
