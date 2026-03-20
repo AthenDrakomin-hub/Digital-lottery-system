@@ -5,159 +5,315 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>数字开奖系统 - 管理后台</title>
     <link rel="stylesheet" href="/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
-        .server-time { font-family: monospace; color: #00ff88; margin-right: 20px; }
-        
-        /* 导航侧边栏 */
-        .sidebar { 
-            width: 200px; 
-            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); 
-            min-height: calc(100vh - 60px);
-            position: fixed;
-            left: 0;
-            top: 60px;
-            padding: 15px 0;
-            overflow-y: auto;
-        }
-        .nav-group { margin-bottom: 10px; }
-        .nav-group-title { 
-            color: #6c757d; 
-            font-size: 11px; 
-            font-weight: 600; 
-            padding: 10px 20px 5px; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .nav-item { 
+        /* 仪表盘特定样式 */
+        .sidebar-logo { 
             display: flex; 
             align-items: center; 
-            padding: 12px 20px; 
-            color: #adb5bd; 
-            cursor: pointer; 
-            transition: all 0.2s;
-            border-left: 3px solid transparent;
+            gap: 12px; 
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
         }
-        .nav-item:hover { 
-            background: rgba(255,255,255,0.05); 
-            color: #fff;
+        .sidebar-logo-icon { 
+            width: 44px; 
+            height: 44px; 
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 22px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
-        .nav-item.active { 
-            background: rgba(220, 53, 69, 0.1); 
-            color: #dc3545; 
-            border-left-color: #dc3545;
+        .sidebar-logo-text { 
+            color: white; 
+            font-size: 18px; 
+            font-weight: 700; 
+            letter-spacing: -0.5px;
         }
-        .nav-item i { margin-right: 10px; font-size: 16px; width: 20px; text-align: center; }
-        .nav-item span { font-size: 14px; }
-        
-        /* 主内容区 */
-        .main-content { 
-            margin-left: 200px; 
-            padding: 20px; 
-            min-height: calc(100vh - 60px);
+        .sidebar-logo-sub { 
+            color: #94a3b8; 
+            font-size: 11px; 
+            font-weight: 400;
         }
         
-        /* 兼容旧样式 */
-        .nav-tabs { display: none; }
-        
-        /* 统计卡片 */
-        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 18px; border-radius: 8px; }
-        .stat-card h4 { margin: 0 0 6px 0; opacity: 0.9; font-size: 12px; }
-        .stat-card .value { font-size: 22px; font-weight: bold; }
-        .stat-card:nth-child(2) { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
-        .stat-card:nth-child(3) { background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%); }
-        .stat-card:nth-child(4) { background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%); }
-        .stat-card:nth-child(5) { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); }
-        
-        /* 工具栏 */
-        .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
-        .toolbar input, .toolbar select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
-        
-        /* 表格 */
-        .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th, .data-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
-        .data-table th { background: #f8f9fa; font-weight: 600; color: #333; }
-        .data-table tr:hover { background: #f5f5f5; }
-        
-        /* 标签 */
-        .badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
-        .badge-success { background: #d4edda; color: #155724; }
-        .badge-danger { background: #f8d7da; color: #721c24; }
-        .badge-warning { background: #fff3cd; color: #856404; }
-        .badge-info { background: #d1ecf1; color: #0c5460; }
-        .badge-secondary { background: #e2e3e5; color: #383d41; }
-        
-        /* 分页 */
-        .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 15px; }
-        .pagination button { padding: 6px 12px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px; font-size: 13px; }
-        .pagination button:hover { background: #f0f0f0; }
-        .pagination button.active { background: #dc3545; color: white; border-color: #dc3545; }
-        
-        /* 操作按钮 */
-        .action-btns .btn { margin: 2px; padding: 4px 8px; font-size: 11px; }
-        
-        /* 模态框 */
-        .modal-content { max-width: 500px; }
-        .modal-content.wide { max-width: 650px; }
-        .form-row { display: flex; gap: 15px; }
-        .form-row .form-group { flex: 1; }
-        
-        /* 配置项 */
-        .config-section { margin-bottom: 20px; }
-        .config-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .config-item:last-child { border-bottom: none; }
-        .config-label { font-weight: 500; }
-        .config-desc { color: #888; font-size: 12px; }
-        .config-value { font-weight: 600; color: #667eea; }
-        
-        /* 状态指示 */
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .status-dot.online { background: #28a745; }
-        .status-dot.offline { background: #dc3545; }
-        
-        /* 开关样式 */
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 26px; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-        input:checked + .slider { background-color: #28a745; }
-        input:checked + .slider:before { transform: translateX(24px); }
-        input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
-        
-        /* 数字映射样式 */
-        .mapping-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-        .mapping-item { display: flex; align-items: center; gap: 8px; }
-        .mapping-num { 
-            width: 30px; height: 30px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            color: white; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; 
-            font-weight: bold; font-size: 14px;
-            flex-shrink: 0;
+        /* 统计卡片增强 */
+        .stat-card .trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--success);
         }
-        .mapping-input { flex: 1; padding: 6px 10px; font-size: 13px; }
+        .stat-card .trend.down {
+            color: var(--danger);
+        }
         
-        /* 分页按钮 */
-        .pagination button { margin: 0 2px; }
-        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .pagination button.btn-primary { background: #dc3545; border-color: #dc3545; color: white; }
+        /* 系统状态卡片 */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-main);
+            border-radius: var(--radius);
+        }
+        .status-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .status-icon.success {
+            background: var(--success-light);
+        }
+        .status-icon.info {
+            background: var(--info-light);
+        }
+        .status-icon.warning {
+            background: var(--warning-light);
+        }
+        .status-info h4 {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+        .status-info p {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        /* 最新开奖表格 */
+        .latest-draws {
+            margin-top: 16px;
+        }
+        .draw-result {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .draw-num {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+        }
+        .champion {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* 分隔线 */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+        }
+        
+        /* 数据统计区域 */
+        .data-stat-box {
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .data-stat-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+        .data-stat-box h4 {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        .data-stat-box .value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .data-stat-box .sub {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+        
+        /* 归档配置 */
+        .archive-config {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        @media (max-width: 768px) {
+            .archive-config {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* API调试面板增强 */
+        .api-panel {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 24px;
+        }
+        @media (max-width: 1024px) {
+            .api-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+        .api-list {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .api-category {
+            background: var(--bg-main);
+            padding: 10px 16px;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+        }
+        .api-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .api-item:hover {
+            background: var(--bg-hover);
+        }
+        .api-item:last-child {
+            border-bottom: none;
+        }
+        .api-item .method {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--info);
+            margin-bottom: 4px;
+        }
+        .api-item .path {
+            font-family: 'SF Mono', monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+        .api-item .desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        
+        /* 用户编辑模态框增强 */
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-block {
+            background: var(--bg-main);
+            padding: 16px;
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+        }
+        .section-block.account { border-left: 3px solid var(--primary); }
+        .section-block.basic { border-left: 3px solid var(--info); }
+        .section-block.security { border-left: 3px solid var(--warning); }
+        
+        /* 提示框 */
+        .alert {
+            padding: 16px;
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .alert-warning {
+            background: var(--warning-light);
+            color: #92400e;
+        }
+        .alert-info {
+            background: var(--info-light);
+            color: #1e40af;
+        }
+        .alert-success {
+            background: var(--success-light);
+            color: #065f46;
+        }
+        
+        /* 移动端菜单遮罩 */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 150;
+        }
+        .sidebar-overlay.active {
+            display: block;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- 移动端菜单遮罩 -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    
     <div class="container">
-        <!-- 头部 -->
-        <div class="header">
-            <h1>⚙️ 管理后台</h1>
-            <div class="header-right">
-                <span class="server-time" id="serverTime">--</span>
-                <span class="user-info" id="userInfo"></span>
-                <button class="btn btn-danger btn-sm" onclick="logout()">退出</button>
-            </div>
-        </div>
-
         <!-- 侧边栏 -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">🎲</div>
+                <div>
+                    <div class="sidebar-logo-text">开奖系统</div>
+                    <div class="sidebar-logo-sub">管理后台 v2.0</div>
+                </div>
+            </div>
+            
             <!-- 数据概览 -->
             <div class="nav-group">
                 <div class="nav-group-title">数据概览</div>
@@ -198,98 +354,132 @@
             </div>
         </div>
 
+        <!-- 头部 -->
+        <div class="header">
+            <div style="display:flex;align-items:center;gap:16px">
+                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                <h1>📊 数据概览</h1>
+            </div>
+            <div class="header-right">
+                <span class="server-time" id="serverTime">--</span>
+                <span class="user-info" id="userInfo"></span>
+                <button class="btn btn-danger btn-sm" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+
         <!-- 主内容 -->
         <div class="main-content">
-            <!-- 内容 -->
             <div class="content">
             <!-- 概览 -->
             <div id="overview" class="tab-content active">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h4>注册用户</h4>
+                        <h4>👥 注册用户</h4>
                         <div class="value" id="statUsers">-</div>
                     </div>
-                    <div class="stat-card" style="border-left:4px solid #28a745">
-                        <h4>在线用户</h4>
-                        <div class="value" id="statOnline" style="color:#28a745">-</div>
+                    <div class="stat-card">
+                        <h4>🟢 在线用户</h4>
+                        <div class="value" id="statOnline" style="color:var(--success)">-</div>
                     </div>
                     <div class="stat-card">
-                        <h4>今日投注</h4>
+                        <h4>🎫 今日投注</h4>
                         <div class="value" id="statBets">-</div>
                     </div>
                     <div class="stat-card">
-                        <h4>今日交易额</h4>
+                        <h4>💵 今日交易额</h4>
                         <div class="value" id="statAmount">-</div>
                     </div>
                     <div class="stat-card">
-                        <h4>待审核</h4>
+                        <h4>⏳ 待审核</h4>
                         <div class="value" id="statPending">-</div>
                     </div>
                     <div class="stat-card">
-                        <h4>系统余额</h4>
+                        <h4>💳 系统余额</h4>
                         <div class="value" id="statBalance">-</div>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3>系统状态</h3>
-                    <div class="config-item">
-                        <div><span class="config-label">服务状态</span></div>
-                        <div><span class="status-dot online"></span><span style="color:#28a745">运行中</span></div>
-                    </div>
-                    <div class="config-item">
-                        <div><span class="config-label">数据库</span></div>
-                        <div id="dbStatus"><span class="status-dot online"></span><span style="color:#28a745">已连接</span></div>
-                    </div>
-                    <div class="config-item">
-                        <div><span class="config-label">自动开奖</span></div>
-                        <div><span class="status-dot online"></span><span style="color:#28a745">每10秒检查</span></div>
-                    </div>
-                    <div class="config-item">
-                        <div><span class="config-label">开奖周期</span></div>
-                        <div>5分钟 / 10分钟 / 15分钟</div>
+                    <h3>🖥️ 系统状态</h3>
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <div class="status-icon success">✓</div>
+                            <div class="status-info">
+                                <h4>服务状态</h4>
+                                <p style="color:var(--success)">运行中</p>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-icon success">✓</div>
+                            <div class="status-info">
+                                <h4>数据库</h4>
+                                <p id="dbStatus" style="color:var(--success)">已连接</p>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-icon info">⚡</div>
+                            <div class="status-info">
+                                <h4>自动开奖</h4>
+                                <p>每10秒检查</p>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-icon warning">⏰</div>
+                            <div class="status-info">
+                                <h4>开奖周期</h4>
+                                <p>5分钟 / 10分钟 / 15分钟</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3>最新开奖</h3>
-                    <div id="latestDraws">加载中...</div>
+                    <h3>🎲 最新开奖</h3>
+                    <div class="latest-draws" id="latestDraws">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <div>加载中...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- 用户管理 -->
             <div id="users" class="tab-content">
                 <div class="card">
+                    <h3>👥 用户管理</h3>
                     <div class="toolbar">
-                        <input type="text" id="userSearch" placeholder="用户名/姓名/手机号" style="width:180px">
+                        <input type="text" id="userSearch" placeholder="搜索用户名/姓名/手机号..." style="width:200px">
                         <select id="userRole">
                             <option value="">全部角色</option>
                             <option value="admin">管理员</option>
-                            <option value="user">用户</option>
+                            <option value="user">普通用户</option>
                         </select>
                         <select id="userStatus">
                             <option value="">全部状态</option>
                             <option value="true">启用</option>
                             <option value="false">禁用</option>
                         </select>
-                        <button class="btn btn-primary btn-sm" onclick="loadUsers()">搜索</button>
+                        <button class="btn btn-primary btn-sm" onclick="loadUsers()">🔍 搜索</button>
                         <button class="btn btn-success btn-sm" onclick="showUserModal()">+ 新建用户</button>
                     </div>
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>在线</th>
+                                <th>状态</th>
                                 <th>用户名</th>
                                 <th>姓名</th>
                                 <th>手机号</th>
                                 <th>角色</th>
                                 <th>余额</th>
-                                <th>状态</th>
+                                <th>账户</th>
                                 <th>最后活动</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
-                        <tbody id="usersBody"></tbody>
+                        <tbody id="usersBody">
+                            <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted)">请点击搜索加载数据</td></tr>
+                        </tbody>
                     </table>
                     <div class="pagination" id="usersPage"></div>
                 </div>
@@ -298,6 +488,7 @@
             <!-- 开奖记录 -->
             <div id="draws" class="tab-content">
                 <div class="card">
+                    <h3>🎲 开奖记录</h3>
                     <div class="toolbar">
                         <input type="text" id="drawPeriodSearch" placeholder="期号搜索" style="width:120px">
                         <input type="date" id="drawDate">
@@ -312,7 +503,7 @@
                             <option value="drawn">已开奖</option>
                             <option value="pending">待开奖</option>
                         </select>
-                        <button class="btn btn-primary btn-sm" onclick="searchDraws()">查询</button>
+                        <button class="btn btn-primary btn-sm" onclick="searchDraws()">🔍 查询</button>
                         <button class="btn btn-secondary btn-sm" onclick="resetDrawSearch()">重置</button>
                     </div>
                     <table class="data-table">
@@ -329,7 +520,9 @@
                                 <th>操作</th>
                             </tr>
                         </thead>
-                        <tbody id="drawsBody"></tbody>
+                        <tbody id="drawsBody">
+                            <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted)">请点击查询加载数据</td></tr>
+                        </tbody>
                     </table>
                     <div class="pagination" id="drawsPage"></div>
                 </div>
@@ -338,8 +531,9 @@
             <!-- 投注记录 -->
             <div id="bets" class="tab-content">
                 <div class="card">
+                    <h3>🎫 投注记录</h3>
                     <div class="toolbar">
-                        <input type="text" id="betUserSearch" placeholder="用户名" style="width:100px">
+                        <input type="text" id="betUserSearch" placeholder="用户名" style="width:120px">
                         <input type="date" id="betDate">
                         <select id="betInterval">
                             <option value="">全部周期</option>
@@ -353,7 +547,7 @@
                             <option value="won">已中奖</option>
                             <option value="lost">未中奖</option>
                         </select>
-                        <button class="btn btn-primary btn-sm" onclick="searchBets()">查询</button>
+                        <button class="btn btn-primary btn-sm" onclick="searchBets()">🔍 查询</button>
                         <button class="btn btn-secondary btn-sm" onclick="resetBetsSearch()">重置</button>
                     </div>
                     <table class="data-table">
@@ -369,7 +563,9 @@
                                 <th>操作</th>
                             </tr>
                         </thead>
-                        <tbody id="betsBody"></tbody>
+                        <tbody id="betsBody">
+                            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">请点击查询加载数据</td></tr>
+                        </tbody>
                     </table>
                     <div class="pagination" id="betsPage"></div>
                 </div>
@@ -378,9 +574,9 @@
             <!-- 交易管理 -->
             <div id="transactions" class="tab-content">
                 <div class="card">
-                    <h3>交易记录</h3>
+                    <h3>💰 交易管理</h3>
                     <div class="toolbar">
-                        <input type="text" id="transUserSearch" placeholder="用户名" style="width:100px">
+                        <input type="text" id="transUserSearch" placeholder="用户名" style="width:120px">
                         <select id="transType">
                             <option value="">全部类型</option>
                             <option value="deposit">充值</option>
@@ -395,7 +591,7 @@
                             <option value="rejected">已拒绝</option>
                             <option value="cancelled">已取消</option>
                         </select>
-                        <button class="btn btn-primary btn-sm" onclick="searchTransactions()">查询</button>
+                        <button class="btn btn-primary btn-sm" onclick="searchTransactions()">🔍 查询</button>
                         <button class="btn btn-secondary btn-sm" onclick="resetTransSearch()">重置</button>
                     </div>
                     <table class="data-table">
@@ -410,7 +606,9 @@
                                 <th>操作</th>
                             </tr>
                         </thead>
-                        <tbody id="transBody"></tbody>
+                        <tbody id="transBody">
+                            <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">请点击查询加载数据</td></tr>
+                        </tbody>
                     </table>
                     <div class="pagination" id="transPage"></div>
                 </div>
@@ -932,93 +1130,95 @@
                 <h3 id="userModalTitle">新建用户</h3>
                 <button class="modal-close" onclick="closeModal('userModal')">&times;</button>
             </div>
-            
-            <!-- 账户信息 -->
-            <div style="background:#f8f9fa;padding:10px 15px;margin-bottom:15px;border-radius:4px">
-                <div style="font-weight:600;color:#333;margin-bottom:10px">🔐 账户信息</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>用户名 <span style="color:#dc3545">*</span></label>
-                        <input type="text" id="editUsername" class="form-control">
+            <div class="modal-body">
+                <!-- 账户信息 -->
+                <div class="section-block account">
+                    <div class="section-title">🔐 账户信息</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>用户名 <span style="color:var(--danger)">*</span></label>
+                            <input type="text" id="editUsername" class="form-control" placeholder="请输入用户名">
+                        </div>
+                        <div class="form-group">
+                            <label>密码 <span style="color:var(--text-muted);font-size:12px">(至少6位)</span></label>
+                            <input type="password" id="editPassword" class="form-control" placeholder="留空则不修改">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>角色</label>
+                            <select id="editRole" class="form-control" onchange="toggleIpWhitelistSection()">
+                                <option value="user">普通用户</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>余额 (元)</label>
+                            <input type="number" id="editBalance" class="form-control" step="0.01" min="0" placeholder="0.00">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>密码 <span style="color:#888;font-size:12px">(至少6位)</span></label>
-                        <input type="password" id="editPassword" class="form-control" placeholder="留空不修改">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>角色</label>
-                        <select id="editRole" class="form-control" onchange="toggleIpWhitelistSection()">
-                            <option value="user">普通用户</option>
-                            <option value="admin">管理员</option>
+                        <label>账户状态</label>
+                        <select id="editActive" class="form-control">
+                            <option value="true">启用</option>
+                            <option value="false">禁用</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>余额 (元)</label>
-                        <input type="number" id="editBalance" class="form-control" step="0.01" min="0">
+                </div>
+                
+                <!-- 基本信息 -->
+                <div class="section-block basic">
+                    <div class="section-title">👤 基本信息</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>真实姓名</label>
+                            <input type="text" id="editRealName" class="form-control" placeholder="用户真实姓名">
+                        </div>
+                        <div class="form-group">
+                            <label>手机号</label>
+                            <input type="text" id="editPhone" class="form-control" placeholder="11位手机号" maxlength="11">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>身份证号</label>
+                            <input type="text" id="editIdCard" class="form-control" placeholder="18位身份证号" maxlength="18">
+                        </div>
+                        <div class="form-group">
+                            <label>邮箱</label>
+                            <input type="email" id="editEmail" class="form-control" placeholder="user@example.com">
+                        </div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>状态</label>
-                    <select id="editActive" class="form-control">
-                        <option value="true">启用</option>
-                        <option value="false">禁用</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- 基本信息 -->
-            <div style="background:#e8f4f8;padding:10px 15px;margin-bottom:15px;border-radius:4px">
-                <div style="font-weight:600;color:#333;margin-bottom:10px">👤 基本信息</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>真实姓名</label>
-                        <input type="text" id="editRealName" class="form-control" placeholder="用户真实姓名">
-                    </div>
-                    <div class="form-group">
-                        <label>手机号</label>
-                        <input type="text" id="editPhone" class="form-control" placeholder="11位手机号">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>身份证号</label>
-                        <input type="text" id="editIdCard" class="form-control" placeholder="18位身份证号" maxlength="18">
-                    </div>
-                    <div class="form-group">
-                        <label>邮箱</label>
-                        <input type="email" id="editEmail" class="form-control" placeholder="user@example.com">
-                    </div>
-                </div>
-            </div>
-            
-            <!-- IP白名单配置（仅管理员可见） -->
-            <div id="ipWhitelistSection" style="display:none;background:#fff3cd;padding:15px;border-radius:8px;margin-bottom:15px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                    <label style="margin:0;font-weight:600">🔒 IP白名单访问控制</label>
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                        <input type="checkbox" id="editIpWhitelistEnabled" onchange="toggleIpWhitelistInput()">
-                        <span>启用IP白名单</span>
-                    </label>
-                </div>
-                <div id="ipWhitelistInputArea">
-                    <div style="font-size:12px;color:#666;margin-bottom:8px">
-                        每行一个IP地址，支持单IP或CIDR格式（如 192.168.1.0/24）
-                    </div>
-                    <textarea id="editIpWhitelist" class="form-control" rows="3" placeholder="192.168.1.100&#10;10.0.0.0/8&#10;172.16.0.1"></textarea>
-                    <div style="font-size:12px;color:#888;margin-top:5px">
-                        当前登录IP: <span id="currentClientIp" style="color:#667eea;font-weight:600">检测中...</span>
-                        <button type="button" class="btn btn-sm" style="font-size:11px;padding:2px 8px;margin-left:10px" onclick="addCurrentIpToWhitelist()">添加当前IP</button>
+                
+                <!-- IP白名单配置（仅管理员可见） -->
+                <div id="ipWhitelistSection" style="display:none">
+                    <div class="section-block security">
+                        <div class="section-title">🔒 IP白名单访问控制</div>
+                        <div class="form-group">
+                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                                <input type="checkbox" id="editIpWhitelistEnabled" onchange="toggleIpWhitelistInput()">
+                                <span>启用IP白名单限制</span>
+                            </label>
+                        </div>
+                        <div id="ipWhitelistInputArea">
+                            <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">
+                                每行一个IP地址，支持单IP或CIDR格式
+                            </div>
+                            <textarea id="editIpWhitelist" class="form-control" rows="3" placeholder="192.168.1.100&#10;10.0.0.0/8&#10;172.16.0.1"></textarea>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;display:flex;align-items:center;gap:10px">
+                                当前IP: <span id="currentClientIp" style="color:var(--primary);font-weight:600">检测中...</span>
+                                <button type="button" class="btn btn-sm btn-outline" onclick="addCurrentIpToWhitelist()">添加当前IP</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('userModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveUser()">保存</button>
+            </div>
             <input type="hidden" id="editUserId">
-            <div style="display:flex;gap:10px">
-                <button class="btn btn-secondary" onclick="closeModal('userModal')" style="flex:1">取消</button>
-                <button class="btn btn-primary" onclick="saveUser()" style="flex:2">保存</button>
-            </div>
         </div>
     </div>
 
@@ -1026,26 +1226,31 @@
     <div id="adjustModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>调整余额</h3>
+                <h3>💰 调整余额</h3>
                 <button class="modal-close" onclick="closeModal('adjustModal')">&times;</button>
             </div>
-            <div class="form-group">
-                <label>用户</label>
-                <input type="text" id="adjustUser" class="form-control" readonly>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>用户</label>
+                    <input type="text" id="adjustUser" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label>当前余额</label>
+                    <input type="text" id="adjustBalance" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label>调整金额</label>
+                    <input type="number" id="adjustAmount" class="form-control" step="0.01" placeholder="正数增加，负数减少">
+                </div>
+                <div class="form-group">
+                    <label>备注说明</label>
+                    <input type="text" id="adjustNote" class="form-control" placeholder="调整原因">
+                </div>
             </div>
-            <div class="form-group">
-                <label>当前余额</label>
-                <input type="text" id="adjustBalance" class="form-control" readonly>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('adjustModal')">取消</button>
+                <button class="btn btn-primary" onclick="submitAdjust()">确认调账</button>
             </div>
-            <div class="form-group">
-                <label>调整金额 (+增加/-减少)</label>
-                <input type="number" id="adjustAmount" class="form-control" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>备注</label>
-                <input type="text" id="adjustNote" class="form-control" placeholder="调整原因">
-            </div>
-            <button class="btn btn-primary" onclick="submitAdjust()" style="width:100%">确认调账</button>
         </div>
     </div>
 
@@ -1056,30 +1261,35 @@
                 <h3 id="paymentModalTitle">支付方式配置</h3>
                 <button class="modal-close" onclick="closeModal('paymentModal')">&times;</button>
             </div>
-            <div class="form-group">
-                <label>启用状态</label>
-                <select id="paymentEnabled" class="form-control">
-                    <option value="true">启用</option>
-                    <option value="false">禁用</option>
-                </select>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>启用状态</label>
+                    <select id="paymentEnabled" class="form-control">
+                        <option value="true">启用</option>
+                        <option value="false">禁用</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>收款账号/地址</label>
+                    <input type="text" id="paymentAccount" class="form-control" placeholder="收款账号或钱包地址">
+                </div>
+                <div class="form-group">
+                    <label>收款人/户名</label>
+                    <input type="text" id="paymentName" class="form-control" placeholder="收款人姓名">
+                </div>
+                <div class="form-group">
+                    <label>二维码图片URL</label>
+                    <input type="text" id="paymentQrcode" class="form-control" placeholder="收款二维码图片链接">
+                </div>
+                <div class="form-group">
+                    <label>备注说明</label>
+                    <textarea id="paymentNote" class="form-control" rows="2" placeholder="附加说明，如开户行等"></textarea>
+                </div>
             </div>
-            <div class="form-group">
-                <label>收款账号/地址</label>
-                <input type="text" id="paymentAccount" class="form-control" placeholder="收款账号或钱包地址">
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('paymentModal')">取消</button>
+                <button class="btn btn-primary" onclick="savePayment()">保存配置</button>
             </div>
-            <div class="form-group">
-                <label>收款人/户名</label>
-                <input type="text" id="paymentName" class="form-control" placeholder="收款人姓名">
-            </div>
-            <div class="form-group">
-                <label>二维码图片URL</label>
-                <input type="text" id="paymentQrcode" class="form-control" placeholder="收款二维码图片链接">
-            </div>
-            <div class="form-group">
-                <label>备注说明</label>
-                <textarea id="paymentNote" class="form-control" rows="2" placeholder="附加说明，如开户行等"></textarea>
-            </div>
-            <button class="btn btn-primary" onclick="savePayment()" style="width:100%">保存配置</button>
         </div>
     </div>
 
@@ -1087,16 +1297,18 @@
     <div id="rejectModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>拒绝交易</h3>
+                <h3>❌ 拒绝交易</h3>
                 <button class="modal-close" onclick="closeModal('rejectModal')">&times;</button>
             </div>
-            <div class="form-group">
-                <label>拒绝原因 <span style="color:#dc3545">*</span></label>
-                <textarea id="rejectReason" class="form-control" rows="3" placeholder="请输入拒绝原因，将通知用户"></textarea>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>拒绝原因 <span style="color:var(--danger)">*</span></label>
+                    <textarea id="rejectReason" class="form-control" rows="3" placeholder="请输入拒绝原因，将通知用户"></textarea>
+                </div>
             </div>
-            <div style="display:flex;gap:10px">
-                <button class="btn btn-secondary" onclick="closeModal('rejectModal')" style="flex:1">取消</button>
-                <button class="btn btn-danger" onclick="confirmReject()" style="flex:1">确认拒绝</button>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('rejectModal')">取消</button>
+                <button class="btn btn-danger" onclick="confirmReject()">确认拒绝</button>
             </div>
         </div>
     </div>
@@ -1105,28 +1317,30 @@
     <div id="betConfigModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>编辑玩法配置</h3>
+                <h3>🎮 编辑玩法配置</h3>
                 <button class="modal-close" onclick="closeModal('betConfigModal')">&times;</button>
             </div>
-            <div class="form-group">
-                <label>每注投注金额（元）</label>
-                <input type="number" id="editBetPrice" class="form-control" min="1" step="0.5">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>每注投注金额（元）</label>
+                    <input type="number" id="editBetPrice" class="form-control" min="1" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label>中奖金额（元）</label>
+                    <input type="number" id="editBetWin" class="form-control" min="1" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>最大投注数字数</label>
+                    <input type="number" id="editBetMax" class="form-control" min="1" max="10">
+                </div>
+                <div class="form-group">
+                    <label>最小投注数字数</label>
+                    <input type="number" id="editBetMin" class="form-control" min="1" max="10">
+                </div>
             </div>
-            <div class="form-group">
-                <label>中奖金额（元）</label>
-                <input type="number" id="editBetWin" class="form-control" min="1" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>最大投注数字数</label>
-                <input type="number" id="editBetMax" class="form-control" min="1" max="10">
-            </div>
-            <div class="form-group">
-                <label>最小投注数字数</label>
-                <input type="number" id="editBetMin" class="form-control" min="1" max="10">
-            </div>
-            <div style="display:flex;gap:10px">
-                <button class="btn btn-secondary" onclick="closeModal('betConfigModal')" style="flex:1">取消</button>
-                <button class="btn btn-primary" onclick="saveBetConfig()" style="flex:1">保存</button>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('betConfigModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveBetConfig()">保存</button>
             </div>
         </div>
     </div>
@@ -1135,43 +1349,45 @@
     <div id="withdrawConfigModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>编辑提现配置</h3>
+                <h3>💳 编辑提现配置</h3>
                 <button class="modal-close" onclick="closeModal('withdrawConfigModal')">&times;</button>
             </div>
-            <div class="form-group">
-                <label>最小提现金额（元）</label>
-                <input type="number" id="editWithdrawMin" class="form-control" min="1">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>最小提现金额（元）</label>
+                    <input type="number" id="editWithdrawMin" class="form-control" min="1">
+                </div>
+                <div class="form-group">
+                    <label>最大提现金额（元）</label>
+                    <input type="number" id="editWithdrawMax" class="form-control" min="100">
+                </div>
+                <div class="form-group">
+                    <label>提现手续费率（%）</label>
+                    <input type="number" id="editWithdrawFee" class="form-control" min="0" max="100" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>提现到账时间</label>
+                    <input type="text" id="editWithdrawTime" class="form-control" placeholder="如：1-24小时">
+                </div>
             </div>
-            <div class="form-group">
-                <label>最大提现金额（元）</label>
-                <input type="number" id="editWithdrawMax" class="form-control" min="100">
-            </div>
-            <div class="form-group">
-                <label>提现手续费率（%）</label>
-                <input type="number" id="editWithdrawFee" class="form-control" min="0" max="100" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>提现到账时间</label>
-                <input type="text" id="editWithdrawTime" class="form-control" placeholder="如：1-24小时">
-            </div>
-            <div style="display:flex;gap:10px">
-                <button class="btn btn-secondary" onclick="closeModal('withdrawConfigModal')" style="flex:1">取消</button>
-                <button class="btn btn-primary" onclick="saveWithdrawConfig()" style="flex:1">保存</button>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('withdrawConfigModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveWithdrawConfig()">保存</button>
             </div>
         </div>
     </div>
 
     <!-- 支付配置编辑模态框 -->
     <div id="paymentConfigModal" class="modal">
-        <div class="modal-content" style="max-width:500px">
+        <div class="modal-content">
             <div class="modal-header">
                 <h3 id="paymentConfigTitle">编辑支付配置</h3>
                 <button class="modal-close" onclick="closeModal('paymentConfigModal')">&times;</button>
             </div>
-            <div id="paymentConfigForm"></div>
-            <div style="display:flex;gap:10px;margin-top:15px">
-                <button class="btn btn-secondary" onclick="closeModal('paymentConfigModal')" style="flex:1">取消</button>
-                <button class="btn btn-primary" onclick="savePaymentConfig()" style="flex:1">保存</button>
+            <div class="modal-body" id="paymentConfigForm"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('paymentConfigModal')">取消</button>
+                <button class="btn btn-primary" onclick="savePaymentConfig()">保存</button>
             </div>
         </div>
     </div>
@@ -1179,6 +1395,24 @@
     <script>
         let token = localStorage.getItem('token');
         if (!token) location.href = 'login.html';
+
+        // Tab名称映射
+        const tabNames = {
+            'overview': '📊 数据概览',
+            'users': '👥 用户管理',
+            'draws': '🎲 开奖记录',
+            'bets': '🎫 投注记录',
+            'transactions': '💰 交易管理',
+            'config': '⚙️ 系统配置'
+        };
+
+        // 移动端菜单切换
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
 
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
@@ -1194,8 +1428,18 @@
                     document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
                     document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
                     item.classList.add('active');
-                    document.getElementById(item.dataset.tab).classList.add('active');
-                    loadTab(item.dataset.tab);
+                    const tabId = item.dataset.tab;
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // 更新头部标题
+                    document.querySelector('.header h1').textContent = tabNames[tabId] || '管理后台';
+                    
+                    // 移动端关闭侧边栏
+                    if (window.innerWidth <= 768) {
+                        toggleSidebar();
+                    }
+                    
+                    loadTab(tabId);
                 });
             });
             
