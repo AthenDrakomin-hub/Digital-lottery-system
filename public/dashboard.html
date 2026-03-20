@@ -77,6 +77,19 @@
         input:checked + .slider { background-color: #28a745; }
         input:checked + .slider:before { transform: translateX(24px); }
         input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
+        
+        /* 数字映射样式 */
+        .mapping-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .mapping-item { display: flex; align-items: center; gap: 8px; }
+        .mapping-num { 
+            width: 30px; height: 30px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-weight: bold; font-size: 14px;
+            flex-shrink: 0;
+        }
+        .mapping-input { flex: 1; padding: 6px 10px; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -337,6 +350,63 @@
                                 <span class="slider"></span>
                             </label>
                         </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>数字映射配置</h3>
+                    <p style="color:#666;font-size:12px;margin-bottom:15px">设置开奖数字0-9的显示映射，例如：0=大、1=小。留空则显示原始数字。</p>
+                    <div class="mapping-grid">
+                        <div class="mapping-item">
+                            <span class="mapping-num">0</span>
+                            <input type="text" id="map0" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
+                        </div>
+                        <div class="mapping-item">
+                            <span class="mapping-num">1</span>
+                            <input type="text" id="map1" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
+                        </div>
+                        <div class="mapping-item">
+                            <span class="mapping-num">2</span>
+                            <input type="text" id="map2" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
+                        </div>
+                        <div class="mapping-item">
+                            <span class="mapping-num">3</span>
+                            <input type="text" id="map3" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
+                        </div>
+                        <div class="mapping-item">
+                            <span class="mapping-num">4</span>
+                            <input type="text" id="map4" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
+                        </div>
+                        <div class="mapping-item">
+                            <span class="mapping-num">5</span>
+                            <input type="text" id="map5" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
+                        </div>
+                        <div class="mapping-item">
+                            <span class="mapping-num">6</span>
+                            <input type="text" id="map6" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
+                        </div>
+                        <div class="mapping-item">
+                            <span class="mapping-num">7</span>
+                            <input type="text" id="map7" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
+                        </div>
+                        <div class="mapping-item">
+                            <span class="mapping-num">8</span>
+                            <input type="text" id="map8" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
+                        </div>
+                        <div class="mapping-item">
+                            <span class="mapping-num">9</span>
+                            <input type="text" id="map9" class="form-control mapping-input" placeholder="显示值" oninput="updateMappingPreview()">
+                        </div>
+                    </div>
+                    <div style="margin-top:15px;display:flex;gap:10px">
+                        <button class="btn btn-primary btn-sm" onclick="saveNumberMapping()">保存映射</button>
+                        <button class="btn btn-secondary btn-sm" onclick="resetNumberMapping()">重置默认</button>
+                        <button class="btn btn-warning btn-sm" onclick="setPresetMapping('bigSmall')">预设：大小</button>
+                        <button class="btn btn-info btn-sm" onclick="setPresetMapping('oddEven')">预设：单双</button>
+                    </div>
+                    <div style="margin-top:15px;padding:10px;background:#f8f9fa;border-radius:4px">
+                        <div style="font-size:12px;color:#666;margin-bottom:5px">映射预览：</div>
+                        <div id="mappingPreview" style="font-family:monospace;font-size:14px"></div>
                     </div>
                 </div>
 
@@ -610,7 +680,7 @@
                 case 'draws': loadDraws(); break;
                 case 'bets': loadBets(); break;
                 case 'transactions': loadTransactions(); break;
-                case 'config': loadAdmins(); break;
+                case 'config': loadAdmins(); loadNumberMapping(); break;
             }
         }
 
@@ -1175,6 +1245,75 @@
             // TODO: 调用API保存配置
             // 这里暂时只做前端提示
             alert(`${interval}分钟周期已${action}`);
+        }
+
+        // 数字映射配置
+        const NUMBER_MAPPING_KEY = 'numberMapping';
+        
+        function loadNumberMapping() {
+            const saved = localStorage.getItem(NUMBER_MAPPING_KEY);
+            if (saved) {
+                try {
+                    const mapping = JSON.parse(saved);
+                    for (let i = 0; i <= 9; i++) {
+                        document.getElementById('map' + i).value = mapping[i] || '';
+                    }
+                } catch (e) {}
+            }
+            updateMappingPreview();
+        }
+
+        function saveNumberMapping() {
+            const mapping = {};
+            for (let i = 0; i <= 9; i++) {
+                mapping[i] = document.getElementById('map' + i).value.trim();
+            }
+            localStorage.setItem(NUMBER_MAPPING_KEY, JSON.stringify(mapping));
+            updateMappingPreview();
+            alert('数字映射已保存');
+        }
+
+        function resetNumberMapping() {
+            if (!confirm('确定要重置为默认吗？所有映射将被清空。')) return;
+            for (let i = 0; i <= 9; i++) {
+                document.getElementById('map' + i).value = '';
+            }
+            localStorage.removeItem(NUMBER_MAPPING_KEY);
+            updateMappingPreview();
+        }
+
+        function setPresetMapping(type) {
+            const presets = {
+                bigSmall: { 0: '大', 1: '小', 2: '大', 3: '小', 4: '大', 5: '小', 6: '大', 7: '小', 8: '大', 9: '小' },
+                oddEven: { 0: '双', 1: '单', 2: '双', 3: '单', 4: '双', 5: '单', 6: '双', 7: '单', 8: '双', 9: '单' }
+            };
+            const preset = presets[type];
+            if (!preset) return;
+            
+            for (let i = 0; i <= 9; i++) {
+                document.getElementById('map' + i).value = preset[i] || '';
+            }
+            updateMappingPreview();
+        }
+
+        function updateMappingPreview() {
+            let preview = [];
+            for (let i = 0; i <= 9; i++) {
+                const val = document.getElementById('map' + i).value.trim();
+                preview.push(`${i} → ${val || i}`);
+            }
+            document.getElementById('mappingPreview').textContent = preview.join('  |  ');
+        }
+
+        function getMappedNumber(num) {
+            const saved = localStorage.getItem(NUMBER_MAPPING_KEY);
+            if (saved) {
+                try {
+                    const mapping = JSON.parse(saved);
+                    return mapping[num] || num;
+                } catch (e) {}
+            }
+            return num;
         }
 
         async function archiveData() {
