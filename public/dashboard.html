@@ -1603,126 +1603,102 @@
         }
 
         async function loadOverview() {
+            const date = new Date().toISOString().split('T')[0];
+            
             try {
-                const res = await fetch('/api/admin?action=stats', { headers: { 'Authorization': `Bearer ${token}` } });
+                // 获取统计数据
+                const res = await fetch('/api/admin?action=stats&date=' + date, { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
+                
                 if (res.ok) {
-                    // 统计数据
                     document.getElementById('statUsers').textContent = data.users?.total || 0;
                     document.getElementById('statOnline').textContent = data.users?.online || 0;
                     document.getElementById('statBets').textContent = data.bets?.total || 0;
-                    // 今日交易额 = 充值+提现
                     const transAmount = (data.transactions?.depositAmount || 0) + (data.transactions?.withdrawAmount || 0);
                     document.getElementById('statAmount').textContent = `¥${transAmount.toLocaleString()}`;
                     document.getElementById('statPending').textContent = data.transactions?.pending || 0;
                     document.getElementById('statBalance').textContent = `¥${(data.users?.totalBalance || 0).toLocaleString()}`;
-                    
-                    // 从 intervalStats 获取各周期的投注数据
-                    const betStatsByInterval = {};
-                    if (data.intervalStats) {
-                        data.intervalStats.forEach(s => {
-                            betStatsByInterval[s.interval] = { count: s.bets, amount: s.amount };
-                        });
-                    }
                 }
                 
-                // 最新开奖 - 显示每个周期最近5期
-                const date = new Date().toISOString().split('T')[0];
+                // 获取开奖数据
+                const [d5, d10, d15] = await Promise.all([
+                    fetch(`/api/system?type=draws&action=daily&date=${date}&interval=5`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+                    fetch(`/api/system?type=draws&action=daily&date=${date}&interval=10`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+                    fetch(`/api/system?type=draws&action=daily&date=${date}&interval=15`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
+                ]);
                 
-                try {
-                    // 获取今日统计数据（含各周期投注统计）
-                    const statsRes = await fetch(`/api/admin?action=stats&date=${date}`, { headers: { 'Authorization': `Bearer ${token}` } });
-                    const statsData = await statsRes.json();
-                    const betStatsByInterval = {};
-                    if (statsData.intervalStats) {
-                        statsData.intervalStats.forEach(s => {
-                            betStatsByInterval[s.interval] = { count: s.bets, amount: s.amount };
-                        });
-                    }
+                const intervals = [
+                    { label: '5分钟期', interval: 5, data: d5, color: '#6366f1' },
+                    { label: '10分钟期', interval: 10, data: d10, color: '#0ea5e9' },
+                    { label: '15分钟期', interval: 15, data: d15, color: '#f59e0b' }
+                ];
+                
+                let cardsHtml = '';
+                
+                for (const item of intervals) {
+                    const draws = item.data.draws || [];
+                    const totalPeriods = Math.floor(24 * 60 / item.interval);
                     
-                    const [d5, d10, d15] = await Promise.all([
-                        fetch(`/api/system?type=draws&action=daily&date=${date}&interval=5`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
-                        fetch(`/api/system?type=draws&action=daily&date=${date}&interval=10`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
-                        fetch(`/api/system?type=draws&action=daily&date=${date}&interval=15`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
-                    ]);
+                    // 找出已开奖的数量（有结果的）
+                    const settledDraws = draws.filter(d => d.result);
+                    const drawnCount = settledDraws.length;
                     
-                    const intervals = [
-                        { label: '5分钟期', interval: 5, data: d5, betStats: betStatsByInterval[5] || {}, color: '#6366f1' },
-                        { label: '10分钟期', interval: 10, data: d10, betStats: betStatsByInterval[10] || {}, color: '#0ea5e9' },
-                        { label: '15分钟期', interval: 15, data: d15, betStats: betStatsByInterval[15] || {}, color: '#f59e0b' }
-                    ];
+                    // 获取最近5期已开奖的结果
+                    const recentDraws = settledDraws.slice(-5).reverse();
                     
-                    let cardsHtml = '';
-                    
-                    for (const item of intervals) {
-                        const draws = item.data.draws || [];
-                        const now = new Date();
-                        const currentMinutes = now.getHours() * 60 + now.getMinutes();
-                        const totalPeriods = Math.floor(24 * 60 / item.interval);
-                        
-                        // 找出已开奖的数量
-                        const drawnCount = draws.filter(d => d.result).length;
-                        
-                        // 获取最近5期已开奖的结果
-                        const recentDraws = draws.filter(d => d.result).slice(-5).reverse();
-                        
-                        cardsHtml += `
-                            <div class="draw-cycle-card">
-                                <div class="cycle-header">
-                                    <div class="cycle-title">
-                                        🎯 ${item.label}
-                                        <span class="cycle-badge interval-${item.interval}">${item.interval}min</span>
-                                    </div>
-                                    <div style="font-size:12px;color:var(--text-secondary)">
-                                        已开 <strong style="color:${item.color}">${drawnCount}</strong>/${totalPeriods} 期
-                                    </div>
+                    cardsHtml += `
+                        <div class="draw-cycle-card">
+                            <div class="cycle-header">
+                                <div class="cycle-title">
+                                    🎯 ${item.label}
+                                    <span class="cycle-badge interval-${item.interval}">${item.interval}min</span>
                                 </div>
-                                <div class="draw-items">`;
-                        
-                        if (recentDraws.length > 0) {
-                            for (const draw of recentDraws) {
-                                const periodNum = draw.period + 1;
-                                const periodId = `${date.replace(/-/g, '')}${String(periodNum).padStart(3, '0')}`;
-                                const result = draw.result || [];
-                                const champion = result[0];
-                                const time = formatPeriodTime(draw.period, item.interval);
-                                
-                                cardsHtml += `
-                                    <div class="draw-item">
-                                        <div>
-                                            <div class="draw-period">${periodId}</div>
-                                            <div style="font-size:11px;color:var(--text-muted)">${time}</div>
-                                        </div>
-                                        <div class="draw-numbers">
-                                            ${result.map((n, i) => `<span class="draw-num${i === 0 ? ' champion' : ''}">${n}</span>`).join('')}
-                                        </div>
-                                    </div>`;
-                            }
-                        } else {
-                            cardsHtml += `<div style="text-align:center;padding:20px;color:var(--text-muted)">暂无开奖数据</div>`;
+                                <div style="font-size:12px;color:var(--text-secondary)">
+                                    已开 <strong style="color:${item.color}">${drawnCount}</strong>/${totalPeriods} 期
+                                </div>
+                            </div>
+                            <div class="draw-items">`;
+                    
+                    if (recentDraws.length > 0) {
+                        for (const draw of recentDraws) {
+                            const periodNum = draw.period + 1;
+                            const periodId = `${date.replace(/-/g, '')}${String(periodNum).padStart(3, '0')}`;
+                            const result = draw.result || '';
+                            const time = formatPeriodTime(draw.period, item.interval);
+                            
+                            cardsHtml += `
+                                <div class="draw-item">
+                                    <div>
+                                        <div class="draw-period">${periodId}</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">${time}</div>
+                                    </div>
+                                    <div class="draw-numbers">
+                                        ${result.split('').map((n, i) => `<span class="draw-num${i === 0 ? ' champion' : ''}">${n}</span>`).join('')}
+                                    </div>
+                                </div>`;
                         }
-                        
-                        cardsHtml += `
-                                </div>
-                                <div class="cycle-stats">
-                                    <span>📊 投注: ${item.betStats?.count || 0} 笔</span>
-                                    <span>💰 金额: ¥${(item.betStats?.amount || 0).toLocaleString()}</span>
-                                </div>
-                            </div>`;
-                        
-                        // 更新趋势数据
-                        document.getElementById(`trend${item.interval}Total`).textContent = drawnCount;
-                        document.getElementById(`trend${item.interval}Bets`).textContent = item.betStats?.count || 0;
+                    } else {
+                        cardsHtml += `<div style="text-align:center;padding:20px;color:var(--text-muted)">暂无开奖数据</div>`;
                     }
                     
-                    document.getElementById('latestDraws').innerHTML = cardsHtml;
+                    cardsHtml += `
+                            </div>
+                            <div class="cycle-stats">
+                                <span>📊 投注: 0 笔</span>
+                                <span>💰 金额: ¥0</span>
+                            </div>
+                        </div>`;
                     
-                } catch (e) {
-                    console.error('获取开奖数据失败:', e);
-                    document.getElementById('latestDraws').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">加载失败，请刷新重试</div>';
+                    // 更新趋势数据
+                    document.getElementById(`trend${item.interval}Total`).textContent = drawnCount;
+                    document.getElementById(`trend${item.interval}Bets`).textContent = 0;
                 }
+                
+                document.getElementById('latestDraws').innerHTML = cardsHtml;
+                
             } catch (e) {
-                console.error(e);
+                console.error('加载失败:', e);
+                document.getElementById('latestDraws').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">加载失败: ' + e.message + '</div>';
             }
         }
 
