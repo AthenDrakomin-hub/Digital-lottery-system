@@ -114,6 +114,7 @@
                             <option value="false">已禁用</option>
                         </select>
                         <button class="btn btn-primary" onclick="loadUsers()">搜索</button>
+                        <button class="btn btn-success" onclick="showCreateUserModal()">新建用户</button>
                     </div>
                 </div>
 
@@ -272,6 +273,36 @@
                 <input type="password" id="confirmNewPassword" class="form-control" placeholder="再次输入新密码">
             </div>
             <button class="btn btn-primary" onclick="submitChangePassword()" style="width: 100%">确认修改</button>
+        </div>
+    </div>
+
+    <!-- 新建用户模态框 -->
+    <div id="createUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>新建用户</h3>
+                <button class="modal-close" onclick="closeModal('createUserModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="newUsername" class="form-control" placeholder="3-50个字符">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="newUserPassword" class="form-control" placeholder="至少6个字符">
+            </div>
+            <div class="form-group">
+                <label>角色</label>
+                <select id="newUserRole" class="form-control">
+                    <option value="user">普通用户</option>
+                    <option value="admin">管理员</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>初始余额</label>
+                <input type="number" id="newUserBalance" class="form-control" placeholder="0" value="0" min="0" step="0.01">
+            </div>
+            <button class="btn btn-primary" onclick="submitCreateUser()" style="width: 100%">创建用户</button>
         </div>
     </div>
 
@@ -721,6 +752,62 @@
                 }
             } catch (error) {
                 console.error('处理交易错误:', error);
+                showMessage('网络错误', 'error');
+            }
+        }
+
+        // 显示新建用户模态框
+        function showCreateUserModal() {
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newUserPassword').value = '';
+            document.getElementById('newUserRole').value = 'user';
+            document.getElementById('newUserBalance').value = '0';
+            document.getElementById('createUserModal').classList.add('active');
+        }
+
+        // 提交新建用户
+        async function submitCreateUser() {
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newUserPassword').value;
+            const role = document.getElementById('newUserRole').value;
+            const balance = parseFloat(document.getElementById('newUserBalance').value) || 0;
+
+            if (!username || !password) {
+                showMessage('请填写用户名和密码', 'error');
+                return;
+            }
+
+            if (username.length < 3 || username.length > 50) {
+                showMessage('用户名长度应在3-50个字符之间', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('密码长度至少6个字符', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/users?action=create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ username, password, role, balance })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage('用户创建成功', 'success');
+                    closeModal('createUserModal');
+                    loadUsers();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                console.error('创建用户错误:', error);
                 showMessage('网络错误', 'error');
             }
         }
