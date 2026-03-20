@@ -1351,7 +1351,7 @@
         let drawsPageState = {
             data: [],
             page: 1,
-            pageSize: 50,
+            pageSize: 20,
             total: 0
         };
 
@@ -1504,7 +1504,7 @@
             
             // 每页条数选择
             html += `<select class="btn btn-sm" style="margin-left:10px" onchange="changeDrawsPageSize(this.value)">
-                <option value="30" ${pageSize === 30 ? 'selected' : ''}>30条/页</option>
+                <option value="20" ${pageSize === 20 ? 'selected' : ''}>20条/页</option>
                 <option value="50" ${pageSize === 50 ? 'selected' : ''}>50条/页</option>
                 <option value="100" ${pageSize === 100 ? 'selected' : ''}>100条/页</option>
             </select>`;
