@@ -488,25 +488,55 @@
                 const res = await fetch('/api/admin?action=stats', { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
                 if (res.ok) {
-                    document.getElementById('statUsers').textContent = data.stats?.totalUsers || 0;
-                    document.getElementById('statBets').textContent = data.stats?.totalBets || 0;
-                    document.getElementById('statAmount').textContent = `¥${(data.stats?.totalAmount || 0).toFixed(2)}`;
-                    document.getElementById('statBalance').textContent = `¥${(data.stats?.totalBalance || 0).toFixed(2)}`;
+                    // 修复：匹配API返回的嵌套数据结构
+                    document.getElementById('statUsers').textContent = data.users?.total || 0;
+                    document.getElementById('statBets').textContent = data.bets?.total || 0;
+                    document.getElementById('statAmount').textContent = `¥${(data.bets?.amount || 0).toFixed(2)}`;
+                    document.getElementById('statPending').textContent = data.transactions?.pending || 0;
+                    document.getElementById('statBalance').textContent = `¥${(data.users?.totalBalance || 0).toFixed(2)}`;
                 }
                 
-                const pending = await fetch('/api/transactions?status=pending', { headers: { 'Authorization': `Bearer ${token}` } });
-                const pendingData = await pending.json();
-                document.getElementById('statPending').textContent = pendingData.pagination?.total || 0;
-                
-                // 最新开奖
+                // 最新开奖 - 获取三个周期的数据
                 const date = new Date().toISOString().split('T')[0];
-                const draws5 = await fetch(`/api/system?type=draws&date=${date}&interval=5&limit=5`, { headers: { 'Authorization': `Bearer ${token}` } });
-                const d5 = await draws5.json();
-                let html = '<table class="data-table"><tr><th>周期</th><th>最新期号</th><th>结果</th><th>冠军</th></tr>';
-                if (d5.draws && d5.draws.length > 0) {
-                    const last = d5.draws[d5.draws.length - 1];
-                    html += `<tr><td>5分钟</td><td>第${last.period + 1}期</td><td style="font-family:monospace">${last.result || '-'}</td><td>${last.result ? last.result[0] : '-'}</td></tr>`;
+                let html = '<table class="data-table"><tr><th>周期</th><th>最新期号</th><th>结果</th><th>冠军</th><th>状态</th></tr>';
+                
+                try {
+                    const [d5, d10, d15] = await Promise.all([
+                        fetch(`/api/system?type=draws&date=${date}&interval=5&limit=1`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+                        fetch(`/api/system?type=draws&date=${date}&interval=10&limit=1`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+                        fetch(`/api/system?type=draws&date=${date}&interval=15&limit=1`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
+                    ]);
+                    
+                    const intervals = [
+                        { label: '5分钟', data: d5 },
+                        { label: '10分钟', data: d10 },
+                        { label: '15分钟', data: d15 }
+                    ];
+                    
+                    for (const item of intervals) {
+                        if (item.data.draws && item.data.draws.length > 0) {
+                            // 找最新已开奖的记录
+                            const settled = item.data.draws.find(d => d.status === 'settled') || item.data.draws[item.data.draws.length - 1];
+                            const statusBadge = settled.status === 'settled' ? 
+                                '<span class="badge badge-success">已开奖</span>' : 
+                                settled.status === 'drawn' ? 
+                                '<span class="badge badge-warning">待结算</span>' : 
+                                '<span class="badge badge-secondary">待开奖</span>';
+                            html += `<tr>
+                                <td>${item.label}</td>
+                                <td>第${settled.period + 1}期</td>
+                                <td style="font-family:monospace;font-size:16px">${settled.result || '-'}</td>
+                                <td style="font-size:18px;font-weight:bold;color:#dc3545">${settled.result ? settled.result[0] : '-'}</td>
+                                <td>${statusBadge}</td>
+                            </tr>`;
+                        } else {
+                            html += `<tr><td>${item.label}</td><td colspan="4">暂无数据</td></tr>`;
+                        }
+                    }
+                } catch (e) {
+                    html += '<tr><td colspan="5">加载失败</td></tr>';
                 }
+                
                 html += '</table>';
                 document.getElementById('latestDraws').innerHTML = html;
             } catch (e) {
