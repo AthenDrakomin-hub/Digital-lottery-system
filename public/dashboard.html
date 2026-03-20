@@ -296,7 +296,7 @@
                             <option value="rejected">已拒绝</option>
                             <option value="cancelled">已取消</option>
                         </select>
-                        <button class="btn btn-primary btn-sm" onclick="loadTransactions()">查询</button>
+                        <button class="btn btn-primary btn-sm" onclick="searchTransactions()">查询</button>
                     </div>
                     <table class="data-table">
                         <thead>
@@ -1240,17 +1240,35 @@
         }
 
         // 交易管理
+        // 交易管理分页状态
+        let transPageState = {
+            page: 1,
+            pageSize: 20,
+            total: 0
+        };
+
+        function searchTransactions() {
+            transPageState.page = 1;  // 搜索时重置到第一页
+            loadTransactions();
+        }
+
         async function loadTransactions() {
             const params = new URLSearchParams();
             const type = document.getElementById('transType').value;
             const status = document.getElementById('transStatus').value;
-            params.append('limit', '50');
+            
+            params.append('page', transPageState.page);
+            params.append('limit', transPageState.pageSize);
             if (type) params.append('type', type);
             if (status) params.append('status', status);
 
             try {
                 const res = await fetch(`/api/transactions?${params}`, { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
+                
+                // 更新分页状态
+                transPageState.total = data.pagination?.total || 0;
+                
                 const tbody = document.getElementById('transBody');
                 const typeMap = { deposit: '充值', withdraw: '提现', adjust: '调账' };
                 const statusMap = {
@@ -1279,10 +1297,65 @@
                     </tr>
                 `).join('') || '<tr><td colspan="7">暂无数据</td></tr>';
                 
-                document.getElementById('transPage').innerHTML = `共 ${data.pagination?.total || 0} 条`;
+                // 渲染分页
+                renderTransPagination();
             } catch (e) {
                 document.getElementById('transBody').innerHTML = '<tr><td colspan="7">加载失败</td></tr>';
             }
+        }
+
+        function renderTransPagination() {
+            const { page, pageSize, total } = transPageState;
+            const totalPages = Math.ceil(total / pageSize);
+            const container = document.getElementById('transPage');
+            
+            if (total === 0) {
+                container.innerHTML = '暂无数据';
+                return;
+            }
+            
+            if (totalPages <= 1) {
+                container.innerHTML = `共 ${total} 条`;
+                return;
+            }
+            
+            let html = `<span style="margin-right:15px">共 ${total} 条，第 ${page}/${totalPages} 页</span>`;
+            
+            html += `<button class="btn btn-sm" ${page === 1 ? 'disabled' : ''} onclick="goTransPage(1)">首页</button>`;
+            html += `<button class="btn btn-sm" ${page === 1 ? 'disabled' : ''} onclick="goTransPage(${page - 1})">上一页</button>`;
+            
+            const maxVisible = 5;
+            let start = Math.max(1, page - Math.floor(maxVisible / 2));
+            let end = Math.min(totalPages, start + maxVisible - 1);
+            start = Math.max(1, end - maxVisible + 1);
+            
+            for (let i = start; i <= end; i++) {
+                html += `<button class="btn btn-sm ${i === page ? 'btn-primary' : ''}" onclick="goTransPage(${i})">${i}</button>`;
+            }
+            
+            html += `<button class="btn btn-sm" ${page === totalPages ? 'disabled' : ''} onclick="goTransPage(${page + 1})">下一页</button>`;
+            html += `<button class="btn btn-sm" ${page === totalPages ? 'disabled' : ''} onclick="goTransPage(${totalPages})">尾页</button>`;
+            
+            html += `<select class="btn btn-sm" style="margin-left:10px" onchange="changeTransPageSize(this.value)">
+                <option value="20" ${pageSize === 20 ? 'selected' : ''}>20条/页</option>
+                <option value="50" ${pageSize === 50 ? 'selected' : ''}>50条/页</option>
+                <option value="100" ${pageSize === 100 ? 'selected' : ''}>100条/页</option>
+            </select>`;
+            
+            container.innerHTML = html;
+        }
+
+        function goTransPage(page) {
+            const totalPages = Math.ceil(transPageState.total / transPageState.pageSize);
+            if (page < 1 || page > totalPages) return;
+            transPageState.page = page;
+            loadTransactions();
+        }
+
+        function changeTransPageSize(size) {
+            transPageState.pageSize = parseInt(size);
+            transPageState.page = 1;
+            loadTransactions();
         }
 
         async function approveTrans(id) {
