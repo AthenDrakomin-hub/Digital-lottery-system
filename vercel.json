@@ -17,7 +17,7 @@
   "crons": [
     {
       "path": "/api/system?type=cron&action=check-draws",
-      "schedule": "* * * * *"
+      "schedule": "*/5 * * * *"
     }
   ]
 }
