@@ -16,7 +16,7 @@ export default function LoginPage() {
   // 已登录用户重定向
   useEffect(() => {
     if (!authLoading && isLoggedIn) {
-      router.push('/invest')
+      router.push('/client/invest')
     }
   }, [authLoading, isLoggedIn, router])
 
@@ -43,7 +43,7 @@ export default function LoginPage() {
 
       if (data.success && data.user) {
         setUser(data.user)
-        router.push('/invest')
+        router.push('/client/invest')
       } else {
         setError(data.error || '登錄失敗，請稍後重試')
       }
@@ -83,7 +83,7 @@ export default function LoginPage() {
         <div className="p-12">
           {/* Logo */}
           <div className="flex justify-center mb-12">
-            <Link href="/home" className="flex items-center space-x-3">
+            <Link href="/client/home" className="flex items-center space-x-3">
               <img 
                 src="https://www.towngassmartenergy.com/images/common/logo.png" 
                 className="h-10" 

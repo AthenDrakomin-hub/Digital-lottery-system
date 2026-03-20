@@ -1,93 +1,45 @@
 import mongoose from 'mongoose'
 
-// 默认字段映射配置
-export const DEFAULT_FIELD_MAPPING = {
-  energyTypes: [
-    { id: 'nuclear', name: '核能', color: '#a855f7', enabled: true },
-    { id: 'hydrogen', name: '氫能', color: '#93c5fd', enabled: true },
-    { id: 'electric', name: '電能', color: '#9ca3af', enabled: true },
-    { id: 'wind', name: '風能', color: '#16a34a', enabled: true },
-    { id: 'water', name: '水能', color: '#f97316', enabled: true },
-    { id: 'solar', name: '太陽能', color: '#3b82f6', enabled: true },
-    { id: 'geothermal', name: '地熱能', color: '#ca8a04', enabled: true },
-    { id: 'ocean', name: '洋流能', color: '#06b6d4', enabled: true },
-    { id: 'wave', name: '波浪能', color: '#ec4899', enabled: true },
-    { id: 'tidal', name: '潮汐能', color: '#dc2626', enabled: true }
-  ],
-  provinces: [
-    { id: 'zhejiang', name: '浙江', enabled: true },
-    { id: 'hebei', name: '河北', enabled: true },
-    { id: 'guangdong', name: '廣東', enabled: true },
-    { id: 'anhui', name: '安徽', enabled: true },
-    { id: 'shandong', name: '山東', enabled: true },
-    { id: 'jiangsu', name: '江蘇', enabled: true },
-    { id: 'neimenggu', name: '蒙古', enabled: true },
-    { id: 'henan', name: '河南', enabled: true },
-    { id: 'xinjiang', name: '新疆', enabled: true },
-    { id: 'sichuan', name: '四川', enabled: true }
-  ],
-  betConfig: {
-    minAmount: 2,
-    maxAmount: 50000,
-    unitPrice: 2
+// 定义配置接口
+interface IConfig {
+  energyTypes: string[]
+  provinces: string[]
+  betAmounts: number[]
+  odds: {
+    energyType: number
+    province: number
+    amount: number
   }
 }
 
-// 定义静态方法接口
-interface IConfigModel extends mongoose.Model<mongoose.Document> {
-  get: (key: string, defaultValue?: unknown) => Promise<unknown>
-  set: (key: string, value: unknown) => Promise<mongoose.Document>
-  initDefaults: () => Promise<void>
-}
+// 定义文档接口
+interface ConfigDocument extends mongoose.Document, IConfig {}
+
+// 定义模型接口
+interface IConfigModel extends mongoose.Model<ConfigDocument> {}
 
 const configSchema = new mongoose.Schema({
-  key: { 
-    type: String, 
-    required: true, 
-    unique: true,
-    trim: true
+  energyTypes: {
+    type: [String],
+    default: ['核能', '氫能', '電能', '風能', '水能', '太陽能', '地熱能', '洋流能', '波浪能', '潮汐能'],
   },
-  value: { 
-    type: mongoose.Schema.Types.Mixed, 
-    required: true 
+  provinces: {
+    type: [String],
+    default: ['北京', '上海', '廣東', '江蘇', '浙江', '山東', '四川', '湖北', '河南', '福建'],
   },
-  description: { 
-    type: String, 
-    trim: true 
+  betAmounts: {
+    type: [Number],
+    default: [100, 500, 1000, 5000, 10000],
   },
-  updatedAt: { 
-    type: Date, 
-    default: Date.now 
-  }
+  odds: {
+    energyType: { type: Number, default: 1.8 },
+    province: { type: Number, default: 2.5 },
+    amount: { type: Number, default: 3.0 },
+  },
 })
 
-// 静态方法
-configSchema.statics.get = async function(key: string, defaultValue: unknown = null) {
-  const config = await this.findOne({ key })
-  return config ? config.value : defaultValue
-}
-
-configSchema.statics.set = async function(key: string, value: unknown) {
-  return this.findOneAndUpdate(
-    { key },
-    { value, updatedAt: new Date() },
-    { upsert: true, new: true }
-  )
-}
-
-configSchema.statics.initDefaults = async function() {
-  const existing = await this.findOne({ key: 'fieldMapping' })
-  if (!existing) {
-    await this.create({
-      key: 'fieldMapping',
-      value: DEFAULT_FIELD_MAPPING,
-      description: '字段映射配置（能源类型、省份等）'
-    })
-    console.log('✅ 字段映射配置已初始化')
-  }
-}
-
 // 防止模型重复编译
-const Config = (mongoose.models.Config as IConfigModel) || mongoose.model<mongoose.Document, IConfigModel>('Config', configSchema)
+const Config = (mongoose.models.Config as IConfigModel) || mongoose.model<ConfigDocument, IConfigModel>('Config', configSchema)
 
 export default Config
+export type { IConfig, ConfigDocument }

@@ -1,94 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
-import dbConnect from '@/lib/db'
-import Config, { DEFAULT_FIELD_MAPPING } from '@/models/Config'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
-
-// JWT payload 类型
-interface JwtPayload {
-  id: string
-  userId?: string
-  username: string
-  role: string
-  iat: number
-  exp: number
-}
-
-// 验证管理员权限
-async function verifyAdmin(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null
-  }
-
-  const token = authHeader.split(' ')[1]
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload
-    const User = (await import('@/models/User')).default
-    await dbConnect()
-    const user = await User.findById(decoded.id || decoded.userId)
-    return user && user.role === 'admin' && user.isActive ? user : null
-  } catch {
-    return null
-  }
-}
+import Config from '@/models/Config'
+import { connectDB } from '@/lib/mongodb'
 
 // 获取配置
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    await dbConnect()
+    await connectDB()
 
-    const { searchParams } = new URL(req.url)
-    const key = searchParams.get('key') || 'fieldMapping'
-
-    // 初始化默认配置
-    await Config.initDefaults()
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config = await Config.findOne({ key }) as any
+    let config = await Config.findOne()
+    
+    if (!config) {
+      // 创建默认配置
+      config = await Config.create({
+        energyTypes: ['核能', '氫能', '電能', '風能', '水能', '太陽能', '地熱能', '洋流能', '波浪能', '潮汐能'],
+        provinces: ['北京', '上海', '廣東', '江蘇', '浙江', '山東', '四川', '湖北', '河南', '福建'],
+        betAmounts: [100, 500, 1000, 5000, 10000],
+        odds: { energyType: 1.8, province: 2.5, amount: 3.0 },
+      })
+    }
     
     return NextResponse.json({
       success: true,
-      data: config ? config.value : DEFAULT_FIELD_MAPPING
+      config: {
+        energyTypes: config.energyTypes,
+        provinces: config.provinces,
+        betAmounts: config.betAmounts,
+        odds: config.odds,
+      },
     })
   } catch (error) {
     console.error('Get config error:', error)
-    return NextResponse.json({ error: '服务器错误' }, { status: 500 })
-  }
-}
-
-// 更新配置（需要管理员权限）
-export async function PUT(req: NextRequest) {
-  try {
-    const admin = await verifyAdmin(req)
-    if (!admin) {
-      return NextResponse.json({ error: '需要管理员权限' }, { status: 403 })
-    }
-
-    await dbConnect()
-
-    const body = await req.json()
-    const { key = 'fieldMapping', value } = body
-
-    if (!value) {
-      return NextResponse.json({ error: '缺少配置值' }, { status: 400 })
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config = await Config.findOneAndUpdate(
-      { key },
-      { value, updatedAt: new Date() },
-      { upsert: true, new: true }
-    ) as any
-
-    return NextResponse.json({
-      success: true,
-      message: '配置已更新',
-      data: config.value
-    })
-  } catch (error) {
-    console.error('Update config error:', error)
-    return NextResponse.json({ error: '服务器错误' }, { status: 500 })
+    return NextResponse.json({ success: false, error: '服務器錯誤' }, { status: 500 })
   }
 }

@@ -22,17 +22,17 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const { user, loading, logout } = useUser()
 
   const navItems = [
-    { href: '/home', label: '主頁' },
-    { href: '/about', label: '關於我們' },
-    { href: '/invest', label: '投資中心' },
-    { href: '/dashboard', label: '賬務管理' },
-    { href: '/contact', label: '聯繫我們' },
+    { href: '/client/home', label: '主頁' },
+    { href: '/client/about', label: '關於我們' },
+    { href: '/client/invest', label: '投資中心' },
+    { href: '/client/dashboard', label: '賬務管理' },
+    { href: '/client/contact', label: '聯繫我們' },
   ]
 
   const isActive = (href: string) => pathname === href
 
   // 登录页面不显示Header和Footer
-  const isLoginPage = pathname === '/login'
+  const isLoginPage = pathname === '/client/login'
 
   if (loading) {
     return (
@@ -51,7 +51,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
       {!isLoginPage && (
         <header className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
           <div className="max-w-[1440px] mx-auto px-10 h-20 flex items-center justify-between">
-            <Link href="/home" className="flex items-center space-x-2">
+            <Link href="/client/home" className="flex items-center space-x-2">
               <img 
                 src="https://www.towngassmartenergy.com/images/common/logo.png" 
                 className="h-10" 
@@ -86,7 +86,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
                 </div>
               ) : (
                 <Link 
-                  href="/login" 
+                  href="/client/login" 
                   className="bg-[#32b24a] text-white px-6 py-2 rounded-full text-sm hover:bg-green-600 transition-colors"
                 >
                   登錄系統
@@ -103,7 +103,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
       </main>
 
       {/* Footer */}
-      {!isLoginPage && pathname !== '/contact' && (
+      {!isLoginPage && pathname !== '/client/contact' && (
         <footer className="bg-white border-t border-gray-100 py-10">
           <div className="max-w-[1440px] mx-auto px-10 flex justify-between items-center text-gray-400 text-xs">
             <div className="flex items-center space-x-4">

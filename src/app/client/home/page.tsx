@@ -29,13 +29,13 @@ export default function HomePage() {
             </p>
             <div className="flex space-x-4">
               <Link 
-                href="/invest" 
+                href="/client/invest" 
                 className="bg-[#32b24a] text-white px-8 py-3 rounded-full font-bold hover:bg-[#1a8b33] transition-colors"
               >
                 立即投資
               </Link>
               <Link 
-                href="/about" 
+                href="/client/about" 
                 className="border-2 border-white text-white px-8 py-3 rounded-full font-bold hover:bg-white hover:text-[#00529b] transition-colors"
               >
                 了解更多
@@ -100,7 +100,7 @@ export default function HomePage() {
           <h2 className="text-4xl font-bold mb-6">開啟您的綠色能源投資之旅</h2>
           <p className="text-xl mb-8 opacity-90">立即加入，共同創造可持續的未來</p>
           <Link 
-            href={isLoggedIn ? '/invest' : '/login'} 
+            href={isLoggedIn ? '/client/invest' : '/client/login'} 
             className="inline-block bg-white text-[#32b24a] px-10 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-colors"
           >
             {isLoggedIn ? '立即投資' : '立即登錄'}
