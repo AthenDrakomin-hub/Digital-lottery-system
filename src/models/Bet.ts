@@ -74,7 +74,7 @@ const betSchema = new mongoose.Schema({
   },
   resultId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'LotteryResult',
+    ref: 'Draw',
   },
   createdAt: {
     type: Date,

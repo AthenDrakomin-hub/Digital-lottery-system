@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import User from '@/models/User'
 import Transaction from '@/models/Transaction'
-import LotteryResult from '@/models/LotteryResult'
+import Draw from '@/models/Draw'
 import dbConnect from '@/lib/db'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
@@ -31,16 +31,17 @@ export async function GET(request: NextRequest) {
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+    const todayStr = new Date().toISOString().split('T')[0]
 
-    const [totalUsers, activeUsers, todayTransactions, todayStats, pendingLotteries, balanceResult, recentUsers] = await Promise.all([
+    const [totalUsers, activeUsers, todayTransactions, todayStats, pendingDraws, balanceResult, recentUsers] = await Promise.all([
       User.countDocuments(),
-      User.countDocuments({ status: 'active' }),
+      User.countDocuments({ isActive: true }),
       Transaction.countDocuments({ createdAt: { $gte: today } }),
       Transaction.aggregate([
         { $match: { createdAt: { $gte: today } } },
         { $group: { _id: null, total: { $sum: '$amount' } } },
       ]),
-      LotteryResult.countDocuments({ status: 'pending' }),
+      Draw.countDocuments({ status: 'pending' }),
       User.aggregate([{ $group: { _id: null, total: { $sum: '$balance' } } }]),
       User.find().sort({ createdAt: -1 }).limit(5).select('username realName balance createdAt'),
     ])
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
         activeUsers,
         todayTransactions,
         todayAmount: todayStats[0]?.total || 0,
-        pendingLotteries,
+        pendingLotteries: pendingDraws,
         totalBalance: balanceResult[0]?.total || 0,
       },
       recentUsers: recentUsers.map(u => ({
