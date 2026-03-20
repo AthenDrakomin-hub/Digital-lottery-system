@@ -286,12 +286,8 @@
         }
 
         function redirectByRole(role) {
-            // 管理员跳转到管理后台，普通用户跳转到客户端
-            if (role === 'admin') {
-                window.location.href = 'dashboard.html';
-            } else {
-                window.location.href = 'index.html';
-            }
+            // 所有用户都跳转到仪表盘
+            window.location.href = 'dashboard.html';
         }
 
         document.getElementById('password').addEventListener('keypress', (e) => {

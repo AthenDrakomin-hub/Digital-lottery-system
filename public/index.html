@@ -3,37 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>数字开奖管理系统</title>
+    <title>数字开奖系统</title>
     <link rel="stylesheet" href="/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .index-container {
+            text-align: center;
+            color: white;
+            max-width: 500px;
+        }
+        
+        .index-logo {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin: 0 auto 30px;
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3);
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .index-title {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .index-subtitle {
+            font-size: 16px;
+            color: #94a3b8;
+            margin-bottom: 40px;
+        }
+        
+        .index-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .index-btn {
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .index-btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+        
+        .index-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.4);
+        }
+        
+        .index-btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .index-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .index-loading {
+            padding: 30px;
+        }
+        
+        .index-loading .spinner {
+            width: 48px;
+            height: 48px;
+            border-width: 4px;
+            border-color: rgba(255, 255, 255, 0.2);
+            border-top-color: #6366f1;
+            margin: 0 auto 20px;
+        }
+        
+        .index-loading p {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        
+        .index-features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 50px;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .index-feature {
+            text-align: center;
+        }
+        
+        .index-feature-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .index-feature-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .index-feature-desc {
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        @media (max-width: 600px) {
+            .index-title {
+                font-size: 28px;
+            }
+            
+            .index-features {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .index-actions {
+                flex-direction: column;
+            }
+            
+            .index-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-header">
-            <h1>🎰 数字开奖管理系统</h1>
-            <p>多周期开奖管理平台</p>
-        </div>
-        <div style="text-align: center;">
-            <p style="margin-bottom: 20px; color: #6b7280;">正在检查登录状态...</p>
+    <div class="index-container" id="app">
+        <!-- 加载中状态 -->
+        <div class="index-loading" id="loading">
             <div class="spinner"></div>
+            <p>正在检查登录状态...</p>
+        </div>
+        
+        <!-- 主内容（默认隐藏） -->
+        <div id="main" style="display: none;">
+            <div class="index-logo">🎲</div>
+            <h1 class="index-title">数字开奖系统</h1>
+            <p class="index-subtitle">多周期开奖管理平台</p>
+            
+            <div class="index-actions">
+                <a href="login.html" class="index-btn index-btn-primary">🔐 登录账户</a>
+                <a href="login.html" class="index-btn index-btn-secondary">📝 注册新用户</a>
+            </div>
+            
+            <div class="index-features">
+                <div class="index-feature">
+                    <div class="index-feature-icon">⚡</div>
+                    <div class="index-feature-title">高效开奖</div>
+                    <div class="index-feature-desc">5/10/15分钟多周期</div>
+                </div>
+                <div class="index-feature">
+                    <div class="index-feature-icon">🔒</div>
+                    <div class="index-feature-title">安全可靠</div>
+                    <div class="index-feature-desc">JWT认证+IP白名单</div>
+                </div>
+                <div class="index-feature">
+                    <div class="index-feature-icon">📊</div>
+                    <div class="index-feature-title">数据可视</div>
+                    <div class="index-feature-desc">实时统计分析</div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         const token = localStorage.getItem('token');
+        
         if (token) {
-            fetch('/api/auth?action=me', { headers: { 'Authorization': `Bearer ${token}` } })
+            // 检查登录状态
+            fetch('/api/auth?action=me', { 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            })
             .then(res => res.json())
             .then(data => {
                 if (data.user) {
+                    // 已登录，跳转到仪表盘
                     window.location.href = 'dashboard.html';
                 } else {
-                    localStorage.removeItem('token');
-                    window.location.href = 'login.html';
+                    // Token无效，显示主页面
+                    showMain();
                 }
             })
-            .catch(() => { window.location.href = 'login.html'; });
+            .catch(() => {
+                // 请求失败，显示主页面
+                showMain();
+            });
         } else {
-            window.location.href = 'login.html';
+            // 未登录，显示主页面
+            showMain();
+        }
+        
+        function showMain() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main').style.display = 'block';
         }
     </script>
 </body>
