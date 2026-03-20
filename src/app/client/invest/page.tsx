@@ -314,7 +314,7 @@ export default function InvestPage() {
               {renderResultBalls(latestDraw.result)}
             </div>
 
-            {/* 能源类型映射 */}
+            {/* 能源类型映射 - 只显示名称，不显示数字 */}
             {latestDraw.result && (
               <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
                 <p className="text-gray-400 text-sm mb-2">開獎能源類型</p>
@@ -324,7 +324,7 @@ export default function InvestPage() {
                     const energy = getEnergyByIndex(energyIndex)
                     return energy ? (
                       <span 
-                        className="px-4 py-2 rounded-lg text-white font-bold text-lg"
+                        className="px-6 py-3 rounded-lg text-white font-bold text-xl"
                         style={{ backgroundColor: energy.color }}
                       >
                         {energy.name}
@@ -334,9 +334,6 @@ export default function InvestPage() {
                     )
                   })()}
                 </div>
-                <p className="text-gray-500 text-xs mt-2">
-                  數字 {latestDraw.result[0]} = {getEnergyByIndex(parseInt(latestDraw.result[0]))?.name || '未知'}
-                </p>
               </div>
             )}
 
@@ -395,16 +392,15 @@ export default function InvestPage() {
             </div>
           </div>
 
-          {/* 能源类型标签 */}
+          {/* 能源类型标签 - 只显示名称 */}
           <div className="flex space-x-1 mt-4">
-            {energyTypes.slice(0, 10).map((t, index) => (
+            {energyTypes.slice(0, 10).map(t => (
               <div 
                 key={t.id} 
                 style={{ backgroundColor: t.color }}
-                className="px-2 py-1 rounded text-xs flex items-center gap-1 font-bold text-white"
+                className="px-3 py-1 rounded text-xs font-bold text-white"
               >
-                <span className="bg-black/20 px-1 rounded">{index}</span>
-                <span>{t.name}</span>
+                {t.name}
               </div>
             ))}
           </div>
@@ -470,25 +466,21 @@ export default function InvestPage() {
             </div>
           </div>
 
-          {/* 能源类型选择 */}
+          {/* 能源类型选择 - 只显示名称 */}
           <div className="mb-6">
-            <h3 className="text-sm font-bold text-gray-700 mb-3">
-              選擇能源類型
-              <span className="text-gray-400 font-normal ml-2">（數字0-9對應）</span>
-            </h3>
+            <h3 className="text-sm font-bold text-gray-700 mb-3">選擇能源類型</h3>
             <div className="grid grid-cols-5 gap-2">
-              {energyTypes.map((t, index) => (
+              {energyTypes.map(t => (
                 <button
                   key={t.id}
                   onClick={() => !periodStatus?.isSealed && setSelectedEnergy(t.id)}
                   disabled={periodStatus?.isSealed}
                   style={{ backgroundColor: t.color }}
-                  className={`py-3 rounded text-white text-sm font-bold transition-opacity flex items-center justify-center gap-1 ${
+                  className={`py-3 rounded text-white text-sm font-bold transition-opacity ${
                     periodStatus?.isSealed ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'
                   } ${selectedEnergy === t.id ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
                 >
-                  <span className="bg-black/20 px-1.5 rounded text-xs">{index}</span>
-                  <span>{t.name}</span>
+                  {t.name}
                 </button>
               ))}
             </div>
@@ -551,7 +543,7 @@ export default function InvestPage() {
             }`}
           >
             {periodStatus?.isSealed 
-              ? '🔒 封盤中，暫停投注' 
+              ? '🔒 封封盤中，暫停投注' 
               : submitting 
                 ? '提交中...' 
                 : '一鍵交易'}
