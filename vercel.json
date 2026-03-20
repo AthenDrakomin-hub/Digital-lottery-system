@@ -13,11 +13,5 @@
         { "key": "Cache-Control", "value": "no-store, must-revalidate" }
       ]
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/system?type=cron&action=check-draws",
-      "schedule": "*/5 * * * *"
-    }
   ]
 }
