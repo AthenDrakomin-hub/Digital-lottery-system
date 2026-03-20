@@ -217,7 +217,7 @@
                             <option value="10">10分钟期</option>
                             <option value="15">15分钟期</option>
                         </select>
-                        <button class="btn btn-primary btn-sm" onclick="loadDraws()">查询</button>
+                        <button class="btn btn-primary btn-sm" onclick="searchDraws()">查询</button>
                     </div>
                     <table class="data-table">
                         <thead>
@@ -256,7 +256,7 @@
                             <option value="won">已中奖</option>
                             <option value="lost">未中奖</option>
                         </select>
-                        <button class="btn btn-primary btn-sm" onclick="loadBets()">查询</button>
+                        <button class="btn btn-primary btn-sm" onclick="searchBets()">查询</button>
                     </div>
                     <table class="data-table">
                         <thead>
@@ -882,6 +882,11 @@
             total: 0
         };
 
+        function searchDraws() {
+            drawsPageState.page = 1;  // 搜索时重置到第一页
+            loadDraws();
+        }
+
         async function loadDraws() {
             const date = document.getElementById('drawDate').value;
             const interval = document.getElementById('drawInterval').value;
@@ -1079,12 +1084,26 @@
         }
 
         // 投注记录
+        // 投注记录分页状态
+        let betsPageState = {
+            page: 1,
+            pageSize: 20,
+            total: 0
+        };
+
+        function searchBets() {
+            betsPageState.page = 1;  // 搜索时重置到第一页
+            loadBets();
+        }
+
         async function loadBets() {
-            const params = new URLSearchParams();
             const date = document.getElementById('betDate').value;
             const interval = document.getElementById('betInterval').value;
             const status = document.getElementById('betStatus').value;
-            params.append('limit', '50');
+            
+            const params = new URLSearchParams();
+            params.append('page', betsPageState.page);
+            params.append('limit', betsPageState.pageSize);
             if (date) params.append('date', date);
             if (interval) params.append('interval', interval);
             if (status) params.append('status', status);
@@ -1092,6 +1111,10 @@
             try {
                 const res = await fetch(`/api/system?type=bets&action=admin&${params}`, { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
+                
+                // 更新分页状态
+                betsPageState.total = data.pagination?.total || 0;
+                
                 const tbody = document.getElementById('betsBody');
                 tbody.innerHTML = (data.bets || []).map(b => `
                     <tr>
@@ -1112,9 +1135,66 @@
                         </td>
                     </tr>
                 `).join('') || '<tr><td colspan="8">暂无数据</td></tr>';
+                
+                // 渲染分页
+                renderBetsPagination();
             } catch (e) {
                 document.getElementById('betsBody').innerHTML = '<tr><td colspan="8">加载失败</td></tr>';
             }
+        }
+
+        function renderBetsPagination() {
+            const { page, pageSize, total } = betsPageState;
+            const totalPages = Math.ceil(total / pageSize);
+            const container = document.getElementById('betsPage');
+            
+            if (total === 0) {
+                container.innerHTML = '暂无数据';
+                return;
+            }
+            
+            if (totalPages <= 1) {
+                container.innerHTML = `共 ${total} 条`;
+                return;
+            }
+            
+            let html = `<span style="margin-right:15px">共 ${total} 条，第 ${page}/${totalPages} 页</span>`;
+            
+            html += `<button class="btn btn-sm" ${page === 1 ? 'disabled' : ''} onclick="goBetsPage(1)">首页</button>`;
+            html += `<button class="btn btn-sm" ${page === 1 ? 'disabled' : ''} onclick="goBetsPage(${page - 1})">上一页</button>`;
+            
+            const maxVisible = 5;
+            let start = Math.max(1, page - Math.floor(maxVisible / 2));
+            let end = Math.min(totalPages, start + maxVisible - 1);
+            start = Math.max(1, end - maxVisible + 1);
+            
+            for (let i = start; i <= end; i++) {
+                html += `<button class="btn btn-sm ${i === page ? 'btn-primary' : ''}" onclick="goBetsPage(${i})">${i}</button>`;
+            }
+            
+            html += `<button class="btn btn-sm" ${page === totalPages ? 'disabled' : ''} onclick="goBetsPage(${page + 1})">下一页</button>`;
+            html += `<button class="btn btn-sm" ${page === totalPages ? 'disabled' : ''} onclick="goBetsPage(${totalPages})">尾页</button>`;
+            
+            html += `<select class="btn btn-sm" style="margin-left:10px" onchange="changeBetsPageSize(this.value)">
+                <option value="20" ${pageSize === 20 ? 'selected' : ''}>20条/页</option>
+                <option value="50" ${pageSize === 50 ? 'selected' : ''}>50条/页</option>
+                <option value="100" ${pageSize === 100 ? 'selected' : ''}>100条/页</option>
+            </select>`;
+            
+            container.innerHTML = html;
+        }
+
+        function goBetsPage(page) {
+            const totalPages = Math.ceil(betsPageState.total / betsPageState.pageSize);
+            if (page < 1 || page > totalPages) return;
+            betsPageState.page = page;
+            loadBets();
+        }
+
+        function changeBetsPageSize(size) {
+            betsPageState.pageSize = parseInt(size);
+            betsPageState.page = 1;
+            loadBets();
         }
 
         // 投注操作
