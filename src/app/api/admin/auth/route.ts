@@ -2,9 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import Admin from '@/models/Admin'
+import Config from '@/models/Config'
 import dbConnect from '@/lib/db'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+
+// 自动初始化默认管理员
+async function ensureDefaultAdmin() {
+  try {
+    const existingAdmin = await Admin.findOne({ username: 'admin' })
+    if (existingAdmin) return existingAdmin
+
+    // 创建默认管理员
+    const hashedPassword = await bcrypt.hash('admin123', 10)
+    const admin = await Admin.create({
+      username: 'admin',
+      password: hashedPassword,
+      role: 'admin',
+    })
+    
+    console.log('✅ 自动创建默认管理员: admin / admin123')
+    return admin
+  } catch (error) {
+    console.error('创建默认管理员失败:', error)
+    return null
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,8 +39,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '請輸入用戶名和密碼' }, { status: 400 })
     }
 
-    // Find admin
-    const admin = await Admin.findOne({ username: username.trim() })
+    // 尝试查找管理员
+    let admin = await Admin.findOne({ username: username.trim() })
+    
+    // 如果是 admin 用户且不存在，自动创建
+    if (!admin && username.trim() === 'admin') {
+      admin = await ensureDefaultAdmin()
+    }
+
     if (!admin) {
       return NextResponse.json({ success: false, error: '用戶名或密碼錯誤' }, { status: 401 })
     }
