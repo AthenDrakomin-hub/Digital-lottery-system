@@ -202,6 +202,7 @@
                                 <th>投注数</th>
                                 <th>派奖</th>
                                 <th>状态</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="drawsBody"></tbody>
@@ -239,6 +240,7 @@
                                 <th>开奖结果</th>
                                 <th>中奖</th>
                                 <th>状态</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="betsBody"></tbody>
@@ -327,10 +329,31 @@
                 </div>
 
                 <div class="card">
+                    <h3>数据管理</h3>
+                    <div class="config-item">
+                        <div>
+                            <div class="config-label">开奖记录归档</div>
+                            <div class="config-desc">归档30天前的开奖数据，释放存储空间</div>
+                        </div>
+                        <div><button class="btn btn-warning btn-sm" onclick="archiveData()">执行归档</button></div>
+                    </div>
+                    <div class="config-item">
+                        <div>
+                            <div class="config-label">清理缓存</div>
+                            <div class="config-desc">清除Redis缓存数据</div>
+                        </div>
+                        <div><button class="btn btn-secondary btn-sm" onclick="clearCache()">清理缓存</button></div>
+                    </div>
+                </div>
+
+                <div class="card">
                     <h3>管理员账户</h3>
+                    <div class="toolbar">
+                        <button class="btn btn-success btn-sm" onclick="showUserModal()">+ 新建管理员</button>
+                    </div>
                     <table class="data-table">
                         <thead>
-                            <tr><th>用户名</th><th>状态</th><th>创建时间</th></tr>
+                            <tr><th>用户名</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
                         </thead>
                         <tbody id="adminsBody"></tbody>
                     </table>
@@ -516,6 +539,7 @@
                         <td class="action-btns">
                             <button class="btn btn-primary btn-sm" onclick="editUser('${u._id}','${u.username}','${u.role}',${u.balance},${u.isActive})">编辑</button>
                             <button class="btn btn-secondary btn-sm" onclick="showAdjust('${u._id}','${u.username}',${u.balance})">调账</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteUser('${u._id}','${u.username}')">删除</button>
                         </td>
                     </tr>
                 `).join('') || '<tr><td colspan="6">暂无数据</td></tr>';
@@ -599,6 +623,19 @@
             } catch (e) { alert('操作失败'); }
         }
 
+        async function deleteUser(id, username) {
+            if (!confirm(`确定要删除用户 "${username}" 吗？此操作不可恢复！`)) return;
+            try {
+                const res = await fetch(`/api/users?id=${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (res.ok) { alert('用户已删除'); loadUsers(); }
+                else alert(data.error);
+            } catch (e) { alert('操作失败'); }
+        }
+
         // 开奖记录
         async function loadDraws() {
             const date = document.getElementById('drawDate').value;
@@ -623,6 +660,12 @@
                         <td>${d.settlementStats?.totalBets || 0}</td>
                         <td style="color:#28a745">¥${(d.settlementStats?.totalWinAmount || 0).toFixed(2)}</td>
                         <td>${d.status === 'settled' ? '<span class="badge badge-success">已结算</span>' : '<span class="badge badge-warning">待开奖</span>'}</td>
+                        <td class="action-btns">
+                            ${d._id ? `
+                                <button class="btn btn-primary btn-sm" onclick="manualDraw('${d._id}','${d.period}')">手动开奖</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteDraw('${d._id}')">删除</button>
+                            ` : '-'}
+                        </td>
                     </tr>`;
                 }).join('') || '<tr><td colspan="7">暂无数据</td></tr>';
             } catch (e) {
@@ -635,6 +678,39 @@
             const end = (period + 1) * interval;
             const fmt = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
             return `${fmt(start)}-${fmt(end)}`;
+        }
+
+        // 手动开奖
+        async function manualDraw(id, period) {
+            const result = prompt(`请输入第${parseInt(period)+1}期的开奖号码（10位数字）：`);
+            if (!result || result.length !== 10 || !/^\d{10}$/.test(result)) {
+                return alert('请输入有效的10位数字');
+            }
+            if (!confirm(`确定要将第${parseInt(period)+1}期开奖号码设为 ${result} 吗？`)) return;
+            
+            try {
+                const res = await fetch(`/api/system?type=draws&id=${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ result })
+                });
+                const data = await res.json();
+                if (res.ok) { alert('开奖成功'); loadDraws(); }
+                else alert(data.error);
+            } catch (e) { alert('操作失败'); }
+        }
+
+        async function deleteDraw(id) {
+            if (!confirm('确定要删除该开奖记录吗？')) return;
+            try {
+                const res = await fetch(`/api/system?type=draws&id=${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (res.ok) { alert('已删除'); loadDraws(); }
+                else alert(data.error);
+            } catch (e) { alert('操作失败'); }
         }
 
         // 投注记录
@@ -663,11 +739,59 @@
                         <td>${b.status === 'won' ? '<span class="badge badge-success">中奖</span>' : 
                              b.status === 'lost' ? '<span class="badge badge-danger">未中</span>' : 
                              '<span class="badge badge-warning">待开奖</span>'}</td>
+                        <td class="action-btns">
+                            ${b.status === 'pending' ? 
+                                `<button class="btn btn-success btn-sm" onclick="setBetWon('${b._id}')">设为中奖</button>
+                                 <button class="btn btn-danger btn-sm" onclick="setBetLost('${b._id}')">设为未中</button>
+                                 <button class="btn btn-secondary btn-sm" onclick="cancelBet('${b._id}')">取消</button>` : '-'}
+                        </td>
                     </tr>
-                `).join('') || '<tr><td colspan="7">暂无数据</td></tr>';
+                `).join('') || '<tr><td colspan="8">暂无数据</td></tr>';
             } catch (e) {
-                document.getElementById('betsBody').innerHTML = '<tr><td colspan="7">加载失败</td></tr>';
+                document.getElementById('betsBody').innerHTML = '<tr><td colspan="8">加载失败</td></tr>';
             }
+        }
+
+        // 投注操作
+        async function setBetWon(id) {
+            if (!confirm('确定将此投注设为中奖吗？')) return;
+            try {
+                const res = await fetch(`/api/system?type=bets&id=${id}&action=status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ status: 'won', winAmount: 19.5 })
+                });
+                const data = await res.json();
+                if (res.ok) { alert('已设为中奖'); loadBets(); }
+                else alert(data.error);
+            } catch (e) { alert('操作失败'); }
+        }
+
+        async function setBetLost(id) {
+            if (!confirm('确定将此投注设为未中奖吗？')) return;
+            try {
+                const res = await fetch(`/api/system?type=bets&id=${id}&action=status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ status: 'lost' })
+                });
+                const data = await res.json();
+                if (res.ok) { alert('已设为未中奖'); loadBets(); }
+                else alert(data.error);
+            } catch (e) { alert('操作失败'); }
+        }
+
+        async function cancelBet(id) {
+            if (!confirm('确定取消此投注吗？金额将退还给用户')) return;
+            try {
+                const res = await fetch(`/api/system?type=bets&id=${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (res.ok) { alert('投注已取消'); loadBets(); }
+                else alert(data.error);
+            } catch (e) { alert('操作失败'); }
         }
 
         // 交易审核
@@ -730,9 +854,50 @@
                         <td>${u.username}</td>
                         <td>${u.isActive ? '<span class="badge badge-success">正常</span>' : '<span class="badge badge-danger">禁用</span>'}</td>
                         <td>${new Date(u.createdAt).toLocaleString('zh-CN')}</td>
+                        <td class="action-btns">
+                            <button class="btn btn-sm" onclick="editAdmin('${u._id}', '${u.username}', ${u.isActive})">编辑</button>
+                        </td>
                     </tr>
                 `).join('');
             } catch (e) {}
+        }
+
+        function editAdmin(id, username, isActive) {
+            document.getElementById('userModalTitle').textContent = '编辑管理员';
+            document.getElementById('editUserId').value = id;
+            document.getElementById('editUsername').value = username;
+            document.getElementById('editUsername').setAttribute('readonly', true);
+            document.getElementById('editPassword').value = '';
+            document.getElementById('editRole').value = 'admin';
+            document.getElementById('editBalance').value = '0';
+            document.getElementById('editActive').value = isActive ? 'true' : 'false';
+            document.getElementById('userModal').classList.add('active');
+        }
+
+        async function archiveData() {
+            if (!confirm('确定要归档30天前的开奖数据吗？此操作不可逆。')) return;
+            try {
+                const res = await fetch('/api/system?action=archive', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (res.ok) alert(`归档成功，已归档 ${data.archived || 0} 条记录`);
+                else alert(data.error || '归档失败');
+            } catch (e) { alert('操作失败'); }
+        }
+
+        async function clearCache() {
+            if (!confirm('确定要清理Redis缓存吗？')) return;
+            try {
+                const res = await fetch('/api/system?action=clear-cache', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (res.ok) alert('缓存已清理');
+                else alert(data.error || '清理失败');
+            } catch (e) { alert('操作失败'); }
         }
 
         // 工具函数

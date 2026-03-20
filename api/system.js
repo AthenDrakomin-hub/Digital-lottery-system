@@ -24,6 +24,10 @@
  *   GET    /api/system?type=cron&action=check-draws  - 自动开奖结算
  *   GET    /api/system?type=cron&action=compensation - 补偿机制
  * 
+ * 系统管理 (type=system):
+ *   POST   /api/system?type=system&action=archive    - 数据归档
+ *   POST   /api/system?type=system&action=clear-cache - 清理缓存
+ * 
  * 支付回调 (type=payment):
  *   POST   /api/system?type=payment&action=alipay    - 支付宝回调
  *   POST   /api/system?type=payment&action=wechat    - 微信回调
@@ -58,7 +62,8 @@ const CONFIG = {
         WIN_AMOUNT: 19.5,
         MAX_NUMBERS: 5,
         MIN_NUMBERS: 1
-    }
+    },
+    ARCHIVE_DAYS: 30
 };
 
 // ===== 辅助函数 =====
@@ -547,6 +552,78 @@ async function handlePaymentCallback(req, res) {
     res.send('success');
 }
 
+// ===== 系统管理处理函数 =====
+
+async function handleSystemArchive(req, res) {
+    const admin = await verifyAdmin(req);
+    if (!admin) return res.status(401).json({ error: '需要管理员权限' });
+
+    const archiveDate = new Date();
+    archiveDate.setDate(archiveDate.getDate() - CONFIG.ARCHIVE_DAYS);
+    const archiveDateStr = archiveDate.toISOString().slice(0, 10);
+
+    // 查找30天前的开奖记录
+    const result = await Draw.deleteMany({
+        date: { $lt: archiveDateStr }
+    });
+
+    logger.info('数据归档完成', { 
+        archiveBefore: archiveDateStr, 
+        deletedCount: result.deletedCount,
+        operator: admin.username 
+    });
+
+    res.json({ 
+        success: true, 
+        archived: result.deletedCount,
+        archiveBefore: archiveDateStr,
+        message: `已归档 ${result.deletedCount} 条开奖记录` 
+    });
+}
+
+async function handleSystemClearCache(req, res) {
+    const admin = await verifyAdmin(req);
+    if (!admin) return res.status(401).json({ error: '需要管理员权限' });
+
+    try {
+        // 清理Redis缓存
+        if (cache.client && cache.client.connected) {
+            // 清理开奖缓存
+            const keys = await cache.client.keys('draws:*');
+            if (keys.length > 0) {
+                await cache.client.del(keys);
+            }
+            
+            // 清理用户余额缓存
+            const balanceKeys = await cache.client.keys('user:balance:*');
+            if (balanceKeys.length > 0) {
+                await cache.client.del(balanceKeys);
+            }
+
+            logger.info('缓存清理完成', { 
+                drawKeys: keys.length, 
+                balanceKeys: balanceKeys.length,
+                operator: admin.username 
+            });
+
+            res.json({ 
+                success: true, 
+                clearedKeys: keys.length + balanceKeys.length,
+                message: `已清理 ${keys.length + balanceKeys.length} 个缓存键` 
+            });
+        } else {
+            res.json({ 
+                success: true, 
+                clearedKeys: 0,
+                message: 'Redis未连接，无需清理' 
+            });
+        }
+    } catch (error) {
+        logger.error('缓存清理失败', { error: error.message });
+        res.status(500).json({ error: '缓存清理失败' });
+    }
+}
+
 // ===== 主入口 - 路由分发 =====
 
 const handleSystem = async (req, res) => {
@@ -592,6 +669,11 @@ const handleSystem = async (req, res) => {
                 if (action === 'compensation') return await handleCronCompensation(req, res);
                 break;
 
+            case 'system':
+                if (action === 'archive' && req.method === 'POST') return await handleSystemArchive(req, res);
+                if (action === 'clear-cache' && req.method === 'POST') return await handleSystemClearCache(req, res);
+                break;
+
             case 'payment':
                 if (action === 'alipay') return await handlePaymentAlipay(req, res);
                 if (action === 'wechat') return await handlePaymentWechat(req, res);
@@ -602,7 +684,7 @@ const handleSystem = async (req, res) => {
             default:
                 return res.status(400).json({
                     error: '无效的type参数',
-                    availableTypes: ['draws', 'bets', 'cron', 'payment']
+                    availableTypes: ['draws', 'bets', 'cron', 'system', 'payment']
                 });
         }
 
