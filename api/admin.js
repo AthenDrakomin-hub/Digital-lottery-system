@@ -413,26 +413,6 @@ async function handleArchiveClean(req, res) {
     logger.info('数据归档执行', results);
     res.json({ success: true, ...results });
 }
-        
-        if (!dryRun && count > 0) {
-            const deleteResult = await Bet.deleteMany({ 
-                createdAt: { $lt: cutoffDate },
-                status: { $ne: 'pending' }
-            });
-            results.bets.deleted = deleteResult.deletedCount;
-        } else {
-            results.bets.deleted = 0;
-        }
-    }
-    
-    return res.json({
-        success: true,
-        message: dryRun ? '试运行完成，未删除任何数据' : '归档清理完成',
-        dryRun,
-        archiveDays,
-        results
-    });
-}
 
 /**
  * 获取日期范围

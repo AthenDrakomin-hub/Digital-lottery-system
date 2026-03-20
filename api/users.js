@@ -235,7 +235,7 @@ async function handleUpdate(req, res) {
         return res.status(400).json({ error: '缺少用户ID' });
     }
 
-    const { username, role, isActive, balance, password } = req.body;
+    const { username, role, isActive, balance, password, ipWhitelist, ipWhitelistEnabled } = req.body;
 
     const user = await User.findById(id);
     if (!user) {
@@ -268,6 +268,27 @@ async function handleUpdate(req, res) {
         user.password = await bcrypt.hash(password, 10);
     }
 
+    // 更新IP白名单（仅管理员可用）
+    if (user.role === 'admin') {
+        if (ipWhitelistEnabled !== undefined) {
+            user.ipWhitelistEnabled = ipWhitelistEnabled;
+        }
+        
+        if (ipWhitelist !== undefined && Array.isArray(ipWhitelist)) {
+            // 验证IP格式
+            const ipRegex = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/;
+            for (const ip of ipWhitelist) {
+                if (!ipRegex.test(ip)) {
+                    return res.status(400).json({ 
+                        error: `IP地址格式无效: ${ip}`,
+                        hint: '支持格式：192.168.1.1 或 192.168.1.0/24'
+                    });
+                }
+            }
+            user.ipWhitelist = ipWhitelist;
+        }
+    }
+
     await user.save();
 
     res.json({
@@ -277,7 +298,9 @@ async function handleUpdate(req, res) {
             username: user.username,
             role: user.role,
             balance: user.balance,
-            isActive: user.isActive
+            isActive: user.isActive,
+            ipWhitelist: user.ipWhitelist,
+            ipWhitelistEnabled: user.ipWhitelistEnabled
         }
     });
 }

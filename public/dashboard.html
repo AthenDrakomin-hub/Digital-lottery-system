@@ -675,7 +675,7 @@
                     </div>
                     <table class="data-table">
                         <thead>
-                            <tr><th>用户名</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
+                            <tr><th>用户名</th><th>IP白名单</th><th>最后登录</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
                         </thead>
                         <tbody id="adminsBody"></tbody>
                     </table>
@@ -704,7 +704,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>角色</label>
-                    <select id="editRole" class="form-control">
+                    <select id="editRole" class="form-control" onchange="toggleIpWhitelistSection()">
                         <option value="user">普通用户</option>
                         <option value="admin">管理员</option>
                     </select>
@@ -721,8 +721,30 @@
                     <option value="false">禁用</option>
                 </select>
             </div>
+            
+            <!-- IP白名单配置（仅管理员可见） -->
+            <div id="ipWhitelistSection" style="display:none;background:#f8f9fa;padding:15px;border-radius:8px;margin-top:15px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <label style="margin:0;font-weight:600">🔒 IP白名单访问控制</label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                        <input type="checkbox" id="editIpWhitelistEnabled" onchange="toggleIpWhitelistInput()">
+                        <span>启用IP白名单</span>
+                    </label>
+                </div>
+                <div id="ipWhitelistInputArea">
+                    <div style="font-size:12px;color:#666;margin-bottom:8px">
+                        每行一个IP地址，支持单IP或CIDR格式（如 192.168.1.0/24）
+                    </div>
+                    <textarea id="editIpWhitelist" class="form-control" rows="4" placeholder="192.168.1.100&#10;10.0.0.0/8&#10;172.16.0.1"></textarea>
+                    <div style="font-size:12px;color:#888;margin-top:5px">
+                        当前登录IP: <span id="currentClientIp" style="color:#667eea;font-weight:600">检测中...</span>
+                        <button type="button" class="btn btn-sm" style="font-size:11px;padding:2px 8px;margin-left:10px" onclick="addCurrentIpToWhitelist()">添加当前IP</button>
+                    </div>
+                </div>
+            </div>
+            
             <input type="hidden" id="editUserId">
-            <button class="btn btn-primary" onclick="saveUser()" style="width:100%">保存</button>
+            <button class="btn btn-primary" onclick="saveUser()" style="width:100%;margin-top:15px">保存</button>
         </div>
     </div>
 
@@ -1039,6 +1061,11 @@
             document.getElementById('editRole').value = 'user';
             document.getElementById('editBalance').value = '0';
             document.getElementById('editActive').value = 'true';
+            // 重置IP白名单配置
+            document.getElementById('editIpWhitelistEnabled').checked = false;
+            document.getElementById('editIpWhitelist').value = '';
+            toggleIpWhitelistSection();
+            toggleIpWhitelistInput();
             document.getElementById('userModal').classList.add('active');
         }
 
@@ -1056,13 +1083,24 @@
 
         async function saveUser() {
             const id = document.getElementById('editUserId').value;
+            const role = document.getElementById('editRole').value;
             const body = {
                 username: document.getElementById('editUsername').value.trim(),
                 password: document.getElementById('editPassword').value || undefined,
-                role: document.getElementById('editRole').value,
+                role: role,
                 balance: parseFloat(document.getElementById('editBalance').value) || 0,
                 isActive: document.getElementById('editActive').value === 'true'
             };
+            
+            // 管理员IP白名单配置
+            if (role === 'admin') {
+                body.ipWhitelistEnabled = document.getElementById('editIpWhitelistEnabled').checked;
+                const ipText = document.getElementById('editIpWhitelist').value;
+                body.ipWhitelist = ipText.split('\n')
+                    .map(ip => ip.trim())
+                    .filter(ip => ip && /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/.test(ip));
+            }
+            
             if (!body.username) return alert('请输入用户名');
 
             try {
@@ -1073,7 +1111,11 @@
                     body: JSON.stringify(body)
                 });
                 const data = await res.json();
-                if (res.ok) { closeModal('userModal'); loadUsers(); }
+                if (res.ok) { 
+                    closeModal('userModal'); 
+                    loadUsers(); 
+                    loadAdmins();
+                }
                 else alert(data.error);
             } catch (e) { alert('操作失败'); }
         }
@@ -1736,29 +1778,105 @@
             try {
                 const res = await fetch('/api/users?role=admin', { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
-                document.getElementById('adminsBody').innerHTML = (data.users || []).map(u => `
+                document.getElementById('adminsBody').innerHTML = (data.users || []).map(u => {
+                    const ipStatus = u.ipWhitelistEnabled 
+                        ? `<span class="badge badge-info" title="${(u.ipWhitelist || []).join(', ')}">${(u.ipWhitelist || []).length}个IP</span>`
+                        : '<span class="badge badge-secondary">未启用</span>';
+                    const lastLogin = u.lastLoginAt 
+                        ? `<div style="font-size:11px">${new Date(u.lastLoginAt).toLocaleString('zh-CN')}</div><div style="font-size:10px;color:#888">${u.lastLoginIp || '-'}</div>`
+                        : '<span style="color:#888">-</span>';
+                    
+                    return `
                     <tr>
-                        <td>${u.username}</td>
+                        <td><strong>${u.username}</strong></td>
+                        <td>${ipStatus}</td>
+                        <td>${lastLogin}</td>
                         <td>${u.isActive ? '<span class="badge badge-success">正常</span>' : '<span class="badge badge-danger">禁用</span>'}</td>
                         <td>${new Date(u.createdAt).toLocaleString('zh-CN')}</td>
                         <td class="action-btns">
-                            <button class="btn btn-sm" onclick="editAdmin('${u._id}', '${u.username}', ${u.isActive})">编辑</button>
+                            <button class="btn btn-sm" onclick="editAdmin('${u._id}')">编辑</button>
                         </td>
                     </tr>
-                `).join('');
+                `}).join('');
             } catch (e) {}
         }
 
-        function editAdmin(id, username, isActive) {
-            document.getElementById('userModalTitle').textContent = '编辑管理员';
-            document.getElementById('editUserId').value = id;
-            document.getElementById('editUsername').value = username;
-            document.getElementById('editUsername').setAttribute('readonly', true);
-            document.getElementById('editPassword').value = '';
-            document.getElementById('editRole').value = 'admin';
-            document.getElementById('editBalance').value = '0';
-            document.getElementById('editActive').value = isActive ? 'true' : 'false';
-            document.getElementById('userModal').classList.add('active');
+        // 当前客户端IP（用于显示和添加）
+        let currentClientIp = '';
+
+        // 获取当前客户端IP
+        async function fetchClientIp() {
+            try {
+                const res = await fetch('/api/auth?action=me', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                // 尝试从响应中获取IP信息
+                currentClientIp = data.ip || data.clientIp || '未知';
+                document.getElementById('currentClientIp').textContent = currentClientIp;
+            } catch (e) {
+                document.getElementById('currentClientIp').textContent = '获取失败';
+            }
+        }
+
+        // 切换IP白名单配置区域显示
+        function toggleIpWhitelistSection() {
+            const role = document.getElementById('editRole').value;
+            const section = document.getElementById('ipWhitelistSection');
+            section.style.display = role === 'admin' ? 'block' : 'none';
+        }
+
+        // 切换IP白名单输入区域
+        function toggleIpWhitelistInput() {
+            const enabled = document.getElementById('editIpWhitelistEnabled').checked;
+            const area = document.getElementById('ipWhitelistInputArea');
+            area.style.opacity = enabled ? '1' : '0.5';
+            area.style.pointerEvents = enabled ? 'auto' : 'none';
+        }
+
+        // 添加当前IP到白名单
+        function addCurrentIpToWhitelist() {
+            if (!currentClientIp || currentClientIp === '未知' || currentClientIp === '获取失败') {
+                alert('无法获取当前IP');
+                return;
+            }
+            const textarea = document.getElementById('editIpWhitelist');
+            const ips = textarea.value.split('\n').map(ip => ip.trim()).filter(ip => ip);
+            if (!ips.includes(currentClientIp)) {
+                ips.push(currentClientIp);
+                textarea.value = ips.join('\n');
+            }
+        }
+
+        async function editAdmin(id) {
+            try {
+                const res = await fetch(`/api/users?id=${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || '获取用户信息失败');
+                    return;
+                }
+                
+                const u = data.user;
+                document.getElementById('userModalTitle').textContent = '编辑管理员';
+                document.getElementById('editUserId').value = u._id;
+                document.getElementById('editUsername').value = u.username;
+                document.getElementById('editUsername').setAttribute('readonly', true);
+                document.getElementById('editPassword').value = '';
+                document.getElementById('editRole').value = u.role;
+                document.getElementById('editBalance').value = u.balance || 0;
+                document.getElementById('editActive').value = u.isActive ? 'true' : 'false';
+                
+                // IP白名单配置
+                document.getElementById('editIpWhitelistEnabled').checked = u.ipWhitelistEnabled || false;
+                document.getElementById('editIpWhitelist').value = (u.ipWhitelist || []).join('\n');
+                
+                toggleIpWhitelistSection();
+                toggleIpWhitelistInput();
+                fetchClientIp();
+                
+                document.getElementById('userModal').classList.add('active');
+            } catch (e) {
+                alert('获取用户信息失败');
+            }
         }
 
         // 开奖周期开关

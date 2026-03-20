@@ -27,6 +27,32 @@ const userSchema = new mongoose.Schema({
         type: Boolean, 
         default: true 
     },
+    // IP白名单（仅管理员可用）
+    ipWhitelist: {
+        type: [String],
+        default: [],
+        validate: {
+            validator: function(ips) {
+                // 验证每个IP地址格式
+                const ipRegex = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/;
+                return ips.every(ip => ipRegex.test(ip));
+            },
+            message: 'IP地址格式无效，支持格式：192.168.1.1 或 192.168.1.0/24'
+        }
+    },
+    // IP白名单开关
+    ipWhitelistEnabled: {
+        type: Boolean,
+        default: false
+    },
+    // 最后登录IP
+    lastLoginIp: {
+        type: String
+    },
+    // 最后登录时间
+    lastLoginAt: {
+        type: Date
+    },
     deletedAt: {
         type: Date
     }, // 删除时间（软删除）
@@ -49,5 +75,39 @@ userSchema.index({ balance: -1 }); // 用于余额排序
 userSchema.virtual('formattedBalance').get(function() {
     return `¥${this.balance.toFixed(2)}`;
 });
+
+// 方法：检查IP是否在白名单中
+userSchema.methods.isIpAllowed = function(ip) {
+    // 如果未启用IP白名单，允许所有IP
+    if (!this.ipWhitelistEnabled || this.ipWhitelist.length === 0) {
+        return true;
+    }
+    
+    return this.ipWhitelist.some(allowedIp => {
+        // 支持CIDR格式，如 192.168.1.0/24
+        if (allowedIp.includes('/')) {
+            return isIpInCIDR(ip, allowedIp);
+        }
+        // 支持单个IP
+        return ip === allowedIp;
+    });
+};
+
+// 辅助函数：检查IP是否在CIDR范围内
+function isIpInCIDR(ip, cidr) {
+    const [range, bits] = cidr.split('/');
+    const mask = parseInt(bits) || 32;
+    
+    const ipNum = ipToInt(ip);
+    const rangeNum = ipToInt(range);
+    const maskNum = ~((1 << (32 - mask)) - 1);
+    
+    return (ipNum & maskNum) === (rangeNum & maskNum);
+}
+
+// 辅助函数：IP转整数
+function ipToInt(ip) {
+    return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet), 0) >>> 0;
+}
 
 module.exports = mongoose.model('User', userSchema);

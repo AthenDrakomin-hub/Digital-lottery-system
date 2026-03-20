@@ -90,11 +90,30 @@ async function handleLogin(req, res) {
         return res.status(403).json({ error: '账户已被禁用' });
     }
 
+    // 获取客户端IP
+    const clientIp = getClientIp(req);
+
+    // 检查IP白名单（仅对管理员生效）
+    if (user.role === 'admin' && user.ipWhitelistEnabled && user.ipWhitelist.length > 0) {
+        if (!user.isIpAllowed(clientIp)) {
+            console.log(`管理员 ${user.username} 尝试从非白名单IP ${clientIp} 登录`);
+            return res.status(403).json({ 
+                error: '您的IP不在白名单中，禁止登录',
+                ip: clientIp
+            });
+        }
+    }
+
     // 验证密码
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
         return res.status(401).json({ error: '用户名或密码错误' });
     }
+
+    // 更新最后登录信息
+    user.lastLoginIp = clientIp;
+    user.lastLoginAt = new Date();
+    await user.save();
 
     // 生成Token
     const token = generateToken({
@@ -110,9 +129,37 @@ async function handleLogin(req, res) {
             id: user._id,
             username: user.username,
             role: user.role,
-            balance: user.balance
+            balance: user.balance,
+            lastLoginIp: clientIp
         }
     });
+}
+
+/**
+ * 获取客户端真实IP
+ */
+function getClientIp(req) {
+    // 尝试从各种header中获取真实IP
+    const forwarded = req.headers['x-forwarded-for'];
+    if (forwarded) {
+        return forwarded.split(',')[0].trim();
+    }
+    
+    const realIp = req.headers['x-real-ip'];
+    if (realIp) {
+        return realIp.trim();
+    }
+    
+    // Vercel提供的header
+    const vercelIp = req.headers['x-vercel-forwarded-for'];
+    if (vercelIp) {
+        return vercelIp.split(',')[0].trim();
+    }
+    
+    // 直连IP
+    return req.connection?.remoteAddress || 
+           req.socket?.remoteAddress || 
+           'unknown';
 }
 
 /**
@@ -149,6 +196,9 @@ async function handleMe(req, res) {
         await cache.setUserBalance(user._id.toString(), user.balance);
     }
 
+    // 获取客户端IP
+    const clientIp = getClientIp(req);
+
     res.json({
         user: {
             id: user._id,
@@ -156,8 +206,13 @@ async function handleMe(req, res) {
             role: user.role,
             balance: balance,
             isActive: user.isActive,
+            ipWhitelist: user.ipWhitelist,
+            ipWhitelistEnabled: user.ipWhitelistEnabled,
+            lastLoginIp: user.lastLoginIp,
+            lastLoginAt: user.lastLoginAt,
             createdAt: user.createdAt
-        }
+        },
+        clientIp: clientIp
     });
 }
 
