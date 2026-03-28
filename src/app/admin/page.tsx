@@ -60,12 +60,12 @@ export default function AdminDashboard() {
   }
 
   const statCards = [
-    { label: '總用戶數', value: stats.totalUsers, icon: '👥', color: 'bg-blue-600' },
-    { label: '活躍用戶', value: stats.activeUsers, icon: '✅', color: 'bg-green-600' },
+    { label: '总用户数', value: stats.totalUsers, icon: '👥', color: 'bg-blue-600' },
+    { label: '活跃用户', value: stats.activeUsers, icon: '✅', color: 'bg-green-600' },
     { label: '今日交易', value: stats.todayTransactions, icon: '📊', color: 'bg-purple-600' },
-    { label: '今日金額', value: `¥${stats.todayAmount.toLocaleString()}`, icon: '💰', color: 'bg-yellow-600' },
-    { label: '待開獎期', value: stats.pendingLotteries, icon: '🎰', color: 'bg-orange-600' },
-    { label: '平台總額', value: `¥${stats.totalBalance.toLocaleString()}`, icon: '🏦', color: 'bg-red-600' },
+    { label: '今日金额', value: `¥${stats.todayAmount.toLocaleString()}`, icon: '💰', color: 'bg-yellow-600' },
+    { label: '待开奖期', value: stats.pendingLotteries, icon: '🎰', color: 'bg-orange-600' },
+    { label: '平台总额', value: `¥${stats.totalBalance.toLocaleString()}`, icon: '🏦', color: 'bg-red-600' },
   ]
 
   return (
@@ -89,19 +89,19 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <a href="/admin/users/create" className="bg-green-600 hover:bg-green-700 text-white rounded-lg p-4 text-center transition-colors">
             <div className="text-2xl mb-2">👤</div>
-            <div>創建用戶</div>
+            <div>创建用户</div>
           </a>
           <a href="/admin/lottery" className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg p-4 text-center transition-colors">
             <div className="text-2xl mb-2">🎰</div>
-            <div>開獎管理</div>
+            <div>开奖管理</div>
           </a>
           <a href="/admin/records" className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-4 text-center transition-colors">
             <div className="text-2xl mb-2">📋</div>
-            <div>交易記錄</div>
+            <div>交易记录</div>
           </a>
           <a href="/admin/config" className="bg-orange-600 hover:bg-orange-700 text-white rounded-lg p-4 text-center transition-colors">
             <div className="text-2xl mb-2">⚙️</div>
-            <div>系統配置</div>
+            <div>系统配置</div>
           </a>
         </div>
       </div>
@@ -109,7 +109,7 @@ export default function AdminDashboard() {
       {/* Recent Users */}
       <div className="bg-gray-800 rounded-xl p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-white text-lg font-medium">最近註冊用戶</h2>
+          <h2 className="text-white text-lg font-medium">最近注册用户</h2>
           <a href="/admin/users" className="text-green-500 hover:text-green-400 text-sm">查看全部 →</a>
         </div>
         {recentUsers.length > 0 ? (
@@ -117,10 +117,10 @@ export default function AdminDashboard() {
             <table className="w-full">
               <thead>
                 <tr className="text-gray-400 text-left border-b border-gray-700">
-                  <th className="pb-3">用戶名</th>
+                  <th className="pb-3">用户名</th>
                   <th className="pb-3">姓名</th>
-                  <th className="pb-3">餘額</th>
-                  <th className="pb-3">註冊時間</th>
+                  <th className="pb-3">余额</th>
+                  <th className="pb-3">注册时间</th>
                 </tr>
               </thead>
               <tbody>
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         ) : (
-          <p className="text-gray-400 text-center py-8">暫無用戶數據</p>
+          <p className="text-gray-400 text-center py-8">暂无用户数据</p>
         )}
       </div>
     </div>

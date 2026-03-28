@@ -66,7 +66,7 @@ export default function AdminLayout({
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">載入中...</p>
+          <p className="text-gray-400">加载中...</p>
         </div>
       </div>
     )
@@ -77,12 +77,12 @@ export default function AdminLayout({
   }
 
   const menuItems = [
-    { href: '/admin', label: '儀表盤', icon: '📊' },
-    { href: '/admin/users', label: '用戶管理', icon: '👥' },
-    { href: '/admin/draws', label: '開獎記錄', icon: '🎰' },
-    { href: '/admin/lottery', label: '開獎設置', icon: '🎯' },
-    { href: '/admin/records', label: '交易記錄', icon: '📋' },
-    { href: '/admin/config', label: '系統配置', icon: '⚙️' },
+    { href: '/admin', label: '仪表盘', icon: '📊' },
+    { href: '/admin/users', label: '用户管理', icon: '👥' },
+    { href: '/admin/draws', label: '开奖记录', icon: '🎰' },
+    { href: '/admin/lottery', label: '开奖设置', icon: '🎯' },
+    { href: '/admin/records', label: '交易记录', icon: '📋' },
+    { href: '/admin/config', label: '系统配置', icon: '⚙️' },
   ]
 
   const isActive = (href: string) => {
@@ -99,7 +99,7 @@ export default function AdminLayout({
           <Link href="/admin" className="flex items-center gap-2">
             <span className="text-2xl">🏢</span>
             {sidebarOpen && (
-              <span className="text-white font-bold">港華後台</span>
+              <span className="text-white font-bold">港华后台</span>
             )}
           </Link>
         </div>
@@ -136,15 +136,15 @@ export default function AdminLayout({
         {/* Header */}
         <header className="h-16 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-6">
           <h1 className="text-white text-lg font-medium">
-            {menuItems.find((item) => isActive(item.href))?.label || '後台管理'}
+            {menuItems.find((item) => isActive(item.href))?.label || '后台管理'}
           </h1>
           <div className="flex items-center gap-4">
-            <span className="text-gray-400">管理員: {admin.username}</span>
+            <span className="text-gray-400">管理员: {admin.username}</span>
             <button
               onClick={handleLogout}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
             >
-              登出
+              退出
             </button>
           </div>
         </header>

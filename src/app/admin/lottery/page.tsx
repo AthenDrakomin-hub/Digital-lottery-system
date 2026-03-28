@@ -119,7 +119,7 @@ export default function LotteryPage() {
 
   const handleCreate = async () => {
     if (!/^\d{10}$/.test(formData.result)) {
-      alert('開獎結果必須是10位數字')
+      alert('开奖结果必须是10位数字')
       return
     }
 
@@ -143,11 +143,11 @@ export default function LotteryPage() {
         setShowCreateModal(false)
         setFormData({ interval: 5, period: 0, result: '' })
       } else {
-        alert(data.error || '創建失敗')
+        alert(data.error || '创建失败')
       }
     } catch {
       console.error('Failed to create draw')
-      alert('創建失敗')
+      alert('创建失败')
     } finally {
       setSubmitting(false)
     }
@@ -165,7 +165,7 @@ export default function LotteryPage() {
   const handleUpdate = async () => {
     if (!editingDraw) return
     if (!/^\d{10}$/.test(formData.result)) {
-      alert('開獎結果必須是10位數字')
+      alert('开奖结果必须是10位数字')
       return
     }
 
@@ -189,11 +189,11 @@ export default function LotteryPage() {
         setEditingDraw(null)
         setFormData({ interval: 5, period: 0, result: '' })
       } else {
-        alert(data.error || '更新失敗')
+        alert(data.error || '更新失败')
       }
     } catch {
       console.error('Failed to update draw')
-      alert('更新失敗')
+      alert('更新失败')
     } finally {
       setSubmitting(false)
     }
@@ -209,7 +209,7 @@ export default function LotteryPage() {
 
   // 渲染开奖结果 - 使用字段映射
   const renderResult = (result: string) => {
-    if (!result || result.length < 2) return <span className="text-gray-500">未設置</span>
+    if (!result || result.length < 2) return <span className="text-gray-500">未设置</span>
 
     const digits = result.split('').map(Number)
     const energy = config.energyTypes[digits[0]]
@@ -272,7 +272,7 @@ export default function LotteryPage() {
           disabled={current === 1}
           className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
         >
-          上一頁
+          上一页
         </button>
         
         {pages.map((p, i) => (
@@ -298,11 +298,11 @@ export default function LotteryPage() {
           disabled={current === total}
           className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
         >
-          下一頁
+          下一页
         </button>
 
         <span className="text-gray-400 text-sm ml-4">
-          共 {pagination.total} 條記錄
+          共 {pagination.total} 条记录
         </span>
       </div>
     )
@@ -335,7 +335,7 @@ export default function LotteryPage() {
           }}
           className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors"
         >
-          + 設置開獎結果
+          + 设置开奖结果
         </button>
       </div>
 
@@ -346,11 +346,11 @@ export default function LotteryPage() {
             <table className="w-full">
               <thead>
                 <tr className="text-gray-400 text-left border-b border-gray-700 text-sm bg-gray-700">
-                  <th className="px-6 py-3">期號</th>
-                  <th className="px-6 py-3">開獎時間</th>
-                  <th className="px-6 py-3">週期</th>
-                  <th className="px-6 py-3">開獎結果</th>
-                  <th className="px-6 py-3">狀態</th>
+                  <th className="px-6 py-3">期号</th>
+                  <th className="px-6 py-3">开奖时间</th>
+                  <th className="px-6 py-3">周期</th>
+                  <th className="px-6 py-3">开奖结果</th>
+                  <th className="px-6 py-3">状态</th>
                   <th className="px-6 py-3">操作</th>
                 </tr>
               </thead>
@@ -365,7 +365,7 @@ export default function LotteryPage() {
                     </td>
                     <td className="px-6 py-3 text-sm">
                       <span className="px-2 py-1 bg-gray-700 rounded text-gray-300">
-                        {draw.interval}分鐘
+                        {draw.interval}分钟
                       </span>
                     </td>
                     <td className="px-6 py-3">
@@ -377,7 +377,7 @@ export default function LotteryPage() {
                           ? 'bg-green-900/50 text-green-400' 
                           : 'bg-yellow-900/50 text-yellow-400'
                       }`}>
-                        {draw.status === 'settled' ? '已開獎' : '待開獎'}
+                        {draw.status === 'settled' ? '已开奖' : '待开奖'}
                       </span>
                     </td>
                     <td className="px-6 py-3">
@@ -385,7 +385,7 @@ export default function LotteryPage() {
                         onClick={() => openEditModal(draw)}
                         className="text-blue-400 hover:text-blue-300 text-sm"
                       >
-                        編輯
+                        编辑
                       </button>
                     </td>
                   </tr>
@@ -399,7 +399,7 @@ export default function LotteryPage() {
         </div>
       ) : (
         <div className="bg-gray-800 rounded-xl p-12 text-center text-gray-400">
-          該日期暫無開獎記錄，點擊右上角新增
+          该日期暂无开奖记录，点击右上角新增
         </div>
       )}
 
@@ -408,26 +408,26 @@ export default function LotteryPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-gray-800 rounded-xl p-6 w-full max-w-lg mx-4">
             <h3 className="text-xl font-bold text-white mb-6">
-              {editingDraw ? '編輯開獎結果' : '設置開獎結果'}
+              {editingDraw ? '编辑开奖结果' : '设置开奖结果'}
             </h3>
 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-gray-300 mb-2">週期</label>
+                  <label className="block text-gray-300 mb-2">周期</label>
                   <select
                     value={formData.interval}
                     onChange={(e) => setFormData({ ...formData, interval: Number(e.target.value) as 5 | 10 | 15, period: getNextPeriod(Number(e.target.value)) })}
                     className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
                     disabled={!!editingDraw}
                   >
-                    <option value={5}>5分鐘</option>
-                    <option value={10}>10分鐘</option>
-                    <option value={15}>15分鐘</option>
+                    <option value={5}>5分钟</option>
+                    <option value={10}>10分钟</option>
+                    <option value={15}>15分钟</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-gray-300 mb-2">期號</label>
+                  <label className="block text-gray-300 mb-2">期号</label>
                   <input
                     type="number"
                     value={formData.period}
@@ -442,7 +442,7 @@ export default function LotteryPage() {
               {/* 快捷选择：能源类型 + 省份 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-gray-300 mb-2">能源類型 (第1位)</label>
+                  <label className="block text-gray-300 mb-2">能源类型 (第1位)</label>
                   <select
                     id="energy-select"
                     className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
@@ -479,7 +479,7 @@ export default function LotteryPage() {
 
               <div>
                 <label className="block text-gray-300 mb-2">
-                  開獎結果 (10位數字)
+                  开奖结果 (10位数字)
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -487,13 +487,13 @@ export default function LotteryPage() {
                     value={formData.result}
                     onChange={(e) => setFormData({ ...formData, result: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                     className="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white font-mono text-xl tracking-widest focus:outline-none focus:border-green-500"
-                    placeholder="請輸入10位數字"
+                    placeholder="请输入10位数字"
                     maxLength={10}
                   />
                   <button
                     onClick={generateRandomResult}
                     className="px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                    title="隨機生成"
+                    title="随机生成"
                   >
                     🎲
                   </button>
@@ -512,7 +512,7 @@ export default function LotteryPage() {
                 disabled={submitting || formData.result.length !== 10}
                 className="flex-1 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? '處理中...' : (editingDraw ? '保存' : '創建')}
+                {submitting ? '处理中...' : (editingDraw ? '保存' : '创建')}
               </button>
               <button
                 onClick={() => {

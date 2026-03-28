@@ -35,10 +35,10 @@ export default function CreateUserPage() {
       if (data.success) {
         router.push('/admin/users')
       } else {
-        setError(data.error || '創建失敗')
+        setError(data.error || '创建失败')
       }
     } catch {
-      setError('網絡錯誤，請稍後重試')
+      setError('网络错误，请稍后重试')
     } finally {
       setLoading(false)
     }
@@ -49,9 +49,9 @@ export default function CreateUserPage() {
       {/* Header */}
       <div className="mb-6">
         <Link href="/admin/users" className="text-gray-400 hover:text-white mb-2 inline-block">
-          ← 返回用戶列表
+          ← 返回用户列表
         </Link>
-        <h1 className="text-2xl font-bold text-white">創建新用戶</h1>
+        <h1 className="text-2xl font-bold text-white">创建新用户</h1>
       </div>
 
       {/* Form */}
@@ -64,7 +64,7 @@ export default function CreateUserPage() {
         >
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label htmlFor="username" className="block text-gray-300 mb-2">用戶名 *</label>
+              <label htmlFor="username" className="block text-gray-300 mb-2">用户名 *</label>
               <input
                 id="username"
                 name="username"
@@ -77,7 +77,7 @@ export default function CreateUserPage() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-gray-300 mb-2">初始密碼 *</label>
+              <label htmlFor="password" className="block text-gray-300 mb-2">初始密码 *</label>
               <input
                 id="password"
                 name="password"
@@ -93,7 +93,7 @@ export default function CreateUserPage() {
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label htmlFor="realName" className="block text-gray-300 mb-2">真實姓名</label>
+              <label htmlFor="realName" className="block text-gray-300 mb-2">真实姓名</label>
               <input
                 id="realName"
                 name="realName"
@@ -105,7 +105,7 @@ export default function CreateUserPage() {
               />
             </div>
             <div>
-              <label htmlFor="balance" className="block text-gray-300 mb-2">初始餘額</label>
+              <label htmlFor="balance" className="block text-gray-300 mb-2">初始余额</label>
               <input
                 id="balance"
                 name="balance"
@@ -122,7 +122,7 @@ export default function CreateUserPage() {
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label htmlFor="phone" className="block text-gray-300 mb-2">手機號碼</label>
+              <label htmlFor="phone" className="block text-gray-300 mb-2">手机号码</label>
               <input
                 id="phone"
                 name="phone"
@@ -131,11 +131,11 @@ export default function CreateUserPage() {
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
                 autoComplete="tel"
-                placeholder="請輸入手機號碼"
+                placeholder="请输入手机号码"
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-gray-300 mb-2">郵箱地址</label>
+              <label htmlFor="email" className="block text-gray-300 mb-2">邮箱地址</label>
               <input
                 id="email"
                 name="email"
@@ -144,7 +144,7 @@ export default function CreateUserPage() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
                 autoComplete="email"
-                placeholder="請輸入郵箱地址"
+                placeholder="请输入邮箱地址"
               />
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function CreateUserPage() {
               disabled={loading}
               className="flex-1 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
             >
-              {loading ? '創建中...' : '創建用戶'}
+              {loading ? '创建中...' : '创建用户'}
             </button>
             <Link
               href="/admin/users"

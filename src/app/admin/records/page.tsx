@@ -57,8 +57,8 @@ export default function RecordsPage() {
       deposit: '充值',
       withdraw: '扣款',
       bet: '投注',
-      win: '中獎',
-      refund: '退還',
+      win: '中奖',
+      refund: '退还',
     }
     return types[type] || type
   }
@@ -121,27 +121,27 @@ export default function RecordsPage() {
           onChange={(e) => setFilter(e.target.value)}
           className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
         >
-          <option value="all">全部類型</option>
+          <option value="all">全部类型</option>
           <option value="deposit">充值</option>
           <option value="withdraw">扣款</option>
           <option value="bet">投注</option>
-          <option value="win">中獎</option>
-          <option value="refund">退還</option>
+          <option value="win">中奖</option>
+          <option value="refund">退还</option>
         </select>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">收入總計</p>
+          <p className="text-gray-400 text-sm">收入总计</p>
           <p className="text-green-400 text-2xl font-bold">¥{stats.income.toLocaleString()}</p>
         </div>
         <div className="bg-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">支出總計</p>
+          <p className="text-gray-400 text-sm">支出总计</p>
           <p className="text-red-400 text-2xl font-bold">¥{stats.expense.toLocaleString()}</p>
         </div>
         <div className="bg-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">交易筆數</p>
+          <p className="text-gray-400 text-sm">交易笔数</p>
           <p className="text-white text-2xl font-bold">{records.length}</p>
         </div>
       </div>
@@ -152,12 +152,12 @@ export default function RecordsPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-700 text-gray-300 text-left">
-                <th className="px-6 py-4">時間</th>
-                <th className="px-6 py-4">用戶</th>
-                <th className="px-6 py-4">類型</th>
-                <th className="px-6 py-4">金額</th>
-                <th className="px-6 py-4">餘額</th>
-                <th className="px-6 py-4">備註</th>
+                <th className="px-6 py-4">时间</th>
+                <th className="px-6 py-4">用户</th>
+                <th className="px-6 py-4">类型</th>
+                <th className="px-6 py-4">金额</th>
+                <th className="px-6 py-4">余额</th>
+                <th className="px-6 py-4">备注</th>
               </tr>
             </thead>
             <tbody>
@@ -192,7 +192,7 @@ export default function RecordsPage() {
               ) : (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
-                    暫無交易記錄
+                    暂无交易记录
                   </td>
                 </tr>
               )}

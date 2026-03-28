@@ -131,7 +131,7 @@ export default function DrawsPage() {
   // 渲染开奖结果 - 使用字段映射
   const renderResult = (result: string) => {
     if (!result || result.length < 2) {
-      return <span className="text-gray-500">未設置</span>
+      return <span className="text-gray-500">未设置</span>
     }
 
     const digits = result.split('').map(Number)
@@ -188,8 +188,8 @@ export default function DrawsPage() {
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      pending: '待開獎',
-      settled: '已開獎',
+      pending: '待开奖',
+      settled: '已开奖',
       cancelled: '已取消',
     }
     return labels[status] || status
@@ -235,7 +235,7 @@ export default function DrawsPage() {
           disabled={current === 1}
           className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
         >
-          上一頁
+          上一页
         </button>
         
         {pages.map((p, i) => (
@@ -261,11 +261,11 @@ export default function DrawsPage() {
           disabled={current === total}
           className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
         >
-          下一頁
+          下一页
         </button>
 
         <span className="text-gray-400 text-sm ml-4">
-          共 {pagination.total} 條記錄
+          共 {pagination.total} 条记录
         </span>
       </div>
     )
@@ -296,10 +296,10 @@ export default function DrawsPage() {
             onChange={(e) => setFilter({ ...filter, interval: e.target.value })}
             className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
           >
-            <option value="all">全部週期</option>
-            <option value="5">5分鐘</option>
-            <option value="10">10分鐘</option>
-            <option value="15">15分鐘</option>
+            <option value="all">全部周期</option>
+            <option value="5">5分钟</option>
+            <option value="10">10分钟</option>
+            <option value="15">15分钟</option>
           </select>
 
           <select
@@ -307,9 +307,9 @@ export default function DrawsPage() {
             onChange={(e) => setFilter({ ...filter, status: e.target.value })}
             className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
           >
-            <option value="all">全部狀態</option>
-            <option value="pending">待開獎</option>
-            <option value="settled">已開獎</option>
+            <option value="all">全部状态</option>
+            <option value="pending">待开奖</option>
+            <option value="settled">已开奖</option>
           </select>
         </div>
       </div>
@@ -317,31 +317,31 @@ export default function DrawsPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">總期數</p>
+          <p className="text-gray-400 text-sm">总期数</p>
           <p className="text-white text-2xl font-bold">{stats.total}</p>
         </div>
         <div className="bg-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">待開獎</p>
+          <p className="text-gray-400 text-sm">待开奖</p>
           <p className="text-yellow-400 text-2xl font-bold">{stats.pending}</p>
         </div>
         <div className="bg-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">已開獎</p>
+          <p className="text-gray-400 text-sm">已开奖</p>
           <p className="text-green-400 text-2xl font-bold">{stats.settled}</p>
         </div>
       </div>
 
       {/* 图例说明 */}
       <div className="bg-gray-800 rounded-xl p-4 mb-6">
-        <p className="text-gray-400 text-sm mb-2">開獎結果說明：</p>
+        <p className="text-gray-400 text-sm mb-2">开奖结果说明：</p>
         <div className="flex flex-wrap items-center gap-4 text-sm">
           <span className="text-gray-300">
-            第1位 = 能源類型（0-{config.energyTypes.length - 1}）
+            第1位 = 能源类型（0-{config.energyTypes.length - 1}）
           </span>
           <span className="text-gray-300">
             第2位 = 省份（0-{config.provinces.length - 1}）
           </span>
           <span className="text-gray-300">
-            後8位 = 其他數據
+            后8位 = 其他数据
           </span>
         </div>
       </div>
@@ -353,13 +353,13 @@ export default function DrawsPage() {
             <table className="w-full">
               <thead>
                 <tr className="text-gray-400 text-left border-b border-gray-700 text-sm bg-gray-700">
-                  <th className="px-6 py-3">期號</th>
-                  <th className="px-6 py-3">開獎時間</th>
-                  <th className="px-6 py-3">週期</th>
-                  <th className="px-6 py-3">開獎結果</th>
-                  <th className="px-6 py-3">投注/中獎</th>
+                  <th className="px-6 py-3">期号</th>
+                  <th className="px-6 py-3">开奖时间</th>
+                  <th className="px-6 py-3">周期</th>
+                  <th className="px-6 py-3">开奖结果</th>
+                  <th className="px-6 py-3">投注/中奖</th>
                   <th className="px-6 py-3">派彩</th>
-                  <th className="px-6 py-3">狀態</th>
+                  <th className="px-6 py-3">状态</th>
                 </tr>
               </thead>
               <tbody>
@@ -373,7 +373,7 @@ export default function DrawsPage() {
                     </td>
                     <td className="px-6 py-3 text-sm">
                       <span className="px-2 py-1 bg-gray-700 rounded text-gray-300">
-                        {draw.interval}分鐘
+                        {draw.interval}分钟
                       </span>
                     </td>
                     <td className="px-6 py-3">
@@ -403,7 +403,7 @@ export default function DrawsPage() {
         </div>
       ) : (
         <div className="bg-gray-800 rounded-xl p-12 text-center text-gray-400">
-          該日期暫無開獎記錄
+          该日期暂无开奖记录
         </div>
       )}
     </div>

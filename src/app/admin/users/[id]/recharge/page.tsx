@@ -37,10 +37,10 @@ export default function RechargePage() {
       if (data.success) {
         setUser(data.user)
       } else {
-        setError('用戶不存在')
+        setError('用户不存在')
       }
     } catch {
-      setError('獲取用戶信息失敗')
+      setError('获取用户信息失败')
     }
   }
 
@@ -51,7 +51,7 @@ export default function RechargePage() {
 
     const amountNum = parseFloat(amount)
     if (isNaN(amountNum) || amountNum <= 0) {
-      setError('請輸入有效金額')
+      setError('请输入有效金额')
       setLoading(false)
       return
     }
@@ -73,10 +73,10 @@ export default function RechargePage() {
       if (data.success) {
         router.push('/admin/users')
       } else {
-        setError(data.error || '操作失敗')
+        setError(data.error || '操作失败')
       }
     } catch {
-      setError('網絡錯誤，請稍後重試')
+      setError('网络错误，请稍后重试')
     } finally {
       setLoading(false)
     }
@@ -95,9 +95,9 @@ export default function RechargePage() {
       {/* Header */}
       <div className="mb-6">
         <Link href="/admin/users" className="text-gray-400 hover:text-white mb-2 inline-block">
-          ← 返回用戶列表
+          ← 返回用户列表
         </Link>
-        <h1 className="text-2xl font-bold text-white">賬戶充值/扣款</h1>
+        <h1 className="text-2xl font-bold text-white">账户充值/扣款</h1>
       </div>
 
       {/* User Info */}
@@ -108,10 +108,10 @@ export default function RechargePage() {
           </div>
           <div>
             <p className="text-white font-medium">{user?.username}</p>
-            <p className="text-gray-400 text-sm">{user?.realName || '未設置姓名'}</p>
+            <p className="text-gray-400 text-sm">{user?.realName || '未设置姓名'}</p>
           </div>
           <div className="ml-auto text-right">
-            <p className="text-gray-400 text-sm">當前餘額</p>
+            <p className="text-gray-400 text-sm">当前余额</p>
             <p className="text-green-400 text-xl font-bold">¥{user?.balance.toLocaleString() || 0}</p>
           </div>
         </div>
@@ -132,7 +132,7 @@ export default function RechargePage() {
           method="post"
         >
           <div>
-            <label className="block text-gray-300 mb-2">操作類型</label>
+            <label className="block text-gray-300 mb-2">操作类型</label>
             <div className="grid grid-cols-2 gap-4">
               <button
                 type="button"
@@ -160,7 +160,7 @@ export default function RechargePage() {
           </div>
 
           <div>
-            <label htmlFor="amount" className="block text-gray-300 mb-2">金額</label>
+            <label htmlFor="amount" className="block text-gray-300 mb-2">金额</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">¥</span>
               <input
@@ -170,7 +170,7 @@ export default function RechargePage() {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full pl-8 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-                placeholder="請輸入金額"
+                placeholder="请输入金额"
                 autoComplete="off"
                 required
                 min="0"
@@ -180,21 +180,21 @@ export default function RechargePage() {
           </div>
 
           <div>
-            <label htmlFor="remark" className="block text-gray-300 mb-2">備註</label>
+            <label htmlFor="remark" className="block text-gray-300 mb-2">备注</label>
             <textarea
               id="remark"
               name="remark"
               value={remark}
               onChange={(e) => setRemark(e.target.value)}
               className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-              placeholder="選填，可記錄操作原因"
+              placeholder="选填，可记录操作原因"
               rows={3}
             />
           </div>
 
           {/* Quick amounts */}
           <div>
-            <label className="block text-gray-300 mb-2">快捷金額</label>
+            <label className="block text-gray-300 mb-2">快捷金额</label>
             <div className="grid grid-cols-4 gap-2">
               {[100, 500, 1000, 5000].map((val) => (
                 <button
@@ -219,7 +219,7 @@ export default function RechargePage() {
                   : 'bg-red-600 hover:bg-red-700'
               }`}
             >
-              {loading ? '處理中...' : (type === 'deposit' ? '確認充值' : '確認扣款')}
+              {loading ? '处理中...' : (type === 'deposit' ? '确认充值' : '确认扣款')}
             </button>
             <Link
               href="/admin/users"

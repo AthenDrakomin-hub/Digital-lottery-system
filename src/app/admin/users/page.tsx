@@ -81,7 +81,7 @@ export default function UsersPage() {
         <div className="flex items-center gap-4">
           <input
             type="text"
-            placeholder="搜索用戶名/姓名/手機..."
+            placeholder="搜索用户名/姓名/手机..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500 w-64"
@@ -91,7 +91,7 @@ export default function UsersPage() {
             onChange={(e) => setFilter(e.target.value)}
             className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-500"
           >
-            <option value="all">全部狀態</option>
+            <option value="all">全部状态</option>
             <option value="active">正常</option>
             <option value="disabled">禁用</option>
           </select>
@@ -100,7 +100,7 @@ export default function UsersPage() {
           href="/admin/users/create"
           className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors"
         >
-          + 創建用戶
+          + 创建用户
         </Link>
       </div>
 
@@ -110,13 +110,13 @@ export default function UsersPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-700 text-gray-300 text-left">
-                <th className="px-6 py-4">用戶名</th>
+                <th className="px-6 py-4">用户名</th>
                 <th className="px-6 py-4">姓名</th>
-                <th className="px-6 py-4">手機</th>
-                <th className="px-6 py-4">郵箱</th>
-                <th className="px-6 py-4">餘額</th>
-                <th className="px-6 py-4">狀態</th>
-                <th className="px-6 py-4">註冊時間</th>
+                <th className="px-6 py-4">手机</th>
+                <th className="px-6 py-4">邮箱</th>
+                <th className="px-6 py-4">余额</th>
+                <th className="px-6 py-4">状态</th>
+                <th className="px-6 py-4">注册时间</th>
                 <th className="px-6 py-4">操作</th>
               </tr>
             </thead>
@@ -153,7 +153,7 @@ export default function UsersPage() {
                           onClick={() => handleToggleStatus(user._id, user.status)}
                           className={`${user.status === 'active' ? 'text-red-400 hover:text-red-300' : 'text-green-400 hover:text-green-300'} text-sm`}
                         >
-                          {user.status === 'active' ? '禁用' : '啟用'}
+                          {user.status === 'active' ? '禁用' : '启用'}
                         </button>
                       </div>
                     </td>
@@ -162,7 +162,7 @@ export default function UsersPage() {
               ) : (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-gray-400">
-                    暫無用戶數據
+                    暂无用户数据
                   </td>
                 </tr>
               )}
